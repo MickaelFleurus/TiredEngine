@@ -1,0 +1,47 @@
+# Ignore build artifacts and external dependencies
+/build/
+/external/
+
+# Compiled object files, libraries, executables
+*.obj
+*.o
+*.lo
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+*.app
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+Testing/
+
+# Visual Studio files
+*.vcxproj*
+*.sln
+*.user
+*.filters
+.vs/
+
+# CLion/JetBrains
+.idea/
+cmake-build-*/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Other
+*.log
+*.tmp

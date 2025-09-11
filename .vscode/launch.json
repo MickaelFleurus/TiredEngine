@@ -1,0 +1,14 @@
+{
+    "configurations": [
+    {
+        "name": "(msvc) Launch",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/Debug/Game_Angine.exe",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": []
+    }  
+    ]
+}

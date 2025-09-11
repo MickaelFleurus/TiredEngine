@@ -1,0 +1,22 @@
+---
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+
+# Brace placement
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: BeforeComma
+
+# Constructor initialization list
+PackConstructorInitializers : NextLine
+ConstructorInitializerIndentWidth: 4
+
+# Other preferences
+AllowShortFunctionsOnASingleLine: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlwaysBreakTemplateDeclarations: Yes
