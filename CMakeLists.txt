@@ -24,6 +24,11 @@ if(NOT SDL3_FOUND)
     FetchContent_MakeAvailable(SDL3)
 endif()
 
+get_cmake_property(_variableNames VARIABLES)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
+
 # imgui
 set(IMGUI_SOURCES
     ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp
@@ -38,9 +43,11 @@ target_include_directories(imgui PUBLIC ${CMAKE_SOURCE_DIR}/external/imgui)
 # GoogleTest
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/refs/heads/main.zip
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
     SOURCE_DIR external/googletest
 )
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Shaders
@@ -50,12 +57,14 @@ add_subdirectory(shaders)
 add_subdirectory(tests)
 
 # Sources
-file (GLOB_RECURSE Angine_SRC src/*.cpp)
+file (GLOB_RECURSE Angine_SRC src/*/*.cpp)
+add_library(Angine_LIB ${Angine_SRC})
+target_link_libraries(Angine_LIB PRIVATE Vulkan::Vulkan SDL3::SDL3 imgui)
+target_include_directories(Angine_LIB PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-add_executable(Game_Angine ${Angine_SRC})
-
-include_directories(${SDL3_INCLUDE_DIRS} include)
-target_link_libraries(Game_Angine PRIVATE Vulkan::Vulkan SDL3::SDL3 imgui)
+add_executable(Game_Angine src/main.cpp)
+target_link_libraries(Game_Angine PRIVATE Vulkan::Vulkan SDL3::SDL3 imgui Angine_LIB)
+target_include_directories(Game_Angine PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Post-build commands
 

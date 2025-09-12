@@ -33,6 +33,7 @@ public:
     CToken(CToken&&) = delete;
     CToken& operator=(CToken&&) = delete;
 
+    void Reset();
     std::unique_ptr<CTokenHandle> GetTokenHandle();
 
 private:

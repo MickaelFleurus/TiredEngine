@@ -15,3 +15,10 @@ std::unique_ptr<CToken::CTokenHandle> CToken::GetTokenHandle() {
 void CToken::OnHandleDestroyed(CTokenHandle& handle) {
     m_Handles.erase(&handle);
 }
+
+void CToken::Reset() {
+    for (auto* handle : m_Handles) {
+        handle->m_IsValid = false;
+    }
+    m_Handles.clear();
+}

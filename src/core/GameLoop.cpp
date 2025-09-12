@@ -1,11 +1,10 @@
 #include "core/GameLoop.h"
 
-#include "SDL3/SDL.h"
+#include <SDL3/SDL.h>
 
 namespace Core {
 
 CGameLoop::CGameLoop() = default;
-
 
 std::expected<void, const char*>
 CGameLoop::EverythingInitialisedCorrectly() const {

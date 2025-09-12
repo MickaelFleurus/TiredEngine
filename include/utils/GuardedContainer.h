@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 namespace {
+
 template <typename T>
 class Obj {
 public:
@@ -33,7 +34,7 @@ public:
         return m_Handle->IsValid();
     }
 
-    T const& m_Obj;
+    T& m_Obj;
 
 private:
     std::unique_ptr<CToken::CTokenHandle> m_Handle;
@@ -53,37 +54,40 @@ class CGuardedContainer {
 public:
     // Custom iterator that checks validity
     struct iterator {
-        using BaseIter = std::unordered_set<T>::iterator;
-        BaseIter it, end;
+        using BaseIter = std::unordered_set<::Obj<T>, ObjHasher>::iterator;
 
-        iterator(BaseIter i, BaseIter e) : it(i), end(e) {
+        iterator(BaseIter i, BaseIter e) : m_Current(i), m_End(e) {
             skipInvalid();
         }
 
-        T& operator*() const {
-            return **it;
+        std::iterator_traits<BaseIter>::reference operator*() const {
+            return *m_Current;
         }
 
-        T* operator->() const {
-            return *it;
+        std::iterator_traits<BaseIter>::pointer operator->() const {
+            return (*m_Current);
         }
 
         iterator& operator++() {
-            ++it;
+            ++m_Current;
             skipInvalid();
             return *this;
         }
 
         bool operator!=(const iterator& other) const {
-            return it != other.it;
+
+            return m_Current != other.m_Current;
         }
 
     private:
         void skipInvalid() {
-            while (it != end && !(*it)->IsValid()) {
-                ++it;
+            while (m_Current != m_End && !m_Current->IsValid()) {
+                ++m_Current;
             }
         }
+
+        BaseIter m_Current;
+        BaseIter m_End;
     };
 
     CGuardedContainer() = default;
@@ -103,20 +107,20 @@ public:
         }
     }
 
-    auto begin() {
-        return m_Set.begin();
+    iterator begin() {
+        return std::move(iterator(m_Set.begin(), m_Set.end()));
     }
 
-    auto end() {
-        return m_Set.end();
+    iterator end() {
+        return std::move(iterator(m_Set.end(), m_Set.end()));
     }
 
-    auto cbegin() const {
-        return m_Set.begin();
+    iterator cbegin() const {
+        return iterator(m_Set.begin(), m_Set.end());
     }
 
-    auto cend() const {
-        return m_Set.end();
+    iterator cend() const {
+        return iterator(m_Set.end(), m_Set.end());
     }
 
 private:

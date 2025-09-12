@@ -1,14 +1,24 @@
 {
     "configurations": [
-    {
-        "name": "(msvc) Launch",
-        "type": "cppvsdbg",
-        "request": "launch",
-        "program": "${workspaceFolder}/build/Debug/Game_Angine.exe",
-        "args": [],
-        "stopAtEntry": false,
-        "cwd": "${workspaceFolder}",
-        "environment": []
-    }  
+        {
+            "name": "(msvc) Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/Game_Angine.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
+        },
+        {
+            "name": "(msvc) Unit tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/tests/Debug/angine_tests.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
+        },
     ]
 }
