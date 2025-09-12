@@ -6,44 +6,31 @@
 namespace {
 
 template <typename T>
-class Obj {
+class CStoredObject {
 public:
-    Obj(T& ptr, std::unique_ptr<CToken::CTokenHandle> handler)
-        : m_Obj(ptr), m_Handle(std::move(handler)) {
+    CStoredObject(T& ptr, std::unique_ptr<CToken::CTokenHandle> handler)
+        : m_StoredItem(ptr), m_Handle(std::move(handler)) {
     }
-
-    T& operator*() {
-        return m_Obj;
-    }
-    T* operator->() {
-        return &m_Obj;
-    }
-
-    bool operator==(const Obj& other) const {
-        return &m_Obj == &other.m_Obj;
-    }
-
-    const T& operator*() const {
-        return m_Obj;
-    }
-    const T* operator->() const {
-        return &m_Obj;
+    bool operator==(const CStoredObject& other) const {
+        return &m_StoredItem == &other.m_StoredItem;
     }
 
     bool IsValid() const {
         return m_Handle->IsValid();
     }
 
-    T& m_Obj;
+    T& m_StoredItem;
 
 private:
     std::unique_ptr<CToken::CTokenHandle> m_Handle;
 };
 
-struct ObjHasher {
+struct SStoredObjectHasher {
     template <typename T>
-    std::size_t operator()(const typename ::Obj<T>& obj) const {
-        return std::hash<T*>()(const_cast<T*>(&obj.m_Obj));
+    std::size_t operator()(const ::CStoredObject<T>& obj) const {
+        // Hash the address of the stored item
+        return std::hash<const void*>()(
+            static_cast<const void*>(&obj.m_StoredItem));
     }
 };
 
@@ -54,18 +41,27 @@ class CGuardedContainer {
 public:
     // Custom iterator that checks validity
     struct iterator {
-        using BaseIter = std::unordered_set<::Obj<T>, ObjHasher>::iterator;
+        using BaseIter = std::unordered_set<::CStoredObject<T>,
+                                            SStoredObjectHasher>::iterator;
 
         iterator(BaseIter i, BaseIter e) : m_Current(i), m_End(e) {
             skipInvalid();
         }
 
-        std::iterator_traits<BaseIter>::reference operator*() const {
-            return *m_Current;
+        T& operator*() {
+            return m_Current->m_StoredItem;
         }
 
-        std::iterator_traits<BaseIter>::pointer operator->() const {
-            return (*m_Current);
+        T* operator->() {
+            return &m_Current->m_StoredItem;
+        }
+
+        const T& operator*() const {
+            return m_Current->m_StoredItem;
+        }
+
+        const T* operator->() const {
+            return &m_Current->m_StoredItem;
         }
 
         iterator& operator++() {
@@ -75,7 +71,6 @@ public:
         }
 
         bool operator!=(const iterator& other) const {
-
             return m_Current != other.m_Current;
         }
 
@@ -98,13 +93,16 @@ public:
     }
 
     void Remove(const T& obj) {
-        auto it =
-            std::find_if(m_Set.begin(), m_Set.end(), [&obj](const ::Obj<T>& o) {
-                return &o.m_Obj == &obj;
-            });
+        auto it = std::find_if(
+            m_Set.begin(), m_Set.end(),
+            [&obj](const ::CStoredObject<T>& o) { return *o == &obj; });
         if (it != m_Set.end()) {
             m_Set.erase(it);
         }
+    }
+
+    void Clear() {
+        m_Set.clear();
     }
 
     iterator begin() {
@@ -124,5 +122,5 @@ public:
     }
 
 private:
-    std::unordered_set<::Obj<T>, ObjHasher> m_Set;
+    std::unordered_set<::CStoredObject<T>, SStoredObjectHasher> m_Set;
 };

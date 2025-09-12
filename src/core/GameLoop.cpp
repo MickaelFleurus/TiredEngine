@@ -4,7 +4,8 @@
 
 namespace Core {
 
-CGameLoop::CGameLoop() = default;
+CGameLoop::CGameLoop() : m_Overlord(m_Window) {
+}
 
 std::expected<void, const char*>
 CGameLoop::EverythingInitialisedCorrectly() const {
@@ -18,6 +19,7 @@ CGameLoop::EverythingInitialisedCorrectly() const {
 bool CGameLoop::Run() {
     while (m_Inputs.Poll()) {
         m_Window.Render();
+        m_Overlord.Render();
     }
     return false;
 }

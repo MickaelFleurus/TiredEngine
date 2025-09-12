@@ -11,7 +11,7 @@ class GuardedContainerTest : public ::testing::Test {
 protected:
 };
 
-TEST_F(GuardedContainerTest, AddObject) {
+TEST_F(GuardedContainerTest, AddObjectsAndInvalidateOne) {
     CToken token1, token2;
     CGuardedContainer<Dummy> container;
     Dummy obj1, obj2;
@@ -29,4 +29,14 @@ TEST_F(GuardedContainerTest, AddObject) {
         count++;
     }
     EXPECT_EQ(count, 1);
+}
+
+TEST_F(GuardedContainerTest, AddObjectsAndInvalidateContainer) {
+    CToken token1, token2;
+    CGuardedContainer<Dummy> container;
+    Dummy obj1, obj2;
+    container.Add(obj1, token1);
+    container.Add(obj2, token2);
+
+    container.Clear();
 }
