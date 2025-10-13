@@ -7,9 +7,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find Vulkan
-find_package(Vulkan REQUIRED) 
-
 # Find or download SDL3
 set(SDL3_SHARED ON CACHE BOOL "" FORCE)
 set(SDL3_STATIC OFF CACHE BOOL "" FORCE)
@@ -24,21 +21,23 @@ if(NOT SDL3_FOUND)
     FetchContent_MakeAvailable(SDL3)
 endif()
 
-get_cmake_property(_variableNames VARIABLES)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
-
 # imgui
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.92.3
+    SOURCE_DIR external/imgui
+)
+FetchContent_MakeAvailable(imgui)
 set(IMGUI_SOURCES
-    ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp
-    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_demo.cpp
-    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_tables.cpp
-    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
 )
 add_library(imgui STATIC ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC ${CMAKE_SOURCE_DIR}/external/imgui)
+target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 
 # GoogleTest
 FetchContent_Declare(
@@ -59,11 +58,11 @@ add_subdirectory(tests)
 # Sources
 file (GLOB_RECURSE Angine_SRC src/*/*.cpp)
 add_library(Angine_LIB ${Angine_SRC})
-target_link_libraries(Angine_LIB PRIVATE Vulkan::Vulkan SDL3::SDL3 imgui)
+target_link_libraries(Angine_LIB PRIVATE SDL3::SDL3 imgui)
 target_include_directories(Angine_LIB PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_executable(Game_Angine src/main.cpp)
-target_link_libraries(Game_Angine PRIVATE Vulkan::Vulkan SDL3::SDL3 imgui Angine_LIB)
+target_link_libraries(Game_Angine PRIVATE SDL3::SDL3 imgui Angine_LIB)
 target_include_directories(Game_Angine PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Post-build commands

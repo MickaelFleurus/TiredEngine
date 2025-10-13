@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils/Token.h"
+#include <algorithm>
 #include <unordered_set>
 
 namespace {

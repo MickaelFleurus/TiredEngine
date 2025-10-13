@@ -1,7 +1,5 @@
 #include "renderer/Window.h"
 
-#include "renderer/vulkan/VulkanInstance.h"
-
 #include "SDL3/SDL.h"
 #include "SDL3/SDL_init.h"
 
@@ -32,7 +30,7 @@ public:
     CImpl()
         : m_SDLWindow(std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)>(
               SDL_CreateWindow("SDL3 window", kWindowWidth, kWindowHeight,
-                               SDL_WINDOW_VULKAN),
+                               SDL_WINDOW_RESIZABLE),
               kSDLWindowDeleter))
         , m_SDLRenderer(
               std::unique_ptr<SDL_Renderer, decltype(kSDLRendererDeleter)>(
@@ -40,9 +38,6 @@ public:
                   kSDLRendererDeleter)) {
 
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        bool result = m_VkInstance.CreateInstance();
-        result = result && m_VkInstance.CreateValidationLayers();
-        result = result && m_VkInstance.CreateDebugMessenger();
     }
 
     ~CImpl() {
@@ -58,7 +53,6 @@ public:
 private:
     std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)> m_SDLWindow;
     std::unique_ptr<SDL_Renderer, decltype(kSDLRendererDeleter)> m_SDLRenderer;
-    CVulkanInstance m_VkInstance;
 };
 
 CWindow::CWindow() : m_Impl(std::make_unique<CWindow::CImpl>()) {
