@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 
+class SDL_GPUDevice;
+
 namespace Renderer {
 class CWindow {
 public:
@@ -8,6 +10,7 @@ public:
     ~CWindow();
 
     void Render();
+    SDL_GPUDevice& GetDevice() const;
 
 private:
     class CImpl;

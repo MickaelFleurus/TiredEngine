@@ -4,7 +4,8 @@
 
 namespace Core {
 
-CGameLoop::CGameLoop() : m_Overlord(m_Window) {
+CGameLoop::CGameLoop()
+    : m_Overlord(m_Window), m_ShaderFactory(m_Window.GetDevice()) {
 }
 
 std::expected<void, const char*>

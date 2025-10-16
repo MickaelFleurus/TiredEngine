@@ -62,7 +62,7 @@ target_link_libraries(Angine_LIB PRIVATE SDL3::SDL3 imgui)
 target_include_directories(Angine_LIB PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_executable(Game_Angine src/main.cpp)
-target_link_libraries(Game_Angine PRIVATE SDL3::SDL3 imgui Angine_LIB)
+target_link_libraries(Game_Angine PRIVATE Angine_LIB)
 target_include_directories(Game_Angine PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Post-build commands

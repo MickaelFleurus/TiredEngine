@@ -79,6 +79,16 @@
         "csignal": "cpp",
         "fstream": "cpp",
         "mutex": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "bitset": "cpp",
+        "cinttypes": "cpp",
+        "complex": "cpp",
+        "filesystem": "cpp",
+        "numeric": "cpp",
+        "queue": "cpp",
+        "random": "cpp",
+        "regex": "cpp",
+        "stack": "cpp",
+        "typeindex": "cpp"
     }
 }
