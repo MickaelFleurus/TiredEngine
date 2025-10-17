@@ -1,4 +1,5 @@
 #pragma once
+#include "input/InputHandler.h"
 
 namespace Debug {
 class COverlord;
@@ -14,5 +15,6 @@ public:
 
 private:
     Debug::COverlord& m_Overlord;
+    Input::CInputHandler m_InputHandler;
 };
 } // namespace Core

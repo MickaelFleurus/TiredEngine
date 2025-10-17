@@ -89,6 +89,10 @@
         "random": "cpp",
         "regex": "cpp",
         "stack": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "__hash_table": "cpp",
+        "__bit_reference": "cpp",
+        "__node_handle": "cpp",
+        "string_view": "cpp"
     }
 }
