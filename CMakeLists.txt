@@ -56,9 +56,17 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
+    GIT_TAG 1.0.2
 )
 FetchContent_MakeAvailable(glm)
+
+# Magic Enum - Header-only enum reflection library
+FetchContent_Declare(
+    magic_enum
+    GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+    GIT_TAG v0.9.7
+)
+FetchContent_MakeAvailable(magic_enum)
 
 # Shaders
 add_subdirectory(shaders)
@@ -69,7 +77,7 @@ add_subdirectory(tests)
 # Sources
 file (GLOB_RECURSE Angine_SRC src/*/*.cpp)
 add_library(Angine_LIB ${Angine_SRC})
-target_link_libraries(Angine_LIB PRIVATE SDL3::SDL3 imgui glm::glm)
+target_link_libraries(Angine_LIB PRIVATE SDL3::SDL3 imgui glm::glm magic_enum::magic_enum)
 target_include_directories(Angine_LIB PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 add_executable(Game_Angine src/main.cpp)

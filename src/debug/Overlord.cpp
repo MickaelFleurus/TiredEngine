@@ -44,35 +44,20 @@ COverlord::~COverlord() {
 void COverlord::PrepareRender(SDL_GPUCommandBuffer& cmd) {
     ImGui_ImplSDLGPU3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
+
     ImGui::NewFrame();
-    ImGui::Begin("My First Window");
 
-    ImGui::Text("Hello, ImGui!");
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-    if (ImGui::Button("Click Me!")) {
-        // Button was clicked
-        printf("Button clicked!\n");
+    ShowMenuBar();
+    for (auto& item : m_Items) {
+        if (item.IsVisible()) {
+            item.Render();
+        }
     }
-
-    static float f = 0.0f;
-    ImGui::SliderFloat("Float Slider", &f, 0.0f, 1.0f);
-
-    static bool show_demo = false;
-    ImGui::Checkbox("Show Demo Window", &show_demo);
-
-    if (show_demo) {
-        ImGui::ShowDemoWindow(&show_demo);
-    }
-
-    ImGui::End();
     ImGui::Render();
     ImGui_ImplSDLGPU3_PrepareDrawData(ImGui::GetDrawData(), &cmd);
 }
 
 void COverlord::Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) {
-
     ImGui_ImplSDLGPU3_RenderDrawData(ImGui::GetDrawData(), &cmd, &pass);
 }
 
@@ -82,6 +67,21 @@ void COverlord::AddMenu(IOverlordItem& item, CToken& token) {
 
 void COverlord::HandleEvent(const SDL_Event* e) {
     ImGui_ImplSDL3_ProcessEvent(e);
+}
+
+void COverlord::ShowMenuBar() {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Widgets")) {
+            for (auto& item : m_Items) {
+                if (ImGui::MenuItem(item.GetName(), nullptr,
+                                    item.IsVisible())) {
+                    item.ToggleVisible();
+                }
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
 }
 
 } // namespace Debug

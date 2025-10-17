@@ -7,17 +7,17 @@ namespace {
 constexpr auto buttonList = {Input::EButton::Left, Input::EButton::Right,
                              Input::EButton::Fire};
 
-std::optional<Input::EButton> GetButtonId(SDL_Keycode key) {
-    switch (key) {
-    case SDLK_SPACE:
-        return Input::EButton::Fire;
-    case SDLK_LEFT:
-        return Input::EButton::Left;
-    case SDLK_RIGHT:
-        return Input::EButton::Right;
+SDL_Scancode GetButtonKey(Input::EButton button) {
+    switch (button) {
+    case Input::EButton::Fire:
+        return SDL_GetScancodeFromKey(SDLK_SPACE, nullptr);
+    case Input::EButton::Left:
+        return SDL_GetScancodeFromKey(SDLK_LEFT, nullptr);
+    case Input::EButton::Right:
+        return SDL_GetScancodeFromKey(SDLK_RIGHT, nullptr);
     }
-    return std::nullopt;
 }
+} // namespace
 
 namespace Input {
 
@@ -25,16 +25,18 @@ CInputHandler::CInputHandler() {
     for (const auto button : buttonList) {
         mInputStateWatcher.mButtonStates[button] = false;
     }
-}
-
-void CInputHandler::HandleEvent(SDL_Event* event) {
-    if (auto button = GetButtonId(event->key.key); button.has_value()) {
-        bool isPressed = (event->type == SDL_EVENT_KEY_DOWN);
-        mInputStateWatcher.mButtonStates[button.value()] = isPressed;
-    }
+    mInputStateWatcher.mPreviousButtonStates = mInputStateWatcher.mButtonStates;
 }
 
 void CInputHandler::Update() {
+    auto keyboardState = SDL_GetKeyboardState(nullptr);
+    for (const auto button : buttonList) {
+        mInputStateWatcher.mButtonStates[button] =
+            keyboardState[GetButtonKey(button)];
+    }
+}
+
+void CInputHandler::Swap() {
     mInputStateWatcher.swap();
 }
 } // namespace Input

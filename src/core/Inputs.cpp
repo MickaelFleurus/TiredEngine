@@ -16,15 +16,13 @@ CInputs::~CInputs() {
 }
 
 bool CInputs::Poll() {
-
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
         if (e.type == SDL_EVENT_QUIT) {
             return false;
         }
-        m_InputHandler.HandleEvent(&e);
+        m_Overlord.HandleEvent(&e);
     }
-    m_Overlord.HandleEvent(&e);
     return true;
 }
 

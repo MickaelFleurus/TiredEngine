@@ -21,6 +21,7 @@ CGameLoop::EverythingInitialisedCorrectly() const {
 
 bool CGameLoop::Run() {
     while (m_Inputs.Poll()) {
+        m_InputHandler.Update();
         if (!m_Window.PrepareRender()) {
             SDL_Log("Failed to prepare render");
             continue;
@@ -32,6 +33,7 @@ bool CGameLoop::Run() {
             m_Window.Render();
             m_Window.EndRender();
         }
+        m_InputHandler.Swap();
     }
     return false;
 }

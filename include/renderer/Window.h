@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 
-class SDL_GPUDevice;
-class SDL_Window;
-class SDL_GPUCommandBuffer;
-class SDL_GPURenderPass;
+struct SDL_GPUDevice;
+struct SDL_Window;
+struct SDL_GPUCommandBuffer;
+struct SDL_GPURenderPass;
 
 namespace Renderer {
 class CWindow {

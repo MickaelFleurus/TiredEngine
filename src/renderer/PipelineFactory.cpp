@@ -3,6 +3,8 @@
 #include "renderer/PipelineTypes.h"
 #include "renderer/Shader.h"
 
+#include <functional>
+
 namespace {
 // Helper functions and types for pipeline creation
 SDL_GPUPrimitiveType ConvertPrimitiveType(Renderer::EPrimitiveType type) {
@@ -67,32 +69,49 @@ public:
         : m_Device(device), m_Window(window) {
     }
 
-    std::unique_ptr<SDL_GPUGraphicsPipeline>
+    std::unique_ptr<SDL_GPUGraphicsPipeline,
+                    std::function<void(SDL_GPUGraphicsPipeline*)>>
     CreateGraphicsPipeline(CShader& vertexShader, CShader& fragmentShader,
                            SPipelineConfig config = {}) {
-        SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo = {
-            .target_info =
-                {
-                    .num_color_targets = 1,
-                    .color_target_descriptions =
-                        (SDL_GPUColorTargetDescription[]){
-                            {.format = SDL_GetGPUSwapchainTextureFormat(
-                                 &m_Device, &m_Window)}},
-                },
+        SDL_GPUColorTargetDescription colorTarget{};
+        colorTarget.format =
+            SDL_GetGPUSwapchainTextureFormat(&m_Device, &m_Window);
 
-            .rasterizer_state.fill_mode = ConvertFillMode(config.FillMode),
-            .primitive_type = ConvertPrimitiveType(config.PrimitiveType),
-            .vertex_shader = vertexShader.Get(),
-            .fragment_shader = fragmentShader.Get(),
+        SDL_GPUGraphicsPipelineTargetInfo targetInfo{};
+        targetInfo.num_color_targets = 1;
+        targetInfo.color_target_descriptions = &colorTarget;
+
+        SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo{};
+        pipelineCreateInfo.target_info = targetInfo;
+        pipelineCreateInfo.rasterizer_state.fill_mode =
+            ConvertFillMode(config.FillMode);
+        pipelineCreateInfo.rasterizer_state.cull_mode =
+            ConvertCullMode(config.CullMode);
+        pipelineCreateInfo.rasterizer_state.front_face =
+            ConvertFrontFace(config.FrontFace);
+        pipelineCreateInfo.primitive_type =
+            ConvertPrimitiveType(config.PrimitiveType);
+        pipelineCreateInfo.vertex_shader = vertexShader.Get();
+        pipelineCreateInfo.fragment_shader = fragmentShader.Get();
+
+        SDL_GPUGraphicsPipeline* pipeline =
+            SDL_CreateGPUGraphicsPipeline(&m_Device, &pipelineCreateInfo);
+
+        // Capture device by reference in the lambda
+        auto deleter = [device = &m_Device](SDL_GPUGraphicsPipeline* p) {
+            if (p)
+                SDL_ReleaseGPUGraphicsPipeline(device, p);
         };
 
-        return nullptr;
+        return std::unique_ptr<SDL_GPUGraphicsPipeline,
+                               std::function<void(SDL_GPUGraphicsPipeline*)>>(
+            pipeline, deleter);
     }
 
 private:
     SDL_GPUDevice& m_Device;
     SDL_Window& m_Window;
-}; // namespace Renderer
+};
 
 CPipelineFactory::CPipelineFactory(SDL_GPUDevice& device, SDL_Window& window)
     : m_Impl(std::make_unique<CImpl>(device, window)) {

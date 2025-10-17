@@ -93,6 +93,9 @@
         "__hash_table": "cpp",
         "__bit_reference": "cpp",
         "__node_handle": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "codecvt": "cpp",
+        "future": "cpp",
+        "shared_mutex": "cpp"
     }
 }

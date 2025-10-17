@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-class SDL_GPUShader;
-class SDL_GPUDevice;
+struct SDL_GPUShader;
+struct SDL_GPUDevice;
 
 namespace Renderer {
 class CShader {

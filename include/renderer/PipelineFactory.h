@@ -2,8 +2,8 @@
 #include <memory>
 
 struct SDL_GPUGraphicsPipeline;
-class SDL_GPUDevice;
-class SDL_Window;
+struct SDL_GPUDevice;
+struct SDL_Window;
 
 namespace Renderer {
 class CShader;

@@ -1,6 +1,7 @@
 #pragma once
 #include "core/Inputs.h"
 #include "debug/Overlord.h"
+#include "input/InputHandler.h"
 #include "renderer/ShaderFactory.h"
 #include "renderer/Window.h"
 
@@ -19,5 +20,6 @@ private:
     Renderer::CShaderFactory m_ShaderFactory;
     Debug::COverlord m_Overlord;
     CInputs m_Inputs;
+    Input::CInputHandler m_InputHandler;
 };
 } // namespace Core
