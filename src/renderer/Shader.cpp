@@ -13,4 +13,8 @@ CShader::~CShader() {
         SDL_ReleaseGPUShader(&m_Device, m_Shader);
     }
 }
+
+SDL_GPUShader* CShader::Get() const {
+    return m_Shader;
+}
 } // namespace Renderer

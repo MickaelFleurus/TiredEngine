@@ -5,7 +5,9 @@
 namespace Core {
 
 CGameLoop::CGameLoop()
-    : m_Overlord(m_Window), m_ShaderFactory(m_Window.GetDevice()) {
+    : m_Overlord(m_Window.Get(), m_Window.GetDevice())
+    , m_ShaderFactory(m_Window.GetDevice())
+    , m_Inputs(m_Overlord) {
 }
 
 std::expected<void, const char*>
@@ -19,8 +21,17 @@ CGameLoop::EverythingInitialisedCorrectly() const {
 
 bool CGameLoop::Run() {
     while (m_Inputs.Poll()) {
-        m_Window.Render();
-        m_Overlord.Render();
+        if (!m_Window.PrepareRender()) {
+            SDL_Log("Failed to prepare render");
+            continue;
+        }
+        m_Overlord.PrepareRender(m_Window.GetCommandBuffer());
+        if (m_Window.BeginRender()) {
+            m_Overlord.Render(m_Window.GetCommandBuffer(),
+                              m_Window.GetRenderPass());
+            m_Window.Render();
+            m_Window.EndRender();
+        }
     }
     return false;
 }

@@ -2,11 +2,12 @@
 #include "SDL3/SDL.h"
 #include "SDL3/SDL_init.h"
 
+#include "debug/Overlord.h"
 #include "renderer/Window.h"
 
 namespace Core {
 
-CInputs::CInputs() {
+CInputs::CInputs(Debug::COverlord& overlord) : m_Overlord(overlord) {
     SDL_InitSubSystem(SDL_INIT_EVENTS);
 }
 
@@ -24,6 +25,7 @@ bool CInputs::Poll() {
             return false;
         }
     }
+    m_Overlord.HandleEvent(&e);
     return true;
 }
 

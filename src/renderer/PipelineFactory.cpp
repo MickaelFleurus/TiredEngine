@@ -1,7 +1,7 @@
 #include "renderer/PipelineFactory.h"
+#include "SDL3/SDL_gpu.h"
 #include "renderer/PipelineTypes.h"
 #include "renderer/Shader.h"
-#include <SDL_gpu.h>
 
 namespace {
 // Helper functions and types for pipeline creation
@@ -77,7 +77,7 @@ public:
                     .color_target_descriptions =
                         (SDL_GPUColorTargetDescription[]){
                             {.format = SDL_GetGPUSwapchainTextureFormat(
-                                 device, window)}},
+                                 &m_Device, &m_Window)}},
                 },
 
             .rasterizer_state.fill_mode = ConvertFillMode(config.FillMode),

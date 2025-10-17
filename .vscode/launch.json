@@ -20,5 +20,29 @@
             "cwd": "${workspaceFolder}",
             "environment": []
         },
+        {
+            "name": "(lldb) Launch (macOS)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Game_Angine",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "internalTerminal",
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(lldb) Unit tests (macOS)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/tests/angine_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "MIMode": "lldb",
+            "miDebuggerPath": "/usr/bin/lldb"
+        }
     ]
 }
