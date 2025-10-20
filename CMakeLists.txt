@@ -1,104 +1,52 @@
 cmake_minimum_required(VERSION 3.26)
 project(Game_Angine LANGUAGES CXX)
 
+# Add cmake directory to module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 include(FetchContent)
+include(SDL3)
+include(ImGui)
+include(glm)
+include(MagicEnum)
+include(GoogleTest)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find or download SDL3
-set(SDL3_SHARED ON CACHE BOOL "" FORCE)
-set(SDL3_STATIC OFF CACHE BOOL "" FORCE)
-find_package(SDL3 QUIET)
-if(NOT SDL3_FOUND)
-    FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.2.22
-        SOURCE_DIR external/SDL3
-    )
-    FetchContent_MakeAvailable(SDL3)
-endif()
+setup_sdl3()
+setup_imgui()
+setup_magicenum()
+setup_glm()
+setup_gtest()
 
-# imgui
-FetchContent_Declare(
-    imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.92.3
-    SOURCE_DIR external/imgui
-)
-FetchContent_MakeAvailable(imgui)
-set(IMGUI_SOURCES
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlgpu3.cpp
-)
-add_library(imgui STATIC ${IMGUI_SOURCES})
-target_link_libraries(imgui PRIVATE SDL3::SDL3)
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
-
-# GoogleTest
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
-    SOURCE_DIR external/googletest
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-# GLM - Header-only math library
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.2
-)
-FetchContent_MakeAvailable(glm)
-
-# Magic Enum - Header-only enum reflection library
-FetchContent_Declare(
-    magic_enum
-    GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
-    GIT_TAG v0.9.7
-)
-FetchContent_MakeAvailable(magic_enum)
-
-# Shaders
-add_subdirectory(shaders)
-
-# Testing
-add_subdirectory(tests)
 
 # Sources
-file (GLOB_RECURSE Angine_SRC src/*/*.cpp)
-add_library(Angine_LIB ${Angine_SRC})
-target_link_libraries(Angine_LIB PRIVATE SDL3::SDL3 imgui glm::glm magic_enum::magic_enum)
-target_include_directories(Angine_LIB PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_subdirectory(engine)
+add_subdirectory(game)
 
-add_executable(Game_Angine src/main.cpp)
-target_link_libraries(Game_Angine PRIVATE Angine_LIB)
-target_include_directories(Game_Angine PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_executable(BreakoutExclamationMark src/main.cpp)
+target_link_libraries(BreakoutExclamationMark PRIVATE Angine_LIB Breakout_LIB)
+target_include_directories(BreakoutExclamationMark PRIVATE ${CMAKE_SOURCE_DIR}/game/include)
 
-# Post-build commands
+if(TARGET CompileShaders)
+    add_dependencies(BreakoutExclamationMark CompileShaders)
+endif()
 
 if(WIN32)
     add_custom_command(TARGET Game_Angine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<IF:$<CONFIG:Debug>,${CMAKE_BINARY_DIR}/_deps/sdl3-build/Debug/SDL3.dll,${CMAKE_BINARY_DIR}/_deps/sdl3-build/Release/SDL3.dll>"
-        "$<TARGET_FILE_DIR:Game_Angine>"
+        "$<TARGET_FILE_DIR:BreakoutExclamationMark>"
         COMMENT "Copying SDL3.dll to output directory"
     )
 endif()
 
 # Copy compiled shaders to the executable directory after build
-add_custom_command(TARGET Game_Angine POST_BUILD
+add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_BINARY_DIR}/shaders"
-    "$<TARGET_FILE_DIR:Game_Angine>/shaders"
+    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/shaders"
     COMMENT "Copying compiled shaders to output directory"
 )
