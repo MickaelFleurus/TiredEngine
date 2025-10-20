@@ -15,6 +15,8 @@ namespace Core {
 class CGameLoop {
 public:
     CGameLoop();
+    ~CGameLoop();
+
     std::expected<void, const char*> EverythingInitialisedCorrectly() const;
 
     bool Run();

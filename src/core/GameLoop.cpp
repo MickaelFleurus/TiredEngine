@@ -1,4 +1,5 @@
 #include "core/GameLoop.h"
+#include "scene/AbstractScene.h"
 
 #include <SDL3/SDL.h>
 
@@ -9,6 +10,8 @@ CGameLoop::CGameLoop()
     , mShaderFactory(mWindow.GetDevice())
     , mInputs(mOverlord) {
 }
+
+CGameLoop::~CGameLoop() = default;
 
 std::expected<void, const char*>
 CGameLoop::EverythingInitialisedCorrectly() const {
