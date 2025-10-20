@@ -27,27 +27,48 @@ class CMovementComponent;
 
 class CComponentManager {
 public:
-    explicit CComponentManager();
+    CComponentManager() = default;
 
     template <typename T>
     T* getComponent(int entityId) {
-        auto& pool = mComponents[typeid(T)];
-        auto it = pool.find(entityId);
-        if (it != pool.end())
-            return static_cast<T*>(it->second.get());
+        auto& pool = getComponentPool<T>();
+        auto it = pool.mEntityToIndex.find(entityId);
+        if (it != pool.mEntityToIndex.end()) {
+            return static_cast<T*>(pool.mComponents[it->second].get());
+        }
         return nullptr;
     }
 
     template <typename T>
     bool hasComponent(int entityId) {
-        auto& pool = mComponents[typeid(T)];
-        return pool.contains(entityId);
+        auto& pool = getComponentPool<T>();
+        return pool.mEntityToIndex.contains(entityId);
     }
 
     template <typename T>
     void removeComponent(Core::GameObjectId id) {
-        auto& pool = mComponents[typeid(T)];
-        pool.erase(id);
+        auto& pool = getComponentPool<T>();
+        auto it = pool.mEntityToIndex.find(id);
+        if (it == pool.mEntityToIndex.end()) {
+            return;
+        }
+
+        const size_t indexToRemove = it->second;
+        const size_t lastIndex = pool.mComponents.size() - 1;
+
+        // Swap with last element if not already the last
+        if (indexToRemove != lastIndex) {
+            pool.mComponents[indexToRemove] =
+                std::move(pool.mComponents[lastIndex]);
+            pool.mEntityIds[indexToRemove] = pool.mEntityIds[lastIndex];
+
+            // Update the moved component's index in the map
+            pool.mEntityToIndex[pool.mEntityIds[indexToRemove]] = indexToRemove;
+        }
+
+        pool.mComponents.pop_back();
+        pool.mEntityIds.pop_back();
+        pool.mEntityToIndex.erase(id);
     }
 
     void removeComponents(Core::GameObjectId id);
@@ -72,13 +93,29 @@ public:
     void update(float deltaTime);
 
 private:
+    struct ComponentPool {
+        std::vector<std::unique_ptr<IComponent>> mComponents;
+        std::vector<Core::GameObjectId> mEntityIds;
+        std::unordered_map<Core::GameObjectId, size_t> mEntityToIndex;
+    };
+
+    template <typename T>
+    ComponentPool& getComponentPool() {
+        return mComponentPools[std::type_index(typeid(T))];
+    }
+
     template <typename T, typename... Args>
     T& createComponent(Core::CGameObject& owner, Core::GameObjectId id,
                        Args&&... args) {
+        auto& pool = getComponentPool<T>();
         auto component =
             std::make_unique<T>(owner, *this, std::forward<Args>(args)...);
         T* rawPtr = component.get(); // get raw pointer before moving
-        mComponents[typeid(T)].emplace(id, std::move(component));
+
+        size_t newIndex = pool.mComponents.size();
+        pool.mComponents.emplace_back(std::move(component));
+        pool.mEntityIds.emplace_back(id);
+        pool.mEntityToIndex[id] = newIndex;
         return *rawPtr;
     }
 
@@ -89,14 +126,12 @@ private:
 
     template <typename T>
     void update(float deltaTime) {
-        auto& pool = mComponents[typeid(T)];
-        for (auto& componentPair : pool) {
-            componentPair.second->update(deltaTime);
+        auto& pool = mComponentPools[typeid(T)];
+        for (auto& component : pool.mComponents) {
+            component->update(deltaTime);
         }
     }
 
-    std::unordered_map<std::type_index,
-                       std::unordered_map<int, std::unique_ptr<IComponent>>>
-        mComponents;
+    std::unordered_map<std::type_index, ComponentPool> mComponentPools;
 };
 } // namespace Component

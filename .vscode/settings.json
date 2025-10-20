@@ -96,6 +96,13 @@
         "string_view": "cpp",
         "codecvt": "cpp",
         "future": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "__tree": "cpp",
+        "__split_buffer": "cpp",
+        "__locale": "cpp",
+        "__verbose_abort": "cpp",
+        "cwctype": "cpp",
+        "execution": "cpp",
+        "print": "cpp"
     }
 }

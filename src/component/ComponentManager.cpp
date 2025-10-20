@@ -7,10 +7,6 @@
 #include "core/GameObject.h"
 
 namespace Component {
-
-CComponentManager::CComponentManager() {
-}
-
 CInputComponent& CComponentManager::addInputComponent(
     Core::CGameObject& owner, std::optional<Input::InputFunc> onFirePressed,
     std::optional<Input::InputFunc> onLeftPressed,
@@ -42,8 +38,8 @@ CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
 }
 
 void CComponentManager::removeComponents(Core::GameObjectId id) {
-    for (auto& [type, pool] : mComponents) {
-        pool.erase(id);
+    for (auto& [type, pool] : mComponentPools) {
+        removeComponent<decltype(type)>(id);
     }
 }
 
