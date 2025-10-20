@@ -28,9 +28,9 @@ public:
 private:
     void ShowMenuBar();
 
-    static CGuardedContainer<IOverlordItem> m_Items;
-    SDL_Window& m_Window;
-    SDL_GPUDevice& m_Device;
+    static CGuardedContainer<IOverlordItem> mItems;
+    SDL_Window& mWindow;
+    SDL_GPUDevice& mDevice;
     CInputStateWatcher mInputStateWatcher;
 };
 } // namespace Debug

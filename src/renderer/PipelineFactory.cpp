@@ -66,7 +66,7 @@ namespace Renderer {
 class CPipelineFactory::CImpl {
 public:
     CImpl(SDL_GPUDevice& device, SDL_Window& window)
-        : m_Device(device), m_Window(window) {
+        : mDevice(device), mWindow(window) {
     }
 
     std::unique_ptr<SDL_GPUGraphicsPipeline,
@@ -75,7 +75,7 @@ public:
                            SPipelineConfig config = {}) {
         SDL_GPUColorTargetDescription colorTarget{};
         colorTarget.format =
-            SDL_GetGPUSwapchainTextureFormat(&m_Device, &m_Window);
+            SDL_GetGPUSwapchainTextureFormat(&mDevice, &mWindow);
 
         SDL_GPUGraphicsPipelineTargetInfo targetInfo{};
         targetInfo.num_color_targets = 1;
@@ -95,10 +95,10 @@ public:
         pipelineCreateInfo.fragment_shader = fragmentShader.Get();
 
         SDL_GPUGraphicsPipeline* pipeline =
-            SDL_CreateGPUGraphicsPipeline(&m_Device, &pipelineCreateInfo);
+            SDL_CreateGPUGraphicsPipeline(&mDevice, &pipelineCreateInfo);
 
         // Capture device by reference in the lambda
-        auto deleter = [device = &m_Device](SDL_GPUGraphicsPipeline* p) {
+        auto deleter = [device = &mDevice](SDL_GPUGraphicsPipeline* p) {
             if (p)
                 SDL_ReleaseGPUGraphicsPipeline(device, p);
         };
@@ -109,12 +109,12 @@ public:
     }
 
 private:
-    SDL_GPUDevice& m_Device;
-    SDL_Window& m_Window;
+    SDL_GPUDevice& mDevice;
+    SDL_Window& mWindow;
 };
 
 CPipelineFactory::CPipelineFactory(SDL_GPUDevice& device, SDL_Window& window)
-    : m_Impl(std::make_unique<CImpl>(device, window)) {
+    : mImpl(std::make_unique<CImpl>(device, window)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;

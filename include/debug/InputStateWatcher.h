@@ -13,6 +13,6 @@ public:
 
 private:
     Input::CInputWatcher mInputStateWatcher;
-    CToken m_Token;
+    CToken mToken;
 };
 } // namespace Debug

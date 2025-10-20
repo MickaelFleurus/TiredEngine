@@ -11,7 +11,7 @@ public:
     SDL_GPUShader* Get() const;
 
 private:
-    SDL_GPUDevice& m_Device;
-    SDL_GPUShader* m_Shader;
+    SDL_GPUDevice& mDevice;
+    SDL_GPUShader* mShader;
 };
 } // namespace Renderer

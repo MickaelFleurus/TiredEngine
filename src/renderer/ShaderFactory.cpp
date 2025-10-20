@@ -14,26 +14,24 @@ namespace Renderer {
 class CShaderFactory::CImpl {
 public:
     CImpl(SDL_GPUDevice& device)
-        : m_Device(device)
-
-        , m_BasePath(SDL_GetBasePath()) {
+        : mDevice(device), mBasePath(SDL_GetBasePath()) {
     }
 
     CShader* CreateFragmentShader(const char* filePath) {
         return new CShader(CreateShader(filePath, SDL_GPU_SHADERSTAGE_FRAGMENT),
-                           m_Device);
+                           mDevice);
     }
 
     CShader* CreateVertexShader(const char* filePath) {
         return new CShader(CreateShader(filePath, SDL_GPU_SHADERSTAGE_VERTEX),
-                           m_Device);
+                           mDevice);
     }
 
 private:
     SDL_GPUShader* CreateShader(const char* filePath,
                                 SDL_GPUShaderStage stage) {
         // Determine the backend format and construct file path
-        SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(&m_Device);
+        SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(&mDevice);
 
         struct ShaderConfig {
             SDL_GPUShaderFormat format;
@@ -56,7 +54,7 @@ private:
 
         // Build full path
         std::string fullPath =
-            std::string(m_BasePath) + filePath + config->extension;
+            std::string(mBasePath) + filePath + config->extension;
 
         // Load shader file
         size_t codeSize = 0;
@@ -65,7 +63,6 @@ private:
             return nullptr;
         }
 
-        // Use RAII for automatic cleanup
         std::unique_ptr<void, decltype(&SDL_free)> code(rawCode, SDL_free);
 
         // Create shader info
@@ -80,27 +77,27 @@ private:
             .num_storage_buffers = 0,
             .num_uniform_buffers = 0};
 
-        SDL_GPUShader* shader = SDL_CreateGPUShader(&m_Device, &shaderInfo);
+        SDL_GPUShader* shader = SDL_CreateGPUShader(&mDevice, &shaderInfo);
 
         return shader; // code automatically freed by unique_ptr
     }
 
-    const char* m_BasePath;
-    SDL_GPUDevice& m_Device;
+    const char* mBasePath;
+    SDL_GPUDevice& mDevice;
 };
 
 CShaderFactory::CShaderFactory(SDL_GPUDevice& device)
-    : m_Impl(std::make_unique<CImpl>(device)) {
+    : mImpl(std::make_unique<CImpl>(device)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;
 
 CShader* CShaderFactory::CreateFragmentShader(const char* filePath) {
-    return m_Impl->CreateFragmentShader(filePath);
+    return mImpl->CreateFragmentShader(filePath);
 }
 
 CShader* CShaderFactory::CreateVertexShader(const char* filePath) {
-    return m_Impl->CreateVertexShader(filePath);
+    return mImpl->CreateVertexShader(filePath);
 }
 
 } // namespace Renderer

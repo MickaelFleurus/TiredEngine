@@ -5,9 +5,9 @@
 namespace Core {
 
 CGameLoop::CGameLoop()
-    : m_Overlord(m_Window.Get(), m_Window.GetDevice())
-    , m_ShaderFactory(m_Window.GetDevice())
-    , m_Inputs(m_Overlord) {
+    : mOverlord(mWindow.Get(), mWindow.GetDevice())
+    , mShaderFactory(mWindow.GetDevice())
+    , mInputs(mOverlord) {
 }
 
 std::expected<void, const char*>
@@ -20,20 +20,20 @@ CGameLoop::EverythingInitialisedCorrectly() const {
 }
 
 bool CGameLoop::Run() {
-    while (m_Inputs.Poll()) {
-        m_InputHandler.Update();
-        if (!m_Window.PrepareRender()) {
+    while (mInputs.Poll()) {
+        mInputHandler.Update();
+        if (!mWindow.PrepareRender()) {
             SDL_Log("Failed to prepare render");
             continue;
         }
-        m_Overlord.PrepareRender(m_Window.GetCommandBuffer());
-        if (m_Window.BeginRender()) {
-            m_Overlord.Render(m_Window.GetCommandBuffer(),
-                              m_Window.GetRenderPass());
-            m_Window.Render();
-            m_Window.EndRender();
+        mOverlord.PrepareRender(mWindow.GetCommandBuffer());
+        if (mWindow.BeginRender()) {
+            mOverlord.Render(mWindow.GetCommandBuffer(),
+                             mWindow.GetRenderPass());
+            mWindow.Render();
+            mWindow.EndRender();
         }
-        m_InputHandler.Swap();
+        mInputHandler.Swap();
     }
     return false;
 }

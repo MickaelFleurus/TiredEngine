@@ -7,6 +7,10 @@
 
 #include <expected>
 
+namespace Scene {
+class AbstractScene;
+}
+
 namespace Core {
 class CGameLoop {
 public:
@@ -16,10 +20,11 @@ public:
     bool Run();
 
 private:
-    Renderer::CWindow m_Window;
-    Renderer::CShaderFactory m_ShaderFactory;
-    Debug::COverlord m_Overlord;
-    CInputs m_Inputs;
-    Input::CInputHandler m_InputHandler;
+    Renderer::CWindow mWindow;
+    Renderer::CShaderFactory mShaderFactory;
+    Debug::COverlord mOverlord;
+    CInputs mInputs;
+    Input::CInputHandler mInputHandler;
+    std::unique_ptr<Scene::AbstractScene> mCurrentScene;
 };
 } // namespace Core

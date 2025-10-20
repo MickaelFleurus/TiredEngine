@@ -9,7 +9,7 @@
 namespace Debug {
 
 CInputStateWatcher::CInputStateWatcher() {
-    COverlord::AddMenu(*this, m_Token);
+    COverlord::AddMenu(*this, mToken);
 }
 
 const char* CInputStateWatcher::GetName() const {

@@ -5,16 +5,16 @@
 namespace Renderer {
 
 CShader::CShader(SDL_GPUShader* shader, SDL_GPUDevice& device)
-    : m_Device(device), m_Shader(shader) {
+    : mDevice(device), mShader(shader) {
 }
 
 CShader::~CShader() {
-    if (m_Shader) {
-        SDL_ReleaseGPUShader(&m_Device, m_Shader);
+    if (mShader) {
+        SDL_ReleaseGPUShader(&mDevice, mShader);
     }
 }
 
 SDL_GPUShader* CShader::Get() const {
-    return m_Shader;
+    return mShader;
 }
 } // namespace Renderer

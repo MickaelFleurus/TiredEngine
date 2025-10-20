@@ -22,7 +22,8 @@ public:
 
     Core::CGameObject& getRoot();
 
-    Core::CGameObjectBuilder::CBuilder createGameObjectBuilder(Core::CGameObject* parent = nullptr);
+    Core::CGameObjectBuilder::CBuilder
+    createGameObjectBuilder(Core::CGameObject* parent = nullptr);
 
 protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;

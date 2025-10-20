@@ -6,22 +6,22 @@ class CToken {
 public:
     class CTokenHandle {
     public:
-        CTokenHandle(CToken& token) : m_Token(token) {
+        CTokenHandle(CToken& token) : mToken(token) {
         }
 
         ~CTokenHandle() {
-            if (m_IsValid) {
-                m_Token.OnHandleDestroyed(*this);
+            if (mIsValid) {
+                mToken.OnHandleDestroyed(*this);
             }
         }
 
         bool IsValid() const {
-            return m_IsValid;
+            return mIsValid;
         }
 
     private:
-        bool m_IsValid = true;
-        CToken& m_Token;
+        bool mIsValid = true;
+        CToken& mToken;
 
         friend class CToken;
     };
@@ -38,5 +38,5 @@ public:
 
 private:
     void OnHandleDestroyed(CTokenHandle& handle);
-    std::unordered_set<CTokenHandle*> m_Handles;
+    std::unordered_set<CTokenHandle*> mHandles;
 };

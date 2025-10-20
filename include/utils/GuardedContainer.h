@@ -10,20 +10,20 @@ template <typename T>
 class CStoredObject {
 public:
     CStoredObject(T& ptr, std::unique_ptr<CToken::CTokenHandle> handler)
-        : m_StoredItem(ptr), m_Handle(std::move(handler)) {
+        : mStoredItem(ptr), mHandle(std::move(handler)) {
     }
     bool operator==(const CStoredObject& other) const {
-        return &m_StoredItem == &other.m_StoredItem;
+        return &mStoredItem == &other.mStoredItem;
     }
 
     bool IsValid() const {
-        return m_Handle->IsValid();
+        return mHandle->IsValid();
     }
 
-    T& m_StoredItem;
+    T& mStoredItem;
 
 private:
-    std::unique_ptr<CToken::CTokenHandle> m_Handle;
+    std::unique_ptr<CToken::CTokenHandle> mHandle;
 };
 
 struct SStoredObjectHasher {
@@ -31,7 +31,7 @@ struct SStoredObjectHasher {
     std::size_t operator()(const ::CStoredObject<T>& obj) const {
         // Hash the address of the stored item
         return std::hash<const void*>()(
-            static_cast<const void*>(&obj.m_StoredItem));
+            static_cast<const void*>(&obj.mStoredItem));
     }
 };
 
@@ -45,83 +45,83 @@ public:
         using BaseIter = std::unordered_set<::CStoredObject<T>,
                                             SStoredObjectHasher>::iterator;
 
-        iterator(BaseIter i, BaseIter e) : m_Current(i), m_End(e) {
+        iterator(BaseIter i, BaseIter e) : mCurrent(i), mEnd(e) {
             skipInvalid();
         }
 
         T& operator*() {
-            return m_Current->m_StoredItem;
+            return mCurrent->mStoredItem;
         }
 
         T* operator->() {
-            return &m_Current->m_StoredItem;
+            return &mCurrent->mStoredItem;
         }
 
         const T& operator*() const {
-            return m_Current->m_StoredItem;
+            return mCurrent->mStoredItem;
         }
 
         const T* operator->() const {
-            return &m_Current->m_StoredItem;
+            return &mCurrent->mStoredItem;
         }
 
         iterator& operator++() {
-            ++m_Current;
+            ++mCurrent;
             skipInvalid();
             return *this;
         }
 
         bool operator!=(const iterator& other) const {
-            return m_Current != other.m_Current;
+            return mCurrent != other.mCurrent;
         }
 
     private:
         void skipInvalid() {
-            while (m_Current != m_End && !m_Current->IsValid()) {
-                ++m_Current;
+            while (mCurrent != mEnd && !mCurrent->IsValid()) {
+                ++mCurrent;
             }
         }
 
-        BaseIter m_Current;
-        BaseIter m_End;
+        BaseIter mCurrent;
+        BaseIter mEnd;
     };
 
     CGuardedContainer() = default;
     ~CGuardedContainer() = default;
 
     void Add(T& obj, CToken& token) {
-        m_Set.emplace(obj, token.GetTokenHandle());
+        mSet.emplace(obj, token.GetTokenHandle());
     }
 
     void Remove(const T& obj) {
         auto it = std::find_if(
-            m_Set.begin(), m_Set.end(),
+            mSet.begin(), mSet.end(),
             [&obj](const ::CStoredObject<T>& o) { return *o == &obj; });
-        if (it != m_Set.end()) {
-            m_Set.erase(it);
+        if (it != mSet.end()) {
+            mSet.erase(it);
         }
     }
 
     void Clear() {
-        m_Set.clear();
+        mSet.clear();
     }
 
     iterator begin() {
-        return std::move(iterator(m_Set.begin(), m_Set.end()));
+        return std::move(iterator(mSet.begin(), mSet.end()));
     }
 
     iterator end() {
-        return std::move(iterator(m_Set.end(), m_Set.end()));
+        return std::move(iterator(mSet.end(), mSet.end()));
     }
 
     iterator cbegin() const {
-        return iterator(m_Set.begin(), m_Set.end());
+        return iterator(mSet.begin(), mSet.end());
     }
 
     iterator cend() const {
-        return iterator(m_Set.end(), m_Set.end());
+        return iterator(mSet.end(), mSet.end());
     }
 
 private:
-    std::unordered_set<::CStoredObject<T>, SStoredObjectHasher> m_Set;
+    std::unordered_set<::CStoredObject<T>, SStoredObjectHasher> mSet;
 };

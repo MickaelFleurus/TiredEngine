@@ -8,13 +8,13 @@ public:
     virtual void Render() = 0;
     virtual const char* GetName() const = 0;
     bool IsVisible() const {
-        return m_Visible;
+        return mVisible;
     }
     void ToggleVisible() {
-        m_Visible = !m_Visible;
+        mVisible = !mVisible;
     }
 
 private:
-    bool m_Visible = false;
+    bool mVisible = false;
 };
 } // namespace Debug

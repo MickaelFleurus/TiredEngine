@@ -7,7 +7,7 @@
 
 namespace Core {
 
-CInputs::CInputs(Debug::COverlord& overlord) : m_Overlord(overlord) {
+CInputs::CInputs(Debug::COverlord& overlord) : mOverlord(overlord) {
     SDL_InitSubSystem(SDL_INIT_EVENTS);
 }
 
@@ -21,7 +21,7 @@ bool CInputs::Poll() {
         if (e.type == SDL_EVENT_QUIT) {
             return false;
         }
-        m_Overlord.HandleEvent(&e);
+        mOverlord.HandleEvent(&e);
     }
     return true;
 }

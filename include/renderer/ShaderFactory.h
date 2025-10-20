@@ -14,6 +14,6 @@ public:
 
 private:
     class CImpl;
-    std::unique_ptr<CImpl> m_Impl;
+    std::unique_ptr<CImpl> mImpl;
 };
 } // namespace Renderer

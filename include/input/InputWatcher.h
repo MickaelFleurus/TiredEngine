@@ -8,7 +8,7 @@
 namespace Input {
 class CInputWatcher {
 public:
-    explicit CInputWatcher() = default;
+    CInputWatcher() = default;
 
     EButtonState getButtonState(EButton button) const;
     bool isPressed(EButton button) const;

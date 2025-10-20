@@ -11,10 +11,10 @@
 #include <SDL3/SDL_gpu.h>
 
 namespace Debug {
-CGuardedContainer<IOverlordItem> COverlord::m_Items;
+CGuardedContainer<IOverlordItem> COverlord::mItems;
 
 COverlord::COverlord(SDL_Window& window, SDL_GPUDevice& device)
-    : m_Window(window), m_Device(device) {
+    : mWindow(window), mDevice(device) {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -27,11 +27,11 @@ COverlord::COverlord(SDL_Window& window, SDL_GPUDevice& device)
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL3_InitForSDLGPU(&m_Window);
+    ImGui_ImplSDL3_InitForSDLGPU(&mWindow);
     ImGui_ImplSDLGPU3_InitInfo info = {};
-    info.Device = &m_Device;
+    info.Device = &mDevice;
     info.ColorTargetFormat =
-        SDL_GetGPUSwapchainTextureFormat(&m_Device, &m_Window);
+        SDL_GetGPUSwapchainTextureFormat(&mDevice, &mWindow);
     ImGui_ImplSDLGPU3_Init(&info);
 }
 
@@ -48,7 +48,7 @@ void COverlord::PrepareRender(SDL_GPUCommandBuffer& cmd) {
     ImGui::NewFrame();
 
     ShowMenuBar();
-    for (auto& item : m_Items) {
+    for (auto& item : mItems) {
         if (item.IsVisible()) {
             item.Render();
         }
@@ -62,7 +62,7 @@ void COverlord::Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) {
 }
 
 void COverlord::AddMenu(IOverlordItem& item, CToken& token) {
-    m_Items.Add(item, token);
+    mItems.Add(item, token);
 }
 
 void COverlord::HandleEvent(const SDL_Event* e) {
@@ -72,7 +72,7 @@ void COverlord::HandleEvent(const SDL_Event* e) {
 void COverlord::ShowMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Widgets")) {
-            for (auto& item : m_Items) {
+            for (auto& item : mItems) {
                 if (ImGui::MenuItem(item.GetName(), nullptr,
                                     item.IsVisible())) {
                     item.ToggleVisible();

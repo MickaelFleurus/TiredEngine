@@ -13,6 +13,6 @@ public:
     bool Poll();
 
 private:
-    Debug::COverlord& m_Overlord;
+    Debug::COverlord& mOverlord;
 };
 } // namespace Core
