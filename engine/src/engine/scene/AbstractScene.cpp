@@ -3,7 +3,7 @@
 namespace Scene {
 
 AbstractScene::AbstractScene(Component::CComponentManager& componentManager,
-                             const Core::SWindowData& windowData)
+                             const Core::CWindowData& windowData)
     : mComponentManager(componentManager)
     , mWindowData(windowData)
     , mGameObjectBuilder(componentManager) {
@@ -12,14 +12,14 @@ AbstractScene::AbstractScene(Component::CComponentManager& componentManager,
 }
 
 Core::CGameObjectBuilder::CBuilder
-AbstractScene::createGameObjectBuilder(Core::CGameObject* parent) {
+AbstractScene::CreateGameObjectBuilder(Core::CGameObject* parent) {
     if (!parent) {
         parent = mSceneRoot.get();
     }
-    return mGameObjectBuilder.createBuilder(*parent);
+    return mGameObjectBuilder.CreateBuilder(*parent);
 }
 
-Core::CGameObject& AbstractScene::getRoot() {
+Core::CGameObject& AbstractScene::GetRoot() {
     return *mSceneRoot;
 }
 } // namespace Scene

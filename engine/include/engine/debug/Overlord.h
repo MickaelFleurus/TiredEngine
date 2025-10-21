@@ -1,36 +1,36 @@
 #pragma once
-#include "engine/debug/InputStateWatcher.h"
+#include "engine/debug/IOverlord.h"
 #include "engine/utils/GuardedContainer.h"
 
 class CToken;
 
 struct SDL_Window;
 struct SDL_GPUDevice;
-struct SDL_GPUCommandBuffer;
-struct SDL_GPURenderPass;
-union SDL_Event;
 
 namespace Debug {
 
 class IOverlordItem;
 
-class COverlord {
+class COverlord : public IOverlord {
 public:
     COverlord(SDL_Window& window, SDL_GPUDevice& device);
     ~COverlord();
 
+    static void AddWidget(IOverlordItem& item, CToken& token);
     static void AddMenu(IOverlordItem& item, CToken& token);
-    void PrepareRender(SDL_GPUCommandBuffer& cmd);
-    void Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass);
 
-    void HandleEvent(const SDL_Event* e);
+    void PrepareRender(SDL_GPUCommandBuffer& cmd) override;
+    void Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) override;
+    void HandleEvent(const SDL_Event* e) override;
 
 private:
-    void ShowMenuBar();
+    void RenderMenuBar();
+    void RenderWidgets();
 
-    static CGuardedContainer<IOverlordItem> mItems;
+    static CGuardedContainer<IOverlordItem> mWidgets;
+    static CGuardedContainer<IOverlordItem> mMenus;
+
     SDL_Window& mWindow;
     SDL_GPUDevice& mDevice;
-    CInputStateWatcher mInputStateWatcher;
 };
 } // namespace Debug

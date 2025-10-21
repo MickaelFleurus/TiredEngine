@@ -1,9 +1,13 @@
 #pragma once
+
 #include "engine/core/Inputs.h"
-#include "engine/debug/Overlord.h"
+#include "engine/debug/OverlordManager.h"
 #include "engine/input/InputHandler.h"
 #include "engine/renderer/ShaderFactory.h"
 #include "engine/renderer/Window.h"
+
+#include "engine/component/ComponentManager.h"
+#include "engine/core/WindowData.h"
 
 #include <chrono>
 #include <expected>
@@ -20,10 +24,7 @@ public:
 
     std::expected<void, const char*> EverythingInitialisedCorrectly() const;
 
-    template <typename T, typename... Args>
-    void LoadScene(Args&&... args) {
-        mCurrentScene = std::make_unique<T>(std::forward<Args>(args)...);
-    }
+    void StartScene(std::unique_ptr<Scene::AbstractScene>&& scene);
 
     bool Run();
 
@@ -32,10 +33,13 @@ public:
 protected:
     Renderer::CWindow mWindow;
     Renderer::CShaderFactory mShaderFactory;
-    Debug::COverlord mOverlord;
+    Debug::COverlordManager mOverlordManager;
     CInputs mInputs;
     Input::CInputHandler mInputHandler;
     std::unique_ptr<Scene::AbstractScene> mCurrentScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
+
+    Component::CComponentManager mComponentManager;
+    Core::CWindowData mWindowData;
 };
 } // namespace Core

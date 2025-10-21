@@ -6,10 +6,11 @@
 namespace Core {
 
 CEngineLoop::CEngineLoop()
-    : mOverlord(mWindow.Get(), mWindow.GetDevice())
+    : mOverlordManager(mWindow.Get(), mWindow.GetDevice())
     , mShaderFactory(mWindow.GetDevice())
-    , mInputs(mOverlord)
-    , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
+    , mInputs(mOverlordManager)
+    , mLastFrameTime(std::chrono::high_resolution_clock::now())
+    , mWindowData() {
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -21,6 +22,10 @@ CEngineLoop::EverythingInitialisedCorrectly() const {
         return std::unexpected(error);
     }
     return {};
+}
+
+void CEngineLoop::StartScene(std::unique_ptr<Scene::AbstractScene>&& scene) {
+    mCurrentScene.swap(scene);
 }
 
 bool CEngineLoop::Run() {
@@ -36,16 +41,17 @@ bool CEngineLoop::Run() {
             SDL_Log("Failed to prepare render");
             continue;
         }
+        mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
 
-        mOverlord.PrepareRender(mWindow.GetCommandBuffer());
         if (mWindow.BeginRender()) {
-            mOverlord.Render(mWindow.GetCommandBuffer(),
-                             mWindow.GetRenderPass());
             mWindow.Render();
+            mOverlordManager.Render(mWindow.GetCommandBuffer(),
+                                    mWindow.GetRenderPass());
+
             mWindow.EndRender();
         }
         mInputHandler.Swap();
     }
-    return false;
+    return true;
 }
 } // namespace Core

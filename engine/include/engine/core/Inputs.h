@@ -1,18 +1,18 @@
 #pragma once
 
 namespace Debug {
-class COverlord;
+class COverlordManager;
 }
 
 namespace Core {
 class CInputs {
 public:
-    CInputs(Debug::COverlord& overlord);
+    CInputs(Debug::COverlordManager& overlord);
     ~CInputs();
 
     bool Poll();
 
 private:
-    Debug::COverlord& mOverlord;
+    Debug::COverlordManager& mOverlordManager;
 };
 } // namespace Core

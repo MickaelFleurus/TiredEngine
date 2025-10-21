@@ -28,14 +28,13 @@ add_subdirectory(game)
 
 add_executable(BreakoutExclamationMark src/main.cpp)
 target_link_libraries(BreakoutExclamationMark PRIVATE Angine_LIB Breakout_LIB)
-target_include_directories(BreakoutExclamationMark PRIVATE ${CMAKE_SOURCE_DIR}/game/include)
 
 if(TARGET CompileShaders)
     add_dependencies(BreakoutExclamationMark CompileShaders)
 endif()
 
 if(WIN32)
-    add_custom_command(TARGET Game_Angine POST_BUILD
+    add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<IF:$<CONFIG:Debug>,${CMAKE_BINARY_DIR}/_deps/sdl3-build/Debug/SDL3.dll,${CMAKE_BINARY_DIR}/_deps/sdl3-build/Release/SDL3.dll>"
         "$<TARGET_FILE_DIR:BreakoutExclamationMark>"

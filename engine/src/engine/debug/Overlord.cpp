@@ -13,7 +13,8 @@
 #include <magic_enum/magic_enum.hpp>
 
 namespace Debug {
-CGuardedContainer<IOverlordItem> COverlord::mItems;
+CGuardedContainer<IOverlordItem> COverlord::mWidgets;
+CGuardedContainer<IOverlordItem> COverlord::mMenus;
 
 COverlord::COverlord(SDL_Window& window, SDL_GPUDevice& device)
     : mWindow(window), mDevice(device) {
@@ -49,12 +50,8 @@ void COverlord::PrepareRender(SDL_GPUCommandBuffer& cmd) {
 
     ImGui::NewFrame();
 
-    ShowMenuBar();
-    for (auto& item : mItems) {
-        if (item.IsVisible()) {
-            item.Render();
-        }
-    }
+    RenderMenuBar();
+    RenderWidgets();
     ImGui::Render();
     ImGui_ImplSDLGPU3_PrepareDrawData(ImGui::GetDrawData(), &cmd);
 }
@@ -63,37 +60,44 @@ void COverlord::Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) {
     ImGui_ImplSDLGPU3_RenderDrawData(ImGui::GetDrawData(), &cmd, &pass);
 }
 
+void COverlord::AddWidget(IOverlordItem& item, CToken& token) {
+    mWidgets.Add(item, token);
+}
+
 void COverlord::AddMenu(IOverlordItem& item, CToken& token) {
-    mItems.Add(item, token);
+    mMenus.Add(item, token);
 }
 
 void COverlord::HandleEvent(const SDL_Event* e) {
     ImGui_ImplSDL3_ProcessEvent(e);
 }
 
-void COverlord::ShowMenuBar() {
+void COverlord::RenderMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
-
-        if (ImGui::BeginMenu("Scenes")) {
-            // for (auto& sceneName :
-            //      magic_enum::enum_values<Scene::ESceneType>()) {
-
-            //     const char* name = magic_enum::enum_name(sceneName).data();
-            //     if (ImGui::MenuItem(name)) {
-            //     }
-            // }
-            ImGui::EndMenu();
+        for (auto& menu : mMenus) {
+            if (menu.IsVisible()) {
+                menu.Render();
+            }
         }
+
         if (ImGui::BeginMenu("Widgets")) {
-            for (auto& item : mItems) {
-                if (ImGui::MenuItem(item.GetName(), nullptr,
-                                    item.IsVisible())) {
-                    item.ToggleVisible();
+            for (auto& widget : mWidgets) {
+                if (ImGui::MenuItem(widget.GetName(), nullptr,
+                                    widget.IsVisible())) {
+                    widget.ToggleVisible();
                 }
             }
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
+    }
+}
+
+void COverlord::RenderWidgets() {
+    for (auto& item : mWidgets) {
+        if (item.IsVisible()) {
+            item.Render();
+        }
     }
 }
 

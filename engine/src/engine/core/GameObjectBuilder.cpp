@@ -16,7 +16,7 @@ CGameObjectBuilder::CGameObjectBuilder(
 }
 
 CGameObjectBuilder::CBuilder
-CGameObjectBuilder::createBuilder(CGameObject& parent) {
+CGameObjectBuilder::CreateBuilder(CGameObject& parent) {
     return CBuilder(mComponentManager, parent);
 }
 

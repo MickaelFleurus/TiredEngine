@@ -51,7 +51,7 @@ public:
     };
 
     explicit CGameObjectBuilder(Component::CComponentManager& componentManager);
-    CBuilder createBuilder(CGameObject& parent);
+    CBuilder CreateBuilder(CGameObject& parent);
 
 private:
     static CGameObject*
