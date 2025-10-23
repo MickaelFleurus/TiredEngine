@@ -5,7 +5,12 @@ project(Game_Angine LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(FetchContent)
+include(Brotli)
+include(Freetype)
+include(HarfBuzz)
+include(PNGLib)
 include(SDL3)
+include(SDL_ttf)
 include(ImGui)
 include(glm)
 include(MagicEnum)
@@ -15,7 +20,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# setup_freetype()
+# setup_harfbuzz()
+setup_pnglib()
+setup_brotli()
 setup_sdl3()
+setup_sdlttf()
 setup_imgui()
 setup_magicenum()
 setup_glm()
@@ -48,4 +58,12 @@ add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
     "${CMAKE_BINARY_DIR}/shaders"
     "$<TARGET_FILE_DIR:BreakoutExclamationMark>/shaders"
     COMMENT "Copying compiled shaders to output directory"
+)
+
+add_custom_command(
+    TARGET BreakoutExclamationMark POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/game/assets"
+    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/assets"
+    COMMENT "Copying game assets (textures, fonts, etc.) to output directory"
 )
