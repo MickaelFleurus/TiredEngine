@@ -25,13 +25,16 @@ public:
     void removeChildren();
     void destroySelf();
 
+    const std::string& getName() const;
+
     GameObjectId getId() const;
     void setParent(CGameObject* parent);
 
     const std::vector<std::unique_ptr<CGameObject>>& getChildren() const;
 
 private:
-    CGameObject(Component::CComponentManager& componentManager,
+    CGameObject(const std::string& name,
+                Component::CComponentManager& componentManager,
                 CGameObject* mParent = nullptr, GameObjectId id = 0);
     void free();
 
@@ -40,6 +43,7 @@ private:
     CGameObject& addChild(std::unique_ptr<CGameObject>&& child);
     void removeChild(CGameObject* child);
 
+    const std::string mName;
     glm::vec2 mLocalPosition{};
     glm::vec2 mAnchorPosition{0.0f, 0.0f};
     Component::CComponentManager& mComponentManager;

@@ -2,8 +2,8 @@
 
 namespace Scene {
 
-AbstractScene::AbstractScene(Component::CComponentManager& componentManager,
-                             const Core::CWindowData& windowData)
+CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
+                               const Core::CWindowData& windowData)
     : mComponentManager(componentManager)
     , mWindowData(windowData)
     , mGameObjectBuilder(componentManager) {
@@ -12,14 +12,15 @@ AbstractScene::AbstractScene(Component::CComponentManager& componentManager,
 }
 
 Core::CGameObjectBuilder::CBuilder
-AbstractScene::CreateGameObjectBuilder(Core::CGameObject* parent) {
+CAbstractScene::CreateGameObjectBuilder(const std::string& name,
+                                        Core::CGameObject* parent) {
     if (!parent) {
         parent = mSceneRoot.get();
     }
-    return mGameObjectBuilder.CreateBuilder(*parent);
+    return mGameObjectBuilder.CreateBuilder(name, *parent);
 }
 
-Core::CGameObject& AbstractScene::GetRoot() {
+Core::CGameObject& CAbstractScene::GetRoot() {
     return *mSceneRoot;
 }
 } // namespace Scene

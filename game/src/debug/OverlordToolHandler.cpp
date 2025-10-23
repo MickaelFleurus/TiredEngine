@@ -4,12 +4,14 @@
 
 namespace Debug {
 
-COverlordToolHandler::COverlordToolHandler(Scene::ISceneLoader& sceneLoader)
-    : mSceneLoaderOverlord(sceneLoader), mToken() {
+COverlordToolHandler::COverlordToolHandler(Scene::CSceneHandler& sceneHandler)
+    : mSceneLoaderOverlord(sceneHandler), mSceneHierarchy(sceneHandler) {
 }
 
 void COverlordToolHandler::RegisterTools() {
     COverlord::AddMenu(mSceneLoaderOverlord, mToken);
+
+    COverlord::AddWidget(mSceneHierarchy, mToken);
 }
 
 } // namespace Debug

@@ -16,23 +16,25 @@ CGameObjectBuilder::CGameObjectBuilder(
 }
 
 CGameObjectBuilder::CBuilder
-CGameObjectBuilder::CreateBuilder(CGameObject& parent) {
-    return CBuilder(mComponentManager, parent);
+CGameObjectBuilder::CreateBuilder(const std::string& name,
+                                  CGameObject& parent) {
+    return CBuilder(name, mComponentManager, parent);
 }
 
 CGameObject*
 CGameObjectBuilder::createRoot(Component::CComponentManager& componentManager) {
-    return new CGameObject(componentManager, nullptr, mNextId++);
+    return new CGameObject("Root", componentManager, nullptr, mNextId++);
 }
 
 // CGameObjectBuilder::CBuilder implementation
 
 CGameObjectBuilder::CBuilder::CBuilder(
-    Component::CComponentManager& componentManager, CGameObject& parent)
+    const std::string& name, Component::CComponentManager& componentManager,
+    CGameObject& parent)
     : mComponentManager(componentManager)
     , mParent(parent)
     , mGameObject(std::unique_ptr<CGameObject>(new CGameObject(
-          componentManager, &parent, CGameObjectBuilder::mNextId++))) {
+          name, componentManager, &parent, CGameObjectBuilder::mNextId++))) {
 }
 
 CGameObjectBuilder::CBuilder&

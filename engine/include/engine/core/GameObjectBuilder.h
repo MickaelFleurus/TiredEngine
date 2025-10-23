@@ -13,7 +13,7 @@ class CComponentManager;
 }
 
 namespace Scene {
-class AbstractScene;
+class CAbstractScene;
 }
 
 namespace Core {
@@ -27,7 +27,8 @@ public:
 
     class CBuilder {
     public:
-        CBuilder(Component::CComponentManager& componentManager,
+        CBuilder(const std::string& name,
+                 Component::CComponentManager& componentManager,
                  CGameObject& parent);
 
         CBuilder& addText(const std::string& text, unsigned size);
@@ -51,7 +52,7 @@ public:
     };
 
     explicit CGameObjectBuilder(Component::CComponentManager& componentManager);
-    CBuilder CreateBuilder(CGameObject& parent);
+    CBuilder CreateBuilder(const std::string& name, CGameObject& parent);
 
 private:
     static CGameObject*
@@ -60,7 +61,7 @@ private:
     static GameObjectId mNextId;
     Component::CComponentManager& mComponentManager;
 
-    friend class Scene::AbstractScene;
+    friend class Scene::CAbstractScene;
 };
 
 } // namespace Core

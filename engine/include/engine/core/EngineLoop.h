@@ -9,11 +9,13 @@
 #include "engine/component/ComponentManager.h"
 #include "engine/core/WindowData.h"
 
+#include "engine/scene/SceneHandler.h"
+
 #include <chrono>
 #include <expected>
 
 namespace Scene {
-class AbstractScene;
+class CAbstractScene;
 }
 
 namespace Core {
@@ -24,22 +26,26 @@ public:
 
     std::expected<void, const char*> EverythingInitialisedCorrectly() const;
 
-    void StartScene(std::unique_ptr<Scene::AbstractScene>&& scene);
+    void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
+    Scene::CAbstractScene* GetCurrentScene() const;
 
     bool Run();
 
     virtual void GameLoop(float deltaTime) = 0;
 
 protected:
+    Scene::CSceneHandler& GetSceneHandler();
+
     Renderer::CWindow mWindow;
     Renderer::CShaderFactory mShaderFactory;
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;
     Input::CInputHandler mInputHandler;
-    std::unique_ptr<Scene::AbstractScene> mCurrentScene;
+    std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 
     Component::CComponentManager mComponentManager;
     Core::CWindowData mWindowData;
+    Scene::CSceneHandler mSceneLoader;
 };
 } // namespace Core

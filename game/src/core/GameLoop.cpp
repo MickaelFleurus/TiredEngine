@@ -2,14 +2,9 @@
 #include "scene/DebugScene.h"
 
 namespace Core {
-CGameLoop::CGameLoop() : CEngineLoop(), mToolHandler(*this) {
+CGameLoop::CGameLoop() : CEngineLoop(), mToolHandler(mSceneLoader) {
     mOverlordManager.CreateOverlord();
     mToolHandler.RegisterTools();
-}
-
-void CGameLoop::LoadScene(Scene::ESceneType sceneType) {
-    StartScene(
-        std::make_unique<Scene::DebugScene>(mComponentManager, mWindowData));
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

@@ -12,18 +12,20 @@ class CWindowData;
 } // namespace Core
 
 namespace Scene {
-class AbstractScene {
+class CAbstractScene {
 public:
-    explicit AbstractScene(Component::CComponentManager& componentManager,
-                           const Core::CWindowData& windowData);
-    virtual ~AbstractScene() = default;
+    explicit CAbstractScene(Component::CComponentManager& componentManager,
+                            const Core::CWindowData& windowData);
+    virtual ~CAbstractScene() = default;
     virtual void Update(float deltaTime) = 0;
-    virtual AbstractScene* GetNextScene() const = 0;
+    virtual CAbstractScene* GetNextScene() const = 0;
 
     Core::CGameObject& GetRoot();
+    virtual const char* GetName() const = 0;
 
     Core::CGameObjectBuilder::CBuilder
-    CreateGameObjectBuilder(Core::CGameObject* parent = nullptr);
+    CreateGameObjectBuilder(const std::string& name,
+                            Core::CGameObject* parent = nullptr);
 
 protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;

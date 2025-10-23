@@ -10,7 +10,7 @@ CEngineLoop::CEngineLoop()
     , mShaderFactory(mWindow.GetDevice())
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mWindowData() {
+    , mSceneLoader(*this, mComponentManager, mWindowData) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -24,8 +24,13 @@ CEngineLoop::EverythingInitialisedCorrectly() const {
     return {};
 }
 
-void CEngineLoop::StartScene(std::unique_ptr<Scene::AbstractScene>&& scene) {
+void CEngineLoop::SetCurrentScene(
+    std::unique_ptr<Scene::CAbstractScene>&& scene) {
     mCurrentScene.swap(scene);
+}
+
+Scene::CAbstractScene* CEngineLoop::GetCurrentScene() const {
+    return mCurrentScene.get();
 }
 
 bool CEngineLoop::Run() {
@@ -54,4 +59,9 @@ bool CEngineLoop::Run() {
     }
     return true;
 }
+
+Scene::CSceneHandler& CEngineLoop::GetSceneHandler() {
+    return mSceneLoader;
+}
+
 } // namespace Core

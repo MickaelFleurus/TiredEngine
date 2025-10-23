@@ -2,17 +2,17 @@
 #include <engine/debug/IOverlordItem.h>
 
 namespace Scene {
-class ISceneLoader;
+class CSceneHandler;
 }
 
 namespace Debug {
 class CSceneLoaderOverlord : public IOverlordItem {
 public:
-    CSceneLoaderOverlord(Scene::ISceneLoader& sceneLoader);
+    CSceneLoaderOverlord(Scene::CSceneHandler& sceneLoader);
     void Render() override;
     const char* GetName() const override;
 
 private:
-    Scene::ISceneLoader& mSceneLoader;
+    Scene::CSceneHandler& mSceneLoader;
 };
 } // namespace Debug

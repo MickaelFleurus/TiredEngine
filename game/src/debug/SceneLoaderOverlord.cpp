@@ -4,7 +4,10 @@
 #include <imgui.h>
 #include <magic_enum/magic_enum.hpp>
 
-#include "scene/ISceneLoader.h"
+#include <engine/scene/SceneHandler.h>
+
+#include "scene/DebugScene.h"
+#include "scene/SceneEnum.h"
 
 namespace {
 constexpr const char* kSceneText = "Scenes";
@@ -13,7 +16,7 @@ constexpr const char* kLoadingText = "Load scene";
 
 namespace Debug {
 
-CSceneLoaderOverlord::CSceneLoaderOverlord(Scene::ISceneLoader& sceneLoader)
+CSceneLoaderOverlord::CSceneLoaderOverlord(Scene::CSceneHandler& sceneLoader)
     : mSceneLoader(sceneLoader) {
     SetVisible(true);
 }
@@ -23,7 +26,7 @@ void CSceneLoaderOverlord::Render() {
         if (ImGui::BeginMenu(kLoadingText)) {
             for (auto& scene : magic_enum::enum_values<Scene::ESceneType>()) {
                 if (ImGui::MenuItem(magic_enum::enum_name(scene).data())) {
-                    mSceneLoader.LoadScene(scene);
+                    mSceneLoader.CreateAndSetScene<Scene::DebugScene>();
                 }
             }
             ImGui::EndMenu();

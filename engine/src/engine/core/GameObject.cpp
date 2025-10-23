@@ -2,9 +2,13 @@
 #include "engine/component/ComponentManager.h"
 
 namespace Core {
-CGameObject::CGameObject(Component::CComponentManager& componentManager,
+CGameObject::CGameObject(const std::string& name,
+                         Component::CComponentManager& componentManager,
                          CGameObject* mParent, GameObjectId id)
-    : mComponentManager(componentManager), mParent(mParent), mId(id) {
+    : mName(name)
+    , mComponentManager(componentManager)
+    , mParent(mParent)
+    , mId(id) {
 }
 
 GameObjectId CGameObject::getId() const {
@@ -100,6 +104,10 @@ glm::vec2 CGameObject::getWorldPosition() const {
 const std::vector<std::unique_ptr<CGameObject>>&
 CGameObject::getChildren() const {
     return mChildren;
+}
+
+const std::string& CGameObject::getName() const {
+    return mName;
 }
 
 } // namespace Core
