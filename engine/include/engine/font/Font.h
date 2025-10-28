@@ -3,7 +3,7 @@
 #include <compare>
 #include <string>
 
-namespace Renderer {
+namespace Font {
 
 struct SFont {
     std::string fontPath;
@@ -19,4 +19,4 @@ struct SFontHash {
     }
 };
 
-} // namespace Renderer
+} // namespace Font

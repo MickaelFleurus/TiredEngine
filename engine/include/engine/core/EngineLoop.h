@@ -11,6 +11,11 @@
 
 #include "engine/scene/SceneHandler.h"
 
+#include "engine/font/FontHandler.h"
+#include "engine/utils/FileHandler.h"
+
+#include "engine/renderer/TextureManager.h"
+
 #include <chrono>
 #include <expected>
 
@@ -21,7 +26,7 @@ class CAbstractScene;
 namespace Core {
 class CEngineLoop {
 public:
-    CEngineLoop();
+    CEngineLoop(const char* gameName);
     virtual ~CEngineLoop();
 
     std::expected<void, const char*> EverythingInitialisedCorrectly() const;
@@ -44,8 +49,11 @@ protected:
     std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 
-    Component::CComponentManager mComponentManager;
     Core::CWindowData mWindowData;
     Scene::CSceneHandler mSceneLoader;
+    Utils::CFileHandler mFileHandler;
+    Renderer::CTextureManager mTextureManager;
+    Font::CFontHandler mFontHandler;
+    Component::CComponentManager mComponentManager;
 };
 } // namespace Core

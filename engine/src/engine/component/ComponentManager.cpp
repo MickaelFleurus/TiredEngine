@@ -7,6 +7,10 @@
 #include "engine/core/GameObject.h"
 
 namespace Component {
+CComponentManager::CComponentManager(Font::CFontHandler& fontHandler)
+    : mFontHandler(fontHandler) {
+}
+
 CInputComponent& CComponentManager::addInputComponent(
     Core::CGameObject& owner, std::optional<Input::InputFunc> onFirePressed,
     std::optional<Input::InputFunc> onLeftPressed,
@@ -35,6 +39,10 @@ CComponentManager::addMovementComponent(Core::CGameObject& owner,
 CSpriteComponent&
 CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
     return createComponent<CSpriteComponent>(owner, owner.getId());
+}
+
+CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
+    return createComponent<CTextComponent>(owner, owner.getId());
 }
 
 void CComponentManager::removeComponents(Core::GameObjectId id) {

@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "engine/component/IComponent.h"
+#include "engine/component/TextComponent.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
@@ -18,6 +19,10 @@ namespace Core {
 class CGameObject;
 } // namespace Core
 
+namespace Font {
+class CFontHandler;
+} // namespace Font
+
 namespace Component {
 
 class CSpriteComponent;
@@ -27,7 +32,7 @@ class CMovementComponent;
 
 class CComponentManager {
 public:
-    CComponentManager() = default;
+    CComponentManager(Font::CFontHandler& fontHandler);
 
     template <typename T>
     T* getComponent(int entityId) {
@@ -82,6 +87,8 @@ public:
     CMovementComponent& addMovementComponent(Core::CGameObject& owner,
                                              float acceleration);
 
+    CTextComponent& addTextComponent(Core::CGameObject& owner);
+
     // CCollisionComponent& addCollisionComponent(Core::CGameObject& owner, bool
     // isStatic,
     //                                            Physics::SCollisionParamVariant
@@ -132,6 +139,7 @@ private:
         }
     }
 
+    Font::CFontHandler& mFontHandler;
     std::unordered_map<std::type_index, ComponentPool> mComponentPools;
 };
 } // namespace Component

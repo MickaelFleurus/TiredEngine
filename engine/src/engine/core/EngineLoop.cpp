@@ -5,12 +5,16 @@
 
 namespace Core {
 
-CEngineLoop::CEngineLoop()
-    : mOverlordManager(mWindow.Get(), mWindow.GetDevice())
+CEngineLoop::CEngineLoop(const char* gameName)
+    : mFileHandler(gameName)
+    , mOverlordManager(mWindow.Get(), mWindow.GetDevice())
     , mShaderFactory(mWindow.GetDevice())
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mSceneLoader(*this, mComponentManager, mWindowData) {
+    , mSceneLoader(*this, mComponentManager, mWindowData)
+    , mTextureManager(&mWindow.GetDevice(), mFileHandler)
+    , mFontHandler(mTextureManager, mFileHandler)
+    , mComponentManager(mFontHandler) {
 }
 
 CEngineLoop::~CEngineLoop() = default;

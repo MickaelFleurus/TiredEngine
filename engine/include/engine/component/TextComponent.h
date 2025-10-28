@@ -14,5 +14,6 @@ public:
     void updateText(const std::string& text);
 
 private:
+    std::string mText;
 };
 } // namespace Component

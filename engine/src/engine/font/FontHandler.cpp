@@ -1,5 +1,6 @@
 #include "engine/font/FontHandler.h"
 
+#include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
 #include <SDL3/SDL_surface.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -92,17 +93,14 @@ auto CreateFontData(unsigned int fontSize, TTF_Font* font) {
 
 } // namespace
 
-namespace Renderer {
-CFontHandler::CFontHandler(SDL_GPUDevice* device,
+namespace Font {
+CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
                            Utils::CFileHandler& fileHandler)
-    : mDevice(device), mFileHandler(fileHandler) {
+    : mTextureManager(textureManager), mFileHandler(fileHandler) {
     TTF_Init();
 }
 
 CFontHandler::~CFontHandler() {
-    for (auto& [key, police] : mPolices) {
-        SDL_ReleaseGPUTexture(mDevice, police.GetAtlas());
-    }
     TTF_Quit();
 }
 
@@ -116,7 +114,7 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
     SDL_Surface* surface = nullptr;
     std::vector<Font::GlyphInfo> glyphs;
     if (mFileHandler.DoesTextureExist(name)) {
-        surface = mFileHandler.LoadTexture(name);
+        surface = mFileHandler.LoadTextureFileBMP(name);
         glyphs = JsonToGlyphs(mFileHandler.LoadJson(name));
     } else {
         TTF_Font* font = TTF_OpenFont(name, size);
@@ -124,23 +122,16 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
         surface = loadedSurface;
         glyphs = std::vector<Font::GlyphInfo>(loadedGlyphs.begin(),
                                               loadedGlyphs.end());
-        mFileHandler.SaveTexture(name, surface);
+        mFileHandler.SaveTextureFileBMP(name, surface);
         mFileHandler.SaveJson(name, GlyphsToJson(loadedGlyphs));
         TTF_CloseFont(font);
     }
-
-    // Upload to GPU
-    SDL_GPUTextureCreateInfo texInfo = {
-        .type = SDL_GPU_TEXTURETYPE_2D,
-        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
-        .width = static_cast<Uint32>(surface->w),
-        .height = static_cast<Uint32>(surface->h)};
-    auto texture = SDL_CreateGPUTexture(mDevice, &texInfo);
+    mTextureManager.LoadTextureFromSurface(name, surface);
     SDL_DestroySurface(surface);
 
-    auto emplaced = mPolices.emplace(key, CPolice{texture, size, glyphs});
+    auto emplaced =
+        mPolices.emplace(key, CPolice{mTextureManager, name, size, glyphs});
     return emplaced.first->second;
 }
 
-} // namespace Renderer
+} // namespace Font

@@ -26,8 +26,8 @@ bool CFileHandler::DoesTextureExist(const std::string& filename) {
     return std::filesystem::exists(GetTexturePath(filename));
 }
 
-bool CFileHandler::SaveTexture(const std::string& filename,
-                               SDL_Surface* surface) {
+bool CFileHandler::SaveTextureFileBMP(const std::string& filename,
+                                      SDL_Surface* surface) {
     if (SDL_SaveBMP(surface, GetTexturePath(filename).c_str()) != 0) {
         return false;
     }
@@ -57,7 +57,7 @@ nlohmann::json CFileHandler::LoadJson(const std::string& filename) {
     return nlohmann::json::parse(fileStream);
 }
 
-SDL_Surface* CFileHandler::LoadTexture(const std::string& filename) {
+SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filename) {
     SDL_Surface* surface = SDL_LoadBMP(GetTexturePath(filename).c_str());
     return surface;
 }
@@ -67,8 +67,9 @@ bool CFileHandler::DeleteJson(const std::string& filename) {
     return std::filesystem::remove(completePath);
 }
 
-std::string CFileHandler::GetTexturePath(const std::string& filename) {
-    return std::format("{}textures/{}.bmp", mTempFolder, filename);
+std::string CFileHandler::GetTexturePath(const std::string& filename,
+                                         const std::string& ext) {
+    return std::format("{}textures/{}.{}", mTempFolder, filename, ext);
 }
 
 std::string CFileHandler::GetJsonPath(const std::string& filename) {

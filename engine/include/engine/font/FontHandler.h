@@ -12,16 +12,21 @@ class CFileHandler;
 }
 
 namespace Renderer {
+class CTextureManager;
+}
+
+namespace Font {
 class CFontHandler {
 public:
-    CFontHandler(SDL_GPUDevice* device, Utils::CFileHandler& fileHandler);
+    CFontHandler(Renderer::CTextureManager& textureManager,
+                 Utils::CFileHandler& fileHandler);
     ~CFontHandler();
 
     CPolice& GetPolice(const char* name, unsigned int size);
 
 private:
     std::unordered_map<SFont, CPolice, SFontHash> mPolices;
-    SDL_GPUDevice* mDevice{nullptr};
+    Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
 };
-} // namespace Renderer
+} // namespace Font

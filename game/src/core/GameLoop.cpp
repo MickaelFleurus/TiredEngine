@@ -1,8 +1,12 @@
 #include "core/GameLoop.h"
 #include "scene/DebugScene.h"
 
+namespace {
+constexpr const char* kGameName = "BreakoutExclamationMark!";
+}
+
 namespace Core {
-CGameLoop::CGameLoop() : CEngineLoop(), mToolHandler(mSceneLoader) {
+CGameLoop::CGameLoop() : CEngineLoop(kGameName), mToolHandler(mSceneLoader) {
     mOverlordManager.CreateOverlord();
     mToolHandler.RegisterTools();
 }

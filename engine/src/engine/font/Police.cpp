@@ -1,10 +1,14 @@
 #include "engine/font/Police.h"
-#include <SDL3/SDL_gpu.h>
+#include "engine/renderer/TextureManager.h"
 
-namespace Renderer {
-CPolice::CPolice(SDL_GPUTexture* atlas, unsigned int size,
+namespace Font {
+CPolice::CPolice(Renderer::CTextureManager& textureManager,
+                 const std::string name, unsigned int size,
                  std::span<Font::GlyphInfo> glyphs)
-    : mSize(size), mAtlas(atlas), mGlyphs(glyphs.begin(), glyphs.end()) {
+    : mTextureManager(textureManager)
+    , mName(name)
+    , mSize(size)
+    , mGlyphs(glyphs.begin(), glyphs.end()) {
 }
 
 unsigned int CPolice::GetSize() const {
@@ -12,7 +16,7 @@ unsigned int CPolice::GetSize() const {
 }
 
 SDL_GPUTexture* CPolice::GetAtlas() const {
-    return mAtlas;
+    return mTextureManager.GetTexture(mName);
 }
 
 glm::vec4 CPolice::GetColor() const {
@@ -23,4 +27,4 @@ void CPolice::SetColor(const glm::vec4& color) {
     mColor = color;
 }
 
-} // namespace Renderer
+} // namespace Font
