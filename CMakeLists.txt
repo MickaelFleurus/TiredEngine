@@ -15,6 +15,7 @@ include(ImGui)
 include(glm)
 include(MagicEnum)
 include(GoogleTest)
+include(nlohmann)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,6 +31,7 @@ setup_imgui()
 setup_magicenum()
 setup_glm()
 setup_gtest()
+setup_nlohmann_json()
 
 
 # Sources

@@ -1,5 +1,5 @@
 
-file(GLOB_RECURSE TEST_SOURCES *.cpp)
+file(GLOB_RECURSE TEST_SOURCES */*.cpp)
 
 enable_testing()
 add_executable(angine_tests ${TEST_SOURCES})
