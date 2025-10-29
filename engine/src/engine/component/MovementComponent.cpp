@@ -30,15 +30,15 @@ CMovementComponent::CMovementComponent(Core::CGameObject& owner,
     : IComponent(owner, componentManager), mAcceleration(acceleration) {
 }
 
-const glm::vec2& CMovementComponent::getVelocity() const {
+const glm::vec3& CMovementComponent::getVelocity() const {
     return mVelocity;
 }
 
-void CMovementComponent::setDirection(glm::vec2 direction) {
+void CMovementComponent::setDirection(glm::vec3 direction) {
     mDirection = glm::normalize(direction);
 }
 
-const glm::vec2& CMovementComponent::getDirection() const {
+const glm::vec3& CMovementComponent::getDirection() const {
     return mDirection;
 }
 
@@ -53,12 +53,12 @@ void CMovementComponent::update(float deltaTime) {
     applyPosition(position);
 }
 
-void CMovementComponent::addDirection(glm::vec2 direction) {
+void CMovementComponent::addDirection(glm::vec3 direction) {
     setDirection(mDirection + direction);
 }
 
-void CMovementComponent::applyPosition(const glm::vec2& position) {
-    mOwner.setLocalPosition(position);
+void CMovementComponent::applyPosition(const glm::vec3& position) {
+    // mOwner.setLocalPosition(position);
     UpdatePosition(mOwner, mComponentManager);
 }
 

@@ -1,0 +1,40 @@
+#include "engine/debug/TransformComponentWidget.h"
+
+#include "engine/component/TransformComponent.h"
+
+#include <glm/gtc/constants.hpp>
+#include <imgui.h>
+
+namespace Debug {
+CTransformComponentWidget::CTransformComponentWidget(
+    Component::CTransformComponent& transformComponent)
+    : mTransformComponent(transformComponent) {
+    SetVisible(true);
+}
+
+void CTransformComponentWidget::Render() {
+
+    // Position
+    auto pos = mTransformComponent.getPosition();
+    if (ImGui::DragFloat3("Position", &pos.x, 0.1f, -FLT_MAX, FLT_MAX,
+                          "%.3f")) {
+        mTransformComponent.setPosition(pos);
+    }
+
+    // Rotation (show in degrees, store in radians)
+    auto rot = mTransformComponent.getRotation();
+    if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f, -360.0f, 360.0f, "%.1f°")) {
+        mTransformComponent.setRotation(rot);
+    }
+
+    // Scale
+    auto scale = mTransformComponent.getScale();
+    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.0f, FLT_MAX, "%.3f")) {
+        mTransformComponent.setScale(scale);
+    }
+}
+
+const char* CTransformComponentWidget::GetName() const {
+    return "Transform";
+}
+} // namespace Debug

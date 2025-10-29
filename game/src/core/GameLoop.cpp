@@ -6,7 +6,9 @@ constexpr const char* kGameName = "BreakoutExclamationMark!";
 }
 
 namespace Core {
-CGameLoop::CGameLoop() : CEngineLoop(kGameName), mToolHandler(mSceneLoader) {
+CGameLoop::CGameLoop()
+    : CEngineLoop(kGameName)
+    , mToolHandler(mComponentManager, mFileHandler, mSceneLoader) {
     mOverlordManager.CreateOverlord();
     mToolHandler.RegisterTools();
 }

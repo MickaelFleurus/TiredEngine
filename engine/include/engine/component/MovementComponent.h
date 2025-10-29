@@ -1,7 +1,7 @@
 #pragma once
 #include "engine/component/IComponent.h"
 
-#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 namespace Component {
 class CMovementComponent : public IComponent {
@@ -11,18 +11,18 @@ public:
 
     void update(float deltaTime) override;
 
-    void addDirection(glm::vec2 direction);
-    void setDirection(glm::vec2 direction);
-    const glm::vec2& getDirection() const;
+    void addDirection(glm::vec3 direction);
+    void setDirection(glm::vec3 direction);
+    const glm::vec3& getDirection() const;
 
-    const glm::vec2& getVelocity() const;
+    const glm::vec3& getVelocity() const;
 
-    void applyPosition(const glm::vec2& position);
+    void applyPosition(const glm::vec3& position);
 
 private:
     const float mAcceleration;
 
-    glm::vec2 mDirection{0.f, 0.f};
-    glm::vec2 mVelocity{0.f, 0.f};
+    glm::vec3 mDirection{0.f, 0.f, 0.f};
+    glm::vec3 mVelocity{0.f, 0.f, 0.f};
 };
 } // namespace Component

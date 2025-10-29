@@ -45,6 +45,11 @@ CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
     return createComponent<CTextComponent>(owner, owner.getId());
 }
 
+CTransformComponent&
+CComponentManager::addTransformComponent(Core::CGameObject& owner) {
+    return createComponent<CTransformComponent>(owner, owner.getId());
+}
+
 void CComponentManager::removeComponents(Core::GameObjectId id) {
     for (auto& [type, pool] : mComponentPools) {
         removeComponent<decltype(type)>(id);

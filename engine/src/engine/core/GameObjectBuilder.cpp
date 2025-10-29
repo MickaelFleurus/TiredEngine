@@ -98,8 +98,10 @@ CGameObjectBuilder::CBuilder::addInputInfo(CInputCallbacks callbacks) {
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::setLocalPosition(const glm::vec2& position) {
-    mGameObject->setLocalPosition(position);
+CGameObjectBuilder::CBuilder::setLocalPosition(const glm::vec3& position) {
+    mComponentManager
+        .getComponent<Component::CTransformComponent>(mGameObject->getId())
+        ->setPosition(position);
     if (auto* spriteComponent =
             mComponentManager.getComponent<Component::CSpriteComponent>(
                 mGameObject->getId());

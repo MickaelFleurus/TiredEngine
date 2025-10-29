@@ -14,14 +14,22 @@ CTextComponent::CTextComponent(Core::CGameObject& owner,
 CTextComponent::~CTextComponent() {
 }
 
-void CTextComponent::addText(const std::string& text, unsigned size) {
-    // mSpriteId = TextIDWrapper{mWindow.createText(text, size, 0.f, 0.f)};
+void CTextComponent::updateText(const std::string& text,
+                                Font::CPolice* police) {
+    mText = text;
+    mPolice = police;
 }
 
-void CTextComponent::updateText(const std::string& text) {
-    // if (mSpriteId && std::holds_alternative<TextIDWrapper>(*mSpriteId)) {
-    //     // mWindow.updateText(std::get<TextIDWrapper>(*mSpriteId).id, text);
-    // }
+void CTextComponent::setPolice(Font::CPolice* police) {
+    mPolice = police;
+}
+
+Font::CPolice* CTextComponent::getPolice() const {
+    return mPolice;
+}
+
+const std::string& CTextComponent::getText() const {
+    return mText;
 }
 
 } // namespace Component

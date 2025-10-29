@@ -20,6 +20,8 @@ public:
     nlohmann::json LoadJson(const std::string& filename);
     SDL_Surface* LoadTextureFileBMP(const std::string& filename);
 
+    std::vector<std::string> GetFonts() const;
+
     bool DeleteJson(const std::string& filename);
 
 private:

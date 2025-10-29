@@ -42,7 +42,7 @@ public:
         //     std::function<void(Physics::SCollisionInfo)> callback);
         CBuilder& addMovementData(float acceleration);
         CBuilder& addInputInfo(CInputCallbacks callbacks);
-        CBuilder& setLocalPosition(const glm::vec2& position);
+        CBuilder& setLocalPosition(const glm::vec3& position);
         CGameObject* build();
 
     private:

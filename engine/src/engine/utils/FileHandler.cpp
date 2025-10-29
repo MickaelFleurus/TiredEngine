@@ -8,6 +8,9 @@
 
 namespace {
 constexpr const char* kCompanyName = "PotatoThunder";
+constexpr const char* kAssetsFolderPath = "assets/";
+constexpr const char* kTexturesFolderPath = "assets/textures/";
+constexpr const char* kFontsFolderPath = "assets/fonts/";
 
 } // namespace
 
@@ -65,6 +68,18 @@ SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filename) {
 bool CFileHandler::DeleteJson(const std::string& filename) {
     auto completePath = GetJsonPath(filename);
     return std::filesystem::remove(completePath);
+}
+
+std::vector<std::string> CFileHandler::GetFonts() const {
+    std::filesystem::path fontsPath = kFontsFolderPath;
+    std::vector<std::string> fonts;
+    for (auto const& dir_entry :
+         std::filesystem::directory_iterator{fontsPath}) {
+        if (dir_entry.path().extension() == ".ttf") {
+            fonts.push_back(dir_entry.path().string());
+        }
+    }
+    return fonts;
 }
 
 std::string CFileHandler::GetTexturePath(const std::string& filename,

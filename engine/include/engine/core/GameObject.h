@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/core/GameObjectId.h"
-#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 #include <memory>
 #include <optional>
@@ -9,17 +9,16 @@
 
 namespace Component {
 class CComponentManager;
-}
+class CTransformComponent;
+} // namespace Component
 
 namespace Core {
 class CGameObject {
 public:
     ~CGameObject();
 
-    void setLocalPosition(const glm::vec2& position);
-
-    glm::vec2 getLocalPosition() const;
-    glm::vec2 getWorldPosition() const;
+    glm::vec3 getLocalPosition() const;
+    glm::vec3 getWorldPosition() const;
 
     void removeChild(GameObjectId id);
     void removeChildren();
@@ -44,12 +43,12 @@ private:
     void removeChild(CGameObject* child);
 
     const std::string mName;
-    glm::vec2 mLocalPosition{};
-    glm::vec2 mAnchorPosition{0.0f, 0.0f};
+
     Component::CComponentManager& mComponentManager;
     CGameObject* mParent{nullptr};
     std::vector<std::unique_ptr<CGameObject>> mChildren;
     const GameObjectId mId;
+    Component::CTransformComponent& mTransformComponent;
 
     friend class CGameObjectBuilder;
 };

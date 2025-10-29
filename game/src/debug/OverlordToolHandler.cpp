@@ -4,14 +4,19 @@
 
 namespace Debug {
 
-COverlordToolHandler::COverlordToolHandler(Scene::CSceneHandler& sceneHandler)
-    : mSceneLoaderOverlord(sceneHandler), mSceneHierarchy(sceneHandler) {
+COverlordToolHandler::COverlordToolHandler(
+    Component::CComponentManager& componentManager,
+    Utils::CFileHandler& fileHandler, Scene::CSceneHandler& sceneHandler)
+    : mSceneLoaderOverlord(sceneHandler)
+    , mEntityWidget(componentManager, fileHandler)
+    , mSceneHierarchy(mEntityWidget, sceneHandler) {
 }
 
 void COverlordToolHandler::RegisterTools() {
     COverlord::AddMenu(mSceneLoaderOverlord, mToken);
 
     COverlord::AddWidget(mSceneHierarchy, mToken);
+    COverlord::AddWidget(mEntityWidget, mToken);
 }
 
 } // namespace Debug

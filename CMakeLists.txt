@@ -67,6 +67,14 @@ add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
 add_custom_command(
     TARGET BreakoutExclamationMark POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/engine/assets"
+    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/assets"
+    COMMENT "Copying game assets (textures, fonts, etc.) to output directory"
+)
+
+add_custom_command(
+    TARGET BreakoutExclamationMark POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/game/assets"
     "$<TARGET_FILE_DIR:BreakoutExclamationMark>/assets"
     COMMENT "Copying game assets (textures, fonts, etc.) to output directory"

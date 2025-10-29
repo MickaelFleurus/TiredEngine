@@ -7,6 +7,7 @@
 
 #include "engine/component/IComponent.h"
 #include "engine/component/TextComponent.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
@@ -96,6 +97,8 @@ public:
     //                                            false);
 
     CSpriteComponent& addSpriteComponent(Core::CGameObject& owner);
+
+    CTransformComponent& addTransformComponent(Core::CGameObject& owner);
 
     void update(float deltaTime);
 

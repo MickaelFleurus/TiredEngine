@@ -1,5 +1,6 @@
 #include "engine/core/GameObject.h"
 #include "engine/component/ComponentManager.h"
+#include "engine/component/TransformComponent.h"
 
 namespace Core {
 CGameObject::CGameObject(const std::string& name,
@@ -8,7 +9,8 @@ CGameObject::CGameObject(const std::string& name,
     : mName(name)
     , mComponentManager(componentManager)
     , mParent(mParent)
-    , mId(id) {
+    , mId(id)
+    , mTransformComponent(componentManager.addTransformComponent(*this)) {
 }
 
 GameObjectId CGameObject::getId() const {
@@ -86,15 +88,11 @@ std::unique_ptr<CGameObject> CGameObject::extractChild(CGameObject* child) {
     return nullptr;
 }
 
-void CGameObject::setLocalPosition(const glm::vec2& position) {
-    mLocalPosition = position;
+glm::vec3 CGameObject::getLocalPosition() const {
+    return mTransformComponent.getPosition();
 }
 
-glm::vec2 CGameObject::getLocalPosition() const {
-    return mLocalPosition;
-}
-
-glm::vec2 CGameObject::getWorldPosition() const {
+glm::vec3 CGameObject::getWorldPosition() const {
     if (mParent) {
         return mParent->getWorldPosition() + getLocalPosition();
     }
