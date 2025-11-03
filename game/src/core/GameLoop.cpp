@@ -1,5 +1,7 @@
 #include "core/GameLoop.h"
-#include "scene/DebugScene.h"
+#include "scene/SceneHandler.h"
+
+#include <magic_enum/magic_enum.hpp>
 
 namespace {
 constexpr const char* kGameName = "BreakoutExclamationMark!";
@@ -8,7 +10,8 @@ constexpr const char* kGameName = "BreakoutExclamationMark!";
 namespace Core {
 CGameLoop::CGameLoop()
     : CEngineLoop(kGameName)
-    , mToolHandler(mComponentManager, mFileHandler, mSceneLoader) {
+    , mSceneHandler(*this, mComponentManager, mWindowData)
+    , mToolHandler(mComponentManager, mFileHandler, mSceneHandler) {
     mOverlordManager.CreateOverlord();
     mToolHandler.RegisterTools();
 }

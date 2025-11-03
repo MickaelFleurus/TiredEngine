@@ -11,7 +11,6 @@ CEngineLoop::CEngineLoop(const char* gameName)
     , mShaderFactory(mWindow.GetDevice())
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mSceneLoader(*this, mComponentManager, mWindowData)
     , mTextureManager(&mWindow.GetDevice(), mFileHandler)
     , mFontHandler(mTextureManager, mFileHandler)
     , mComponentManager(mFontHandler) {
@@ -62,10 +61,6 @@ bool CEngineLoop::Run() {
         mInputHandler.Swap();
     }
     return true;
-}
-
-Scene::CSceneHandler& CEngineLoop::GetSceneHandler() {
-    return mSceneLoader;
 }
 
 } // namespace Core

@@ -3,10 +3,10 @@
 #include "engine/scene/AbstractScene.h"
 
 namespace Scene {
-class DebugScene : public CAbstractScene {
+class CDebugScene : public CAbstractScene {
 public:
-    explicit DebugScene(Component::CComponentManager& componentManager,
-                        const Core::CWindowData& windowData);
+    explicit CDebugScene(Component::CComponentManager& componentManager,
+                         const Core::CWindowData& windowData);
 
     void Update(float deltaTime) override;
     CAbstractScene* GetNextScene() const override;

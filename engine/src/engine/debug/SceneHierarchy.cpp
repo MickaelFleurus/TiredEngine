@@ -3,6 +3,7 @@
 #include "engine/scene/AbstractScene.h"
 
 #include "engine/debug/EntityWidget.h"
+#include "engine/scene/ISceneHandler.h"
 #include <imgui.h>
 
 namespace {} // namespace
@@ -10,7 +11,7 @@ namespace {} // namespace
 namespace Debug {
 
 CSceneHierarchy::CSceneHierarchy(Debug::CEntityWidget& entityWidget,
-                                 Scene::CSceneHandler& sceneHandler)
+                                 Scene::ISceneHandler& sceneHandler)
     : mEntityWidget(entityWidget), mSceneHandler(sceneHandler) {
     SetVisible(true);
 }

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "debug/SceneLoaderOverlord.h"
 #include <engine/debug/EntityWidget.h>
+#include <engine/debug/OverlordSettingsWidget.h>
 #include <engine/debug/SceneHierarchy.h>
+#include <engine/debug/SceneLoaderOverlord.h>
 #include <engine/utils/Token.h>
 
 namespace Utils {
@@ -10,7 +11,7 @@ class CFileHandler;
 }
 
 namespace Scene {
-class CSceneHandler;
+class ISceneHandler;
 } // namespace Scene
 
 namespace Component {
@@ -22,11 +23,12 @@ class COverlordToolHandler {
 public:
     COverlordToolHandler(Component::CComponentManager& componentManager,
                          Utils::CFileHandler& fileHandler,
-                         Scene::CSceneHandler& sceneLoader);
+                         Scene::ISceneHandler& sceneLoader);
 
     void RegisterTools();
 
 private:
+    COverlordSettingsWidget mOverlordSettings;
     CSceneLoaderOverlord mSceneLoaderOverlord;
     CEntityWidget mEntityWidget;
     CSceneHierarchy mSceneHierarchy;

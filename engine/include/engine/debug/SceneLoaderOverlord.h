@@ -1,18 +1,18 @@
 #pragma once
-#include <engine/debug/IOverlordItem.h>
+#include "engine/debug/IOverlordItem.h"
 
 namespace Scene {
-class CSceneHandler;
+class ISceneHandler;
 }
 
 namespace Debug {
 class CSceneLoaderOverlord : public IOverlordItem {
 public:
-    CSceneLoaderOverlord(Scene::CSceneHandler& sceneLoader);
+    CSceneLoaderOverlord(Scene::ISceneHandler& sceneHandler);
     void Render() override;
     const char* GetName() const override;
 
 private:
-    Scene::CSceneHandler& mSceneLoader;
+    Scene::ISceneHandler& mSceneHandler;
 };
 } // namespace Debug

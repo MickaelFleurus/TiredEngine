@@ -1,13 +1,9 @@
-#include "debug/SceneLoaderOverlord.h"
+#include "engine/debug/SceneLoaderOverlord.h"
 
-#include <engine/debug/Overlord.h>
 #include <imgui.h>
 #include <magic_enum/magic_enum.hpp>
 
-#include <engine/scene/SceneHandler.h>
-
-#include "scene/DebugScene.h"
-#include "scene/SceneEnum.h"
+#include "engine/scene/ISceneHandler.h"
 
 namespace {
 constexpr const char* kSceneText = "Scenes";
@@ -16,17 +12,17 @@ constexpr const char* kLoadingText = "Load scene";
 
 namespace Debug {
 
-CSceneLoaderOverlord::CSceneLoaderOverlord(Scene::CSceneHandler& sceneLoader)
-    : mSceneLoader(sceneLoader) {
+CSceneLoaderOverlord::CSceneLoaderOverlord(Scene::ISceneHandler& sceneHandler)
+    : mSceneHandler(sceneHandler) {
     SetVisible(true);
 }
 
 void CSceneLoaderOverlord::Render() {
     if (ImGui::BeginMenu(kSceneText)) {
         if (ImGui::BeginMenu(kLoadingText)) {
-            for (auto& scene : magic_enum::enum_values<Scene::ESceneType>()) {
-                if (ImGui::MenuItem(magic_enum::enum_name(scene).data())) {
-                    mSceneLoader.CreateAndSetScene<Scene::DebugScene>();
+            for (auto& scene : mSceneHandler.GetSceneNames()) {
+                if (ImGui::MenuItem(scene.c_str())) {
+                    mSceneHandler.CreateAndSetScene(scene);
                 }
             }
             ImGui::EndMenu();

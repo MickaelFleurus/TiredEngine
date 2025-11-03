@@ -1,6 +1,7 @@
 #pragma once
 
 #include "debug/OverlordToolHandler.h"
+#include "scene/SceneHandler.h"
 
 #include <engine/core/EngineLoop.h>
 
@@ -12,6 +13,7 @@ public:
     void GameLoop(float deltaTime) override;
 
 private:
+    Scene::CSceneHandler mSceneHandler;
     Debug::COverlordToolHandler mToolHandler;
 };
 } // namespace Core

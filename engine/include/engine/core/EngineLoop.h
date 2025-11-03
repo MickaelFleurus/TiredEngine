@@ -9,8 +9,6 @@
 #include "engine/component/ComponentManager.h"
 #include "engine/core/WindowData.h"
 
-#include "engine/scene/SceneHandler.h"
-
 #include "engine/font/FontHandler.h"
 #include "engine/utils/FileHandler.h"
 
@@ -21,7 +19,8 @@
 
 namespace Scene {
 class CAbstractScene;
-}
+class ISceneHandler;
+} // namespace Scene
 
 namespace Core {
 class CEngineLoop {
@@ -39,21 +38,18 @@ public:
     virtual void GameLoop(float deltaTime) = 0;
 
 protected:
-    Scene::CSceneHandler& GetSceneHandler();
-
     Renderer::CWindow mWindow;
     Renderer::CShaderFactory mShaderFactory;
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;
     Input::CInputHandler mInputHandler;
+    Component::CComponentManager mComponentManager;
     std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 
     Core::CWindowData mWindowData;
-    Scene::CSceneHandler mSceneLoader;
     Utils::CFileHandler mFileHandler;
     Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;
-    Component::CComponentManager mComponentManager;
 };
 } // namespace Core

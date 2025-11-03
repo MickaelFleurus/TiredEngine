@@ -5,7 +5,7 @@
 #include "engine/debug/IOverlordItem.h"
 
 namespace Scene {
-class CSceneHandler;
+class ISceneHandler;
 }
 
 namespace Core {
@@ -19,7 +19,7 @@ class CEntityWidget;
 class CSceneHierarchy : public IOverlordItem {
 public:
     CSceneHierarchy(Debug::CEntityWidget& entityWidget,
-                    Scene::CSceneHandler& sceneHandler);
+                    Scene::ISceneHandler& sceneHandler);
     ~CSceneHierarchy() override;
 
     void Render() override;
@@ -29,6 +29,6 @@ private:
     void DrawNodeRecursive(const Core::CGameObject& obj);
 
     Debug::CEntityWidget& mEntityWidget;
-    Scene::CSceneHandler& mSceneHandler;
+    Scene::ISceneHandler& mSceneHandler;
 };
 } // namespace Debug
