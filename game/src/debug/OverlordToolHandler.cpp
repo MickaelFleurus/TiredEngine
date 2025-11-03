@@ -7,7 +7,8 @@ namespace Debug {
 COverlordToolHandler::COverlordToolHandler(
     Component::CComponentManager& componentManager,
     Utils::CFileHandler& fileHandler, Scene::ISceneHandler& sceneHandler)
-    : mOverlordSettings(fileHandler, sceneHandler)
+    : mSettings(fileHandler, sceneHandler)
+    , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
     , mEntityWidget(componentManager, fileHandler)
     , mSceneHierarchy(mEntityWidget, sceneHandler) {
@@ -15,8 +16,8 @@ COverlordToolHandler::COverlordToolHandler(
 
 void COverlordToolHandler::RegisterTools() {
     COverlord::AddMenu(mSceneLoaderOverlord, mToken);
+    COverlord::AddMenu(mOverlordSettings, mToken);
 
-    COverlord::AddWidget(mOverlordSettings, mToken);
     COverlord::AddWidget(mSceneHierarchy, mToken);
     COverlord::AddWidget(mEntityWidget, mToken);
 }

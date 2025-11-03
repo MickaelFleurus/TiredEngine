@@ -18,7 +18,9 @@ public:
     void LoadSettings();
     void SaveSettings() const;
 
+    bool HasDefaultSceneToLoad() const;
     const std::string& GetDefaultSceneToLoad() const;
+    void SetDefaultSceneToLoad(const std::string& sceneName);
 
 private:
     void ApplySettings();

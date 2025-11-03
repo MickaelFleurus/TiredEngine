@@ -13,7 +13,7 @@ namespace Debug {
 CSceneHierarchy::CSceneHierarchy(Debug::CEntityWidget& entityWidget,
                                  Scene::ISceneHandler& sceneHandler)
     : mEntityWidget(entityWidget), mSceneHandler(sceneHandler) {
-    SetVisible(true);
+    SetVisible(mSceneHandler.GetCurrentScene());
 }
 
 CSceneHierarchy::~CSceneHierarchy() = default;

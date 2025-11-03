@@ -21,8 +21,4 @@ CAbstractScene* CAbstractSceneHandler::GetCurrentScene() const {
     return mEngineLoop.GetCurrentScene();
 }
 
-const std::vector<std::string>& CAbstractSceneHandler::GetSceneNames() const {
-    return mSceneNames;
-}
-
 } // namespace Scene

@@ -25,7 +25,11 @@ std::string CFileHandler::GetTempFolder() const {
     return mTempFolder;
 }
 
-bool CFileHandler::DoesTextureExist(const std::string& filename) {
+bool CFileHandler::DoesFileExist(const std::string& filePath) const {
+    return std::filesystem::exists(GetAbsolutePath(filePath));
+}
+
+bool CFileHandler::DoesTextureExist(const std::string& filename) const {
     return std::filesystem::exists(GetTexturePath(filename));
 }
 
@@ -37,11 +41,10 @@ bool CFileHandler::SaveTextureFileBMP(const std::string& filename,
     return true;
 }
 
-bool CFileHandler::SaveJson(const std::string& filename,
+bool CFileHandler::SaveJson(const std::string& filePath,
                             const nlohmann::json& data) {
 
-    auto completePath = GetJsonPath(filename);
-    std::ofstream fileStream(completePath, std::ios::out);
+    std::ofstream fileStream(GetAbsolutePath(filePath), std::ios::out);
     if (!fileStream.is_open()) {
         return false;
     }
@@ -51,9 +54,8 @@ bool CFileHandler::SaveJson(const std::string& filename,
     return true;
 }
 
-nlohmann::json CFileHandler::LoadJson(const std::string& filename) {
-    auto completePath = GetJsonPath(filename);
-    std::ifstream fileStream(completePath);
+nlohmann::json CFileHandler::LoadJson(const std::string& filePath) {
+    std::ifstream fileStream(GetAbsolutePath(filePath));
     if (!fileStream.is_open()) {
         return nlohmann::json{};
     }
@@ -65,9 +67,8 @@ SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filename) {
     return surface;
 }
 
-bool CFileHandler::DeleteJson(const std::string& filename) {
-    auto completePath = GetJsonPath(filename);
-    return std::filesystem::remove(completePath);
+bool CFileHandler::DeleteJson(const std::string& filePath) {
+    return std::filesystem::remove(GetAbsolutePath(filePath));
 }
 
 std::vector<std::string> CFileHandler::GetFonts() const {
@@ -82,12 +83,18 @@ std::vector<std::string> CFileHandler::GetFonts() const {
     return fonts;
 }
 
+std::string
+CFileHandler::GetAbsolutePath(const std::string& relativePath) const {
+    return std::format("{}{}", mTempFolder, relativePath);
+}
+
 std::string CFileHandler::GetTexturePath(const std::string& filename,
-                                         const std::string& ext) {
+                                         const std::string& ext) const {
     return std::format("{}textures/{}.{}", mTempFolder, filename, ext);
 }
 
-std::string CFileHandler::GetJsonPath(const std::string& filename) {
+std::string
+CFileHandler::GetTextureMetaPath(const std::string& filename) const {
     return std::format("{}textures/{}.json", mTempFolder, filename);
 }
 

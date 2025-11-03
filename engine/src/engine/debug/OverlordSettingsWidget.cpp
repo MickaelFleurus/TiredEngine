@@ -3,35 +3,68 @@
 #include "engine/scene/ISceneHandler.h"
 #include "engine/utils/FileHandler.h"
 
+#include "engine/utils/OverlordSettings.h"
+
 #include <imgui.h>
+
+namespace {} // namespace
 
 namespace Debug {
 COverlordSettingsWidget::COverlordSettingsWidget(
-    Utils::CFileHandler& fileHandler, Scene::ISceneHandler& sceneHandler)
-    : mFileHandler(fileHandler), mSceneHandler(sceneHandler) {
+    Utils::COverlordSettings& settings, Utils::CFileHandler& fileHandler,
+    Scene::ISceneHandler& sceneHandler)
+    : mSettings(settings)
+    , mFileHandler(fileHandler)
+    , mSceneHandler(sceneHandler)
+    , mSceneNames(sceneHandler.GetSceneNames())
+    , mHasDefaultSceneToLoad(settings.HasDefaultSceneToLoad())
+    , mSelectedDefaultScene(settings.GetDefaultSceneToLoad()) {
+    SetVisible(true);
 }
 
 void COverlordSettingsWidget::Render() {
-    if (ImGui::Begin("Overlord Settings")) {
-        const auto& sceneNames = mSceneHandler.GetSceneNames();
+    if (ImGui::BeginMenu("Settings")) {
+        mShowWidget = true;
+        ImGui::EndMenu();
+    }
+    if (mShowWidget && ImGui::Begin("Overlord Settings")) {
 
-        ImGui::Text("Default scene to load:");
-        ImGui::SameLine();
-        if (ImGui::BeginCombo("##scenes", sceneNames[0].c_str())) {
-            for (int n = 0; n < static_cast<int>(sceneNames.size()); n++) {
-                const bool isSelected = (0 == n);
-                if (ImGui::Selectable(sceneNames[n].c_str(), isSelected)) {
-                    mDefaultSceneToLoad = sceneNames[n];
+        auto currentDefaultScene = mSelectedDefaultScene;
+
+        if (ImGui::RadioButton("Has a default scene to load",
+                               mHasDefaultSceneToLoad)) {
+            mHasDefaultSceneToLoad = !mHasDefaultSceneToLoad;
+        }
+        if (mHasDefaultSceneToLoad) {
+            ImGui::Text("Default scene to load:");
+            ImGui::SameLine();
+            if (ImGui::BeginCombo("##scenes", currentDefaultScene.c_str())) {
+                for (const auto& scene : mSceneNames) {
+                    const bool isSelected = (scene == currentDefaultScene);
+                    if (ImGui::Selectable(scene.c_str(), isSelected)) {
+                        mSelectedDefaultScene = scene;
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
                 }
-                if (isSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
+        }
+        if (ImGui::Button("Close")) {
+            mShowWidget = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Save")) {
+            if (mHasDefaultSceneToLoad) {
+                mSettings.SetDefaultSceneToLoad(mSelectedDefaultScene);
+            } else {
+                mSettings.SetDefaultSceneToLoad("");
+            }
+            mSettings.SaveSettings();
+            mShowWidget = false;
         }
         ImGui::End();
-        if (ImGui::Button("Save")) {
-        }
     }
 }
 

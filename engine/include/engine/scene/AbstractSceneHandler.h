@@ -24,8 +24,6 @@ public:
 
     CAbstractScene* GetCurrentScene() const override;
 
-    const std::vector<std::string>& GetSceneNames() const override;
-
 protected:
     template <typename GameSceneType, typename... Args>
     void CreateAndSetSceneImpl(Args&&... args) {
@@ -38,7 +36,6 @@ protected:
     }
     void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
 
-    const std::vector<std::string> mSceneNames;
     Core::CEngineLoop& mEngineLoop;
     Component::CComponentManager& mComponentManager;
     Core::CWindowData& mWindowData;

@@ -25,4 +25,11 @@ void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {
         throw std::runtime_error("Scene type not implemented yet.");
     }
 }
+
+const std::vector<std::string>& CSceneHandler::GetSceneNames() const {
+    static std::vector<std::string> sceneNames(
+        magic_enum::enum_names<ESceneType>().begin(),
+        magic_enum::enum_names<ESceneType>().end());
+    return sceneNames;
+}
 } // namespace Scene

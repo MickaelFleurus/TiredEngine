@@ -15,6 +15,9 @@ namespace Utils {
 COverlordSettings::COverlordSettings(CFileHandler& fileHandler,
                                      Scene::ISceneHandler& sceneHandler)
     : mFileHandler(fileHandler), mSceneHandler(sceneHandler) {
+    if (!mFileHandler.DoesFileExist(kSettingsFile)) {
+        return;
+    }
     LoadSettings();
     ApplySettings();
 }
@@ -31,11 +34,21 @@ void COverlordSettings::SaveSettings() const {
 }
 
 void COverlordSettings::ApplySettings() {
-    mSceneHandler.CreateAndSetScene(mDefaultSceneToLoad);
+    if (!mDefaultSceneToLoad.empty()) {
+        mSceneHandler.CreateAndSetScene(mDefaultSceneToLoad);
+    }
+}
+
+bool COverlordSettings::HasDefaultSceneToLoad() const {
+    return !mDefaultSceneToLoad.empty();
 }
 
 const std::string& COverlordSettings::GetDefaultSceneToLoad() const {
     return mDefaultSceneToLoad;
+}
+
+void COverlordSettings::SetDefaultSceneToLoad(const std::string& sceneName) {
+    mDefaultSceneToLoad = sceneName;
 }
 
 } // namespace Utils
