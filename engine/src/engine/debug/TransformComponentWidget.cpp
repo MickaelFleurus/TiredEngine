@@ -14,20 +14,18 @@ CTransformComponentWidget::CTransformComponentWidget(
 
 void CTransformComponentWidget::Render() {
 
-    // Position
     auto pos = mTransformComponent.getPosition();
     if (ImGui::DragFloat3("Position", &pos.x, 0.1f, -FLT_MAX, FLT_MAX,
                           "%.3f")) {
         mTransformComponent.setPosition(pos);
     }
 
-    // Rotation (show in degrees, store in radians)
-    auto rot = mTransformComponent.getRotation();
+    auto rotEuler = mTransformComponent.getRotation();
+    glm::vec3 rot = glm::degrees(rotEuler);
     if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f, -360.0f, 360.0f, "%.1f°")) {
-        mTransformComponent.setRotation(rot);
+        mTransformComponent.setRotation(glm::radians(rot));
     }
 
-    // Scale
     auto scale = mTransformComponent.getScale();
     if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.0f, FLT_MAX, "%.3f")) {
         mTransformComponent.setScale(scale);

@@ -5,7 +5,7 @@
 class FileHandlerTest : public ::testing::Test {
 protected:
     void TearDown() override {
-        fileHandler.DeleteJson(testFilename);
+        fileHandler.DeleteFile(testFilename, ".json");
     }
 
     Utils::CFileHandler fileHandler{"TestGame"};

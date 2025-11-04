@@ -9,33 +9,61 @@
 namespace {
 constexpr const char* kCompanyName = "PotatoThunder";
 constexpr const char* kAssetsFolderPath = "assets/";
-constexpr const char* kTexturesFolderPath = "assets/textures/";
-constexpr const char* kFontsFolderPath = "assets/fonts/";
+
+std::string HandleSDLPath(char* sdlPath) {
+    std::string path;
+    if (sdlPath) {
+        path = std::string(sdlPath);
+        SDL_free(sdlPath);
+    }
+    return path;
+}
 
 } // namespace
 
 namespace Utils {
 
 CFileHandler::CFileHandler(const std::string& gameName)
-    : mTempFolder(SDL_GetPrefPath(kCompanyName, gameName.c_str())) {
-    std::filesystem::create_directories(std::format("{}textures", mTempFolder));
+    : mTempFolder(
+          HandleSDLPath(SDL_GetPrefPath(kCompanyName, gameName.c_str())))
+    , mAssetFolder(std::format("{}{}", SDL_GetBasePath(), kAssetsFolderPath)) {
 }
 
 std::string CFileHandler::GetTempFolder() const {
     return mTempFolder;
 }
 
-bool CFileHandler::DoesFileExist(const std::string& filePath) const {
-    return std::filesystem::exists(GetAbsolutePath(filePath));
+std::string CFileHandler::GetAssetsFolder() const {
+    return mAssetFolder;
 }
 
-bool CFileHandler::DoesTextureExist(const std::string& filename) const {
-    return std::filesystem::exists(GetTexturePath(filename));
+bool CFileHandler::DoesFileExist(const std::string& filePath,
+                                 const char* extension) const {
+    return std::filesystem::exists(filePath + extension);
 }
 
-bool CFileHandler::SaveTextureFileBMP(const std::string& filename,
+bool CFileHandler::DoesDirectoryExists(const std::string& filePath) const {
+    return std::filesystem::exists(filePath) &&
+           std::filesystem::is_directory(filePath);
+}
+
+void CFileHandler::CreateDirectories(const std::string& path) const {
+    std::filesystem::create_directories(path);
+}
+
+bool CFileHandler::DeleteFile(const std::string& filePath,
+                              const char* extension) {
+    return std::filesystem::remove(filePath + extension);
+}
+
+bool CFileHandler::SaveTextureFileBMP(const std::string& filePath,
                                       SDL_Surface* surface) {
-    if (SDL_SaveBMP(surface, GetTexturePath(filename).c_str()) != 0) {
+    if (const auto parent = std::filesystem::path(filePath).parent_path();
+        !DoesDirectoryExists(parent)) {
+        CreateDirectories(parent);
+    }
+    const auto completePath = filePath + ".bmp";
+    if (SDL_SaveBMP(surface, completePath.c_str()) != 0) {
         return false;
     }
     return true;
@@ -44,7 +72,8 @@ bool CFileHandler::SaveTextureFileBMP(const std::string& filename,
 bool CFileHandler::SaveJson(const std::string& filePath,
                             const nlohmann::json& data) {
 
-    std::ofstream fileStream(GetAbsolutePath(filePath), std::ios::out);
+    const auto completePath = filePath + ".json";
+    std::ofstream fileStream(completePath, std::ios::out);
     if (!fileStream.is_open()) {
         return false;
     }
@@ -55,47 +84,30 @@ bool CFileHandler::SaveJson(const std::string& filePath,
 }
 
 nlohmann::json CFileHandler::LoadJson(const std::string& filePath) {
-    std::ifstream fileStream(GetAbsolutePath(filePath));
+    const auto completePath = filePath + ".json";
+    std::ifstream fileStream(completePath, std::ios::in);
     if (!fileStream.is_open()) {
         return nlohmann::json{};
     }
     return nlohmann::json::parse(fileStream);
 }
 
-SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filename) {
-    SDL_Surface* surface = SDL_LoadBMP(GetTexturePath(filename).c_str());
+SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filePath) {
+    const auto completePath = filePath + ".bmp";
+    SDL_Surface* surface = SDL_LoadBMP(completePath.c_str());
     return surface;
 }
 
-bool CFileHandler::DeleteJson(const std::string& filePath) {
-    return std::filesystem::remove(GetAbsolutePath(filePath));
-}
-
-std::vector<std::string> CFileHandler::GetFonts() const {
-    std::filesystem::path fontsPath = kFontsFolderPath;
-    std::vector<std::string> fonts;
+std::vector<std::string>
+CFileHandler::GetFileNames(const char* extension) const {
+    std::vector<std::string> files;
     for (auto const& dir_entry :
-         std::filesystem::directory_iterator{fontsPath}) {
-        if (dir_entry.path().extension() == ".ttf") {
-            fonts.push_back(dir_entry.path().string());
+         std::filesystem::recursive_directory_iterator{mAssetFolder}) {
+        if (dir_entry.path().extension() == extension) {
+            files.push_back(dir_entry.path().stem());
         }
     }
-    return fonts;
-}
-
-std::string
-CFileHandler::GetAbsolutePath(const std::string& relativePath) const {
-    return std::format("{}{}", mTempFolder, relativePath);
-}
-
-std::string CFileHandler::GetTexturePath(const std::string& filename,
-                                         const std::string& ext) const {
-    return std::format("{}textures/{}.{}", mTempFolder, filename, ext);
-}
-
-std::string
-CFileHandler::GetTextureMetaPath(const std::string& filename) const {
-    return std::format("{}textures/{}.json", mTempFolder, filename);
+    return files;
 }
 
 } // namespace Utils

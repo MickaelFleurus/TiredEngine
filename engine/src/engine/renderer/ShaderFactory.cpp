@@ -1,5 +1,4 @@
 #include "engine/renderer/ShaderFactory.h"
-#include "engine/renderer/Shader.h"
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_gpu.h>
@@ -8,82 +7,106 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+
+namespace {
+constexpr const char* ShaderStageToExtension(SDL_GPUShaderStage stage) {
+    switch (stage) {
+    case SDL_GPU_SHADERSTAGE_VERTEX:
+        return ".vert";
+    case SDL_GPU_SHADERSTAGE_FRAGMENT:
+        return ".frag";
+    default:
+        return "";
+    }
+}
+} // namespace
 
 namespace Renderer {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(SDL_GPUDevice& device)
-        : mDevice(device), mBasePath(SDL_GetBasePath()) {
+    CImpl(SDL_GPUDevice& device) : mDevice(device) {
     }
 
-    CShader* CreateFragmentShader(const char* filePath) {
-        return new CShader(CreateShader(filePath, SDL_GPU_SHADERSTAGE_FRAGMENT),
-                           mDevice);
+    ~CImpl() {
+        for (auto& [path, shader] : mShaderCache) {
+            SDL_ReleaseGPUShader(&mDevice, shader);
+        }
     }
 
-    CShader* CreateVertexShader(const char* filePath) {
-        return new CShader(CreateShader(filePath, SDL_GPU_SHADERSTAGE_VERTEX),
-                           mDevice);
+    SDL_GPUShader* CreateFragmentShader(std::string name, std::string path,
+                                        const SShaderResources& resources) {
+        return CreateShader(name, path, SDL_GPU_SHADERSTAGE_FRAGMENT,
+                            resources);
+    }
+
+    SDL_GPUShader* CreateVertexShader(std::string name, std::string path,
+                                      const SShaderResources& resources) {
+        return CreateShader(name, path, SDL_GPU_SHADERSTAGE_VERTEX, resources);
     }
 
 private:
-    SDL_GPUShader* CreateShader(const char* filePath,
-                                SDL_GPUShaderStage stage) {
-        // Determine the backend format and construct file path
-        SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(&mDevice);
+    SDL_GPUShader* CreateShader(std::string name, std::string path,
+                                SDL_GPUShaderStage stage,
+                                const SShaderResources& resources) {
+        name += ShaderStageToExtension(stage);
+        path += name;
+        if (!mShaderCache.contains(name)) {
 
-        struct ShaderConfig {
-            SDL_GPUShaderFormat format;
-            const char* extension;
-            const char* entrypoint;
-        };
+            SDL_GPUShaderFormat backendFormats =
+                SDL_GetGPUShaderFormats(&mDevice);
 
-        std::optional<ShaderConfig> config;
+            struct ShaderConfig {
+                SDL_GPUShaderFormat format;
+                const char* extension;
+                const char* entrypoint;
+            };
 
-        if (backendFormats & SDL_GPU_SHADERFORMAT_SPIRV) {
-            config = ShaderConfig{SDL_GPU_SHADERFORMAT_SPIRV, ".spv", "main"};
-        } else if (backendFormats & SDL_GPU_SHADERFORMAT_MSL) {
-            config = ShaderConfig{SDL_GPU_SHADERFORMAT_MSL, ".msl", "main0"};
-        } else if (backendFormats & SDL_GPU_SHADERFORMAT_DXIL) {
-            config = ShaderConfig{SDL_GPU_SHADERFORMAT_DXIL, ".dxil", "main"};
-        } else {
-            // Unrecognized backend shader format
-            return nullptr;
+            std::optional<ShaderConfig> config;
+
+            if (backendFormats & SDL_GPU_SHADERFORMAT_SPIRV) {
+                config =
+                    ShaderConfig{SDL_GPU_SHADERFORMAT_SPIRV, ".spv", "main"};
+            } else if (backendFormats & SDL_GPU_SHADERFORMAT_MSL) {
+                config =
+                    ShaderConfig{SDL_GPU_SHADERFORMAT_MSL, ".msl", "main0"};
+            } else if (backendFormats & SDL_GPU_SHADERFORMAT_DXIL) {
+                config =
+                    ShaderConfig{SDL_GPU_SHADERFORMAT_DXIL, ".dxil", "main"};
+            } else {
+                // Unrecognized backend shader format
+                return nullptr;
+            }
+
+            std::string fullPath = path + config->extension;
+            size_t codeSize = 0;
+            void* rawCode = SDL_LoadFile(fullPath.c_str(), &codeSize);
+            if (rawCode == nullptr) {
+                return nullptr;
+            }
+
+            std::unique_ptr<void, decltype(&SDL_free)> code(rawCode, SDL_free);
+
+            SDL_GPUShaderCreateInfo shaderInfo{
+                .code_size = codeSize,
+                .code = static_cast<const Uint8*>(code.get()),
+                .entrypoint = config->entrypoint,
+                .format = config->format,
+                .stage = stage,
+                .num_samplers = resources.numSamplers,
+                .num_storage_textures = resources.numStorageTextures,
+                .num_storage_buffers = resources.numStorageBuffers,
+                .num_uniform_buffers = resources.numUniformBuffers};
+
+            SDL_GPUShader* shader = SDL_CreateGPUShader(&mDevice, &shaderInfo);
+            mShaderCache.emplace(name, shader);
         }
-
-        // Build full path
-        std::string fullPath =
-            std::string(mBasePath) + filePath + config->extension;
-
-        // Load shader file
-        size_t codeSize = 0;
-        void* rawCode = SDL_LoadFile(fullPath.c_str(), &codeSize);
-        if (rawCode == nullptr) {
-            return nullptr;
-        }
-
-        std::unique_ptr<void, decltype(&SDL_free)> code(rawCode, SDL_free);
-
-        // Create shader info
-        SDL_GPUShaderCreateInfo shaderInfo{
-            .code_size = codeSize,
-            .code = static_cast<const Uint8*>(code.get()),
-            .entrypoint = config->entrypoint,
-            .format = config->format,
-            .stage = stage,
-            .num_samplers = 0,
-            .num_storage_textures = 0,
-            .num_storage_buffers = 0,
-            .num_uniform_buffers = 0};
-
-        SDL_GPUShader* shader = SDL_CreateGPUShader(&mDevice, &shaderInfo);
-
-        return shader; // code automatically freed by unique_ptr
+        return mShaderCache[name];
     }
 
-    const char* mBasePath;
     SDL_GPUDevice& mDevice;
+    std::unordered_map<std::string, SDL_GPUShader*> mShaderCache;
 };
 
 CShaderFactory::CShaderFactory(SDL_GPUDevice& device)
@@ -92,12 +115,16 @@ CShaderFactory::CShaderFactory(SDL_GPUDevice& device)
 
 CShaderFactory::~CShaderFactory() = default;
 
-CShader* CShaderFactory::CreateFragmentShader(const char* filePath) {
-    return mImpl->CreateFragmentShader(filePath);
+SDL_GPUShader*
+CShaderFactory::CreateFragmentShader(std::string name, std::string path,
+                                     const SShaderResources& resources) {
+    return mImpl->CreateFragmentShader(name, path, resources);
 }
 
-CShader* CShaderFactory::CreateVertexShader(const char* filePath) {
-    return mImpl->CreateVertexShader(filePath);
+SDL_GPUShader*
+CShaderFactory::CreateVertexShader(std::string name, std::string path,
+                                   const SShaderResources& resources) {
+    return mImpl->CreateVertexShader(name, path, resources);
 }
 
 } // namespace Renderer

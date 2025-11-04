@@ -6,8 +6,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(FetchContent)
 include(Brotli)
-include(Freetype)
-include(HarfBuzz)
 include(PNGLib)
 include(SDL3)
 include(SDL_ttf)
@@ -17,35 +15,37 @@ include(glm)
 include(MagicEnum)
 include(GoogleTest)
 include(nlohmann)
+include(msdfgen)
+include(CompileShaders)
+include(AssetsCopy)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# setup_freetype()
-# setup_harfbuzz()
 setup_pnglib()
 setup_brotli()
 setup_sdl3()
-setup_sdlttf()
 setup_sdl3_image()
 setup_imgui()
 setup_magicenum()
 setup_glm()
 setup_gtest()
 setup_nlohmann_json()
+setup_msdfgen()
 
-
-# Sources
 add_subdirectory(engine)
 add_subdirectory(game)
+
+
+# Compile all shaders from both engine and game
+compile_shaders("${CMAKE_BINARY_DIR}/assets/shaders" CompileShaders)
 
 add_executable(BreakoutExclamationMark src/main.cpp)
 target_link_libraries(BreakoutExclamationMark PRIVATE Angine_LIB Breakout_LIB)
 
-if(TARGET CompileShaders)
-    add_dependencies(BreakoutExclamationMark CompileShaders)
-endif()
+add_dependencies(BreakoutExclamationMark CopyAssets)
+add_dependencies(BreakoutExclamationMark CompileShaders)
 
 if(WIN32)
     add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
@@ -55,27 +55,3 @@ if(WIN32)
         COMMENT "Copying SDL3.dll to output directory"
     )
 endif()
-
-# Copy compiled shaders to the executable directory after build
-add_custom_command(TARGET BreakoutExclamationMark POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_BINARY_DIR}/shaders"
-    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/shaders"
-    COMMENT "Copying compiled shaders to output directory"
-)
-
-add_custom_command(
-    TARGET BreakoutExclamationMark POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/engine/assets"
-    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/assets"
-    COMMENT "Copying game assets (textures, fonts, etc.) to output directory"
-)
-
-add_custom_command(
-    TARGET BreakoutExclamationMark POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/game/assets"
-    "$<TARGET_FILE_DIR:BreakoutExclamationMark>/assets"
-    COMMENT "Copying game assets (textures, fonts, etc.) to output directory"
-)

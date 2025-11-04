@@ -1,14 +1,17 @@
 #include "engine/component/ComponentManager.h"
 
 // #include "engine/component/CollisionComponent.h"
+#include "engine/component/CameraComponent.h"
 #include "engine/component/InputComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
+#include "engine/component/TextComponent.h"
 #include "engine/core/GameObject.h"
 
 namespace Component {
-CComponentManager::CComponentManager(Font::CFontHandler& fontHandler)
-    : mFontHandler(fontHandler) {
+CComponentManager::CComponentManager(Font::CFontHandler& fontHandler,
+                                     Renderer::CTextRenderer& textRenderer)
+    : mFontHandler(fontHandler), mTextRenderer(textRenderer) {
 }
 
 CInputComponent& CComponentManager::addInputComponent(
@@ -42,12 +45,17 @@ CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
 }
 
 CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
-    return createComponent<CTextComponent>(owner, owner.getId());
+    return createComponent<CTextComponent>(owner, owner.getId(), mTextRenderer);
 }
 
 CTransformComponent&
 CComponentManager::addTransformComponent(Core::CGameObject& owner) {
     return createComponent<CTransformComponent>(owner, owner.getId());
+}
+
+CCameraComponent&
+CComponentManager::addCameraComponent(Core::CGameObject& owner) {
+    return createComponent<CCameraComponent>(owner, owner.getId());
 }
 
 void CComponentManager::removeComponents(Core::GameObjectId id) {
@@ -57,7 +65,8 @@ void CComponentManager::removeComponents(Core::GameObjectId id) {
 }
 
 void CComponentManager::update(float deltaTime) {
-    updateAll<CInputComponent, CMovementComponent, CSpriteComponent>(deltaTime);
+    updateAll<CInputComponent, CMovementComponent, CCameraComponent,
+              CSpriteComponent>(deltaTime);
 }
 
 } // namespace Component

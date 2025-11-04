@@ -1,4 +1,5 @@
 #include "engine/component/TransformComponent.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Component {
 CTransformComponent::CTransformComponent(Core::CGameObject& owner,
@@ -19,11 +20,11 @@ const glm::vec3& CTransformComponent::getPosition() const {
 }
 
 void CTransformComponent::setRotation(const glm::vec3& rotation) {
-    mRotation = rotation;
+    mRotation = glm::quat(rotation);
 }
 
-const glm::vec3& CTransformComponent::getRotation() const {
-    return mRotation;
+glm::vec3 CTransformComponent::getRotation() const {
+    return glm::eulerAngles(mRotation);
 }
 
 void CTransformComponent::setScale(const glm::vec3& scale) {
@@ -32,5 +33,11 @@ void CTransformComponent::setScale(const glm::vec3& scale) {
 
 const glm::vec3& CTransformComponent::getScale() const {
     return mScale;
+}
+
+void CTransformComponent::UpdateMatrix(glm::mat4& parentTransform) const {
+    parentTransform = glm::translate(parentTransform, mPosition);
+    parentTransform *= glm::mat4_cast(mRotation);
+    parentTransform = glm::scale(parentTransform, mScale);
 }
 } // namespace Component

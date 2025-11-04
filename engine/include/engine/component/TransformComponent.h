@@ -2,6 +2,8 @@
 
 #include "engine/component/IComponent.h"
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 namespace Component {
@@ -16,14 +18,16 @@ public:
     const glm::vec3& getPosition() const;
 
     void setRotation(const glm::vec3& rotation);
-    const glm::vec3& getRotation() const;
+    glm::vec3 getRotation() const;
 
     void setScale(const glm::vec3& scale);
     const glm::vec3& getScale() const;
 
+    void UpdateMatrix(glm::mat4& parentTransform) const;
+
 private:
     glm::vec3 mPosition{0.f, 0.f, 0.f};
-    glm::vec3 mRotation{0.f, 0.f, 0.f};
+    glm::quat mRotation{1.f, 0.f, 0.f, 0.f};
     glm::vec3 mScale{1.f, 1.f, 1.f};
 };
 } // namespace Component

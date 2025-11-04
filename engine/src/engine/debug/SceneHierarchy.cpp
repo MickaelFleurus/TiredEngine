@@ -28,26 +28,28 @@ void CSceneHierarchy::Render() {
 
 void CSceneHierarchy::DrawNodeRecursive(const Core::CGameObject& obj) {
 
-    bool nodeOpen = ImGui::TreeNode(obj.getName().c_str());
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-    // Check for clicks IMMEDIATELY after TreeNode, before drawing children
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-        mEntityWidget.OnItemClicked(obj.getId());
+    // Highlight if this is the selected entity
+    if (mEntityWidget.GetEntityId() == obj.getId()) {
+        flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    // Right-click context menu (also needs to be right after TreeNode)
-    // if (ImGui::BeginPopupContextItem()) {
-    //     if (ImGui::MenuItem("Inspect")) {
-    //         mEntityWidget.OnItemClicked(obj.getId());
-    //     }
-    //     if (ImGui::MenuItem("Delete")) {
-    //         // Delete logic
-    //     }
-    //     ImGui::EndPopup();
-    // }
+    // Add leaf flag if no children
+    if (obj.getChildren().empty()) {
+        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    }
 
-    // Now draw children if node is open
-    if (nodeOpen) {
+    bool nodeOpen = ImGui::TreeNodeEx(obj.getName().c_str(), flags);
+
+    // Left-click to select
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        mEntityWidget.OnItemClicked(obj.getId(), obj.getName());
+    }
+
+    // Draw children only if node is open AND has children
+    if (nodeOpen && !obj.getChildren().empty()) {
         for (const auto& child : obj.getChildren()) {
             DrawNodeRecursive(*child);
         }

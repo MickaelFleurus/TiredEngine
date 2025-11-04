@@ -6,14 +6,15 @@ struct SDL_GPUDevice;
 struct SDL_Window;
 
 namespace Renderer {
-class CShader;
+struct SPipelineConfig;
+
 class CPipelineFactory {
 public:
     CPipelineFactory(SDL_GPUDevice& device, SDL_Window& window);
     ~CPipelineFactory();
 
-    std::unique_ptr<SDL_GPUGraphicsPipeline>
-    CreateGraphicsPipeline(CShader& vertexShader, CShader& fragmentShader);
+    SDL_GPUGraphicsPipeline*
+    CreateGraphicsPipeline(const SPipelineConfig& config);
 
 private:
     class CImpl;

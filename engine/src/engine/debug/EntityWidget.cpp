@@ -4,6 +4,7 @@
 #include "engine/component/TextComponent.h"
 #include "engine/component/TransformComponent.h"
 
+#include "engine/debug/CameraWidget.h"
 #include "engine/debug/TextComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
 
@@ -11,17 +12,23 @@
 
 namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
-                             Utils::CFileHandler& fileHandler)
-    : mComponentManager(componentManager), mFileHandler(fileHandler) {
+                             Utils::CFileHandler& fileHandler,
+                             Font::CFontHandler& fontHandler)
+    : mComponentManager(componentManager)
+    , mFileHandler(fileHandler)
+    , mFontHandler(fontHandler) {
 }
 
 CEntityWidget::~CEntityWidget() = default;
 
-void CEntityWidget::OnItemClicked(std::optional<int> entityId) {
+void CEntityWidget::OnItemClicked(std::optional<int> entityId,
+                                  std::string name) {
     mEntityId = entityId;
+    mName = name;
 
     mTransformWidget.reset();
     mTextWidget.reset();
+    mCameraWidget.reset();
 
     if (!mEntityId) {
         SetVisible(false);
@@ -39,18 +46,42 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId) {
             mComponentManager.getComponent<Component::CTextComponent>(
                 *mEntityId)) {
         mTextWidget = std::make_unique<Debug::CTextComponentWidget>(
-            *textComponent, mFileHandler);
+            *textComponent, mFileHandler, mFontHandler);
+    }
+    if (auto* cameraComponent =
+            mComponentManager.getComponent<Component::CCameraComponent>(
+                *mEntityId)) {
+        mCameraWidget =
+            std::make_unique<Debug::CCameraWidget>(*cameraComponent);
     }
 }
 
 void CEntityWidget::Render() {
     bool isVisible = IsVisible();
-    if (ImGui::Begin("Entity Widget", &isVisible)) {
+
+    // Position on right side of screen by default
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImVec2 work_pos = viewport->WorkPos;
+    ImVec2 work_size = viewport->WorkSize;
+
+    ImVec2 window_pos;
+    window_pos.x =
+        work_pos.x + work_size.x - 420; // 20px padding from right edge
+    window_pos.y = work_pos.y + 50;     // 50px from top
+
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin("Entity", &isVisible)) {
+        ImGui::Text("Name: %s", mName.c_str());
         if (mTransformWidget) {
             mTransformWidget->Render();
         }
         if (mTextWidget) {
             mTextWidget->Render();
+        }
+        if (mCameraWidget) {
+            mCameraWidget->Render();
         }
         SetVisible(isVisible);
     }
@@ -59,5 +90,9 @@ void CEntityWidget::Render() {
 
 const char* CEntityWidget::GetName() const {
     return "Entity Widget";
+}
+
+std::optional<int> CEntityWidget::GetEntityId() const {
+    return mEntityId;
 }
 } // namespace Debug

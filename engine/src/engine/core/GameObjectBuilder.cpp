@@ -6,19 +6,22 @@
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
 
+#include "engine/font/FontHandler.h"
+
 namespace Core {
 
 GameObjectId CGameObjectBuilder::mNextId = 0;
 
 CGameObjectBuilder::CGameObjectBuilder(
-    Component::CComponentManager& componentManager)
-    : mComponentManager(componentManager) {
+    Component::CComponentManager& componentManager,
+    Font::CFontHandler& fontHandler)
+    : mComponentManager(componentManager), mFontHandler(fontHandler) {
 }
 
 CGameObjectBuilder::CBuilder
 CGameObjectBuilder::CreateBuilder(const std::string& name,
                                   CGameObject& parent) {
-    return CBuilder(name, mComponentManager, parent);
+    return CBuilder(name, mComponentManager, mFontHandler, parent);
 }
 
 CGameObject*
@@ -30,22 +33,33 @@ CGameObjectBuilder::createRoot(Component::CComponentManager& componentManager) {
 
 CGameObjectBuilder::CBuilder::CBuilder(
     const std::string& name, Component::CComponentManager& componentManager,
-    CGameObject& parent)
+    Font::CFontHandler& fontHandler, CGameObject& parent)
     : mComponentManager(componentManager)
+    , mFontHandler(fontHandler)
     , mParent(parent)
     , mGameObject(std::unique_ptr<CGameObject>(new CGameObject(
           name, componentManager, &parent, CGameObjectBuilder::mNextId++))) {
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::addText(const std::string& text, unsigned size) {
-    auto& component{mComponentManager.addSpriteComponent(*mGameObject)};
-    component.addText(text, size);
+CGameObjectBuilder::CBuilder::addText(const std::string& text,
+                                      unsigned int size, std::string fontName) {
+    auto& component{mComponentManager.addTextComponent(*mGameObject)};
+
+    component.setText(text);
+    component.setPolice(&mFontHandler.GetPolice(fontName.c_str(), size));
     return *this;
 }
 
 CGameObjectBuilder::CBuilder& CGameObjectBuilder::CBuilder::addSprite() {
     auto& component{mComponentManager.addSpriteComponent(*mGameObject)};
+    // component.addSprite(type);
+    return *this;
+}
+
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::addCameraComponent() {
+    auto& component{mComponentManager.addCameraComponent(*mGameObject)};
     // component.addSprite(type);
     return *this;
 }

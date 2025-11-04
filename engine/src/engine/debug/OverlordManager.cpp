@@ -29,7 +29,6 @@ void COverlordManager::HandleEvent(const SDL_Event* e) {
 }
 
 void COverlordManager::CreateOverlord() {
-    // TODO : Factory pattern for different Overlord implementations
     mOverlordImpl = std::make_unique<COverlord>(mWindow, mDevice);
 }
 

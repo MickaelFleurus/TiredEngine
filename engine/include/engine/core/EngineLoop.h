@@ -8,6 +8,7 @@
 
 #include "engine/component/ComponentManager.h"
 #include "engine/core/WindowData.h"
+#include "engine/material/MaterialFactory.h"
 
 #include "engine/font/FontHandler.h"
 #include "engine/utils/FileHandler.h"
@@ -50,6 +51,7 @@ protected:
     Core::CWindowData mWindowData;
     Utils::CFileHandler mFileHandler;
     Renderer::CTextureManager mTextureManager;
+    Material::CMaterialFactory mMaterialFactory;
     Font::CFontHandler mFontHandler;
 };
 } // namespace Core

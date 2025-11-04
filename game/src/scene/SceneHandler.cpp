@@ -7,8 +7,10 @@
 namespace Scene {
 CSceneHandler::CSceneHandler(Core::CEngineLoop& engineLoop,
                              Component::CComponentManager& componentManager,
+                             Font::CFontHandler& fontHandler,
                              Core::CWindowData& windowData)
-    : CAbstractSceneHandler(engineLoop, componentManager, windowData) {
+    : CAbstractSceneHandler(engineLoop, componentManager, fontHandler,
+                            windowData) {
 }
 
 void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {

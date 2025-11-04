@@ -1,5 +1,7 @@
 #include "engine/font/FontHandler.h"
 
+#include "engine/material/AbstractMaterial.h"
+#include "engine/material/MaterialFactory.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
 #include <SDL3/SDL_surface.h>
@@ -12,34 +14,38 @@ constexpr unsigned int kStartChar =
 constexpr unsigned int kEndChar = 126; // Tilde. Last printable ASCII character
 constexpr unsigned int kMargin = 8;    // Margin around each glyph in atlas
 
-nlohmann::json GlyphsToJson(const std::array<Font::GlyphInfo, 126>& glyphs) {
+nlohmann::json
+GlyphsToJson(const std::array<Font::GlyphInfo, kEndChar - kStartChar>& glyphs) {
     nlohmann::json jsonData;
-    char c = kStartChar;
+    unsigned char c = kStartChar;
     for (const auto& info : glyphs) {
         nlohmann::json glyphJson;
-        glyphJson["rect"] = {{"x", info.rect.x},
-                             {"y", info.rect.y},
-                             {"w", info.rect.w},
-                             {"h", info.rect.h}};
+        glyphJson["uv"] = {{"x", info.uv.x},
+                           {"y", info.uv.y},
+                           {"w", info.uv.z},
+                           {"h", info.uv.w}};
         glyphJson["advance"] = info.advance;
         glyphJson["offset"] = {{"x", info.offset.x}, {"y", info.offset.y}};
-        jsonData[c++] = glyphJson;
+        glyphJson["size"] = {{"x", info.size.x}, {"y", info.size.y}};
+        jsonData[std::string(1, c++)] = glyphJson;
     }
     return jsonData;
 }
 
 std::vector<Font::GlyphInfo> JsonToGlyphs(const nlohmann::json& jsonData) {
     std::vector<Font::GlyphInfo> glyphs;
-    for (char c = kStartChar; c <= kEndChar; ++c) {
+    for (char c = kStartChar; c < kEndChar; ++c) {
         const auto& glyphJson = jsonData[std::string(1, c)];
         Font::GlyphInfo info;
-        info.rect.x = glyphJson["rect"]["x"];
-        info.rect.y = glyphJson["rect"]["y"];
-        info.rect.w = glyphJson["rect"]["w"];
-        info.rect.h = glyphJson["rect"]["h"];
+        info.uv.x = glyphJson["uv"]["x"];
+        info.uv.y = glyphJson["uv"]["y"];
+        info.uv.z = glyphJson["uv"]["w"];
+        info.uv.w = glyphJson["uv"]["h"];
         info.advance = glyphJson["advance"];
         info.offset.x = glyphJson["offset"]["x"];
         info.offset.y = glyphJson["offset"]["y"];
+        info.size.x = glyphJson["size"]["x"];
+        info.size.y = glyphJson["size"]["y"];
         glyphs.push_back(info);
     }
     return glyphs;
@@ -60,22 +66,28 @@ auto CreateFontData(unsigned int fontSize, TTF_Font* font) {
                     0, 0, 0));
 
     SDL_Color white = {255, 255, 255, 255};
-    std::array<Font::GlyphInfo, 126> glyphs;
+    std::array<Font::GlyphInfo, kEndChar - kStartChar> glyphs;
     int cx = 0, cy = 0;
-    for (unsigned int c = kStartChar; c <= kEndChar; ++c) {
+    for (unsigned int c = kStartChar; c < kEndChar; ++c) {
         SDL_Surface* glyph = TTF_RenderGlyph_Solid(font, c, white);
         if (!glyph) {
             continue;
         }
 
         const int glyphIndex = c - kStartChar;
-        Font::GlyphInfo& glyphInfo = glyphs[c - kStartChar];
+        Font::GlyphInfo& glyphInfo = glyphs[glyphIndex];
         SDL_Rect dst = {cx * glyphSize, cy * glyphSize, glyph->w, glyph->h};
         SDL_BlitSurface(glyph, NULL, atlasSurface, &dst);
 
-        // store rect info for UVs later
-        SDL_Rect rect = dst;
-        glyphInfo.rect = rect;
+        glm::vec4 uv = {static_cast<float>(dst.x), static_cast<float>(dst.y),
+                        static_cast<float>(dst.w), static_cast<float>(dst.h)};
+        uv.x /= atlasSurface->w;
+        uv.y /= atlasSurface->h;
+        uv.z /= atlasSurface->w;
+        uv.w /= atlasSurface->h;
+        glyphInfo.uv = uv;
+        glyphInfo.size = {static_cast<float>(glyph->w),
+                          static_cast<float>(glyph->h)};
 
         TTF_GetGlyphMetrics(font, c, NULL, NULL, NULL, NULL,
                             &glyphInfo.advance);
@@ -95,8 +107,11 @@ auto CreateFontData(unsigned int fontSize, TTF_Font* font) {
 
 namespace Font {
 CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
-                           Utils::CFileHandler& fileHandler)
-    : mTextureManager(textureManager), mFileHandler(fileHandler) {
+                           Utils::CFileHandler& fileHandler,
+                           Material::CMaterialFactory& materialFactory)
+    : mTextureManager(textureManager)
+    , mFileHandler(fileHandler)
+    , mMaterialFactory(materialFactory) {
     TTF_Init();
 }
 
@@ -111,27 +126,33 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
         return it->second;
     }
 
+    const std::string glyphTexFilePath = std::format(
+        "{}/font_textures/{}_{}", mFileHandler.GetTempFolder(), name, size);
     SDL_Surface* surface = nullptr;
     std::vector<Font::GlyphInfo> glyphs;
-    if (mFileHandler.DoesTextureExist(name)) {
-        surface = mFileHandler.LoadTextureFileBMP(name);
-        glyphs = JsonToGlyphs(mFileHandler.LoadJson(name));
+    if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
+        surface = mFileHandler.LoadTextureFileBMP(glyphTexFilePath);
+        glyphs = JsonToGlyphs(mFileHandler.LoadJson(glyphTexFilePath));
     } else {
-        TTF_Font* font = TTF_OpenFont(name, size);
+        auto fontPath = std::format("{}/fonts/{}.ttf",
+                                    mFileHandler.GetAssetsFolder(), name);
+        TTF_Font* font =
+            TTF_OpenFont(fontPath.c_str(), static_cast<float>(size));
         auto [loadedSurface, loadedGlyphs] = CreateFontData(size, font);
         surface = loadedSurface;
         glyphs = std::vector<Font::GlyphInfo>(loadedGlyphs.begin(),
                                               loadedGlyphs.end());
-        mFileHandler.SaveTextureFileBMP(name, surface);
-        mFileHandler.SaveJson(name, GlyphsToJson(loadedGlyphs));
+        mFileHandler.SaveTextureFileBMP(glyphTexFilePath, surface);
+        mFileHandler.SaveJson(glyphTexFilePath, GlyphsToJson(loadedGlyphs));
         TTF_CloseFont(font);
     }
     mTextureManager.LoadTextureFromSurface(name, surface);
     SDL_DestroySurface(surface);
 
-    auto emplaced =
-        mPolices.emplace(key, CPolice{mTextureManager, name, size, glyphs});
-    return emplaced.first->second;
+    auto [emplaced_it, inserted] = mPolices.try_emplace(
+        key, name, std::move(mMaterialFactory.CreateTextMaterial(name)), size,
+        glyphs);
+    return emplaced_it->second;
 }
 
 } // namespace Font

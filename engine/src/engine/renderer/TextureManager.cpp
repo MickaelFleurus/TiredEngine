@@ -34,32 +34,30 @@ SDL_GPUTexture* CTextureManager::LoadTexture(const std::string& filename) {
 SDL_GPUTexture*
 CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                         SDL_Surface* surface) {
-    // Upload to GPU
+
     SDL_GPUTextureCreateInfo texInfo = {
         .type = SDL_GPU_TEXTURETYPE_2D,
         .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
         .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
         .width = static_cast<Uint32>(surface->w),
-        .height = static_cast<Uint32>(surface->h)};
+        .height = static_cast<Uint32>(surface->h),
+        .layer_count_or_depth = 1,
+        .num_levels = 1};
     auto texture = SDL_CreateGPUTexture(mDevice, &texInfo);
 
-    // 2. Create a transfer buffer for upload
     unsigned int uploadSize = surface->pitch * surface->h;
     SDL_GPUTransferBufferCreateInfo bufInfo = {
         .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = uploadSize};
     SDL_GPUTransferBuffer* transferBuffer =
         SDL_CreateGPUTransferBuffer(mDevice, &bufInfo);
 
-    // 3. Map the transfer buffer and copy pixel data
     void* ptr = SDL_MapGPUTransferBuffer(mDevice, transferBuffer, false);
     SDL_memcpy(ptr, surface->pixels, uploadSize);
     SDL_UnmapGPUTransferBuffer(mDevice, transferBuffer);
 
-    // 4. Create command buffer and copy pass
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(mDevice);
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
 
-    // 5. Define source and destination for copy
     SDL_GPUTextureTransferInfo src = {
         .transfer_buffer = transferBuffer,
         .offset = 0,
@@ -74,14 +72,11 @@ CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                 .h = static_cast<Uint32>(surface->h),
                                 .d = 1};
 
-    // 6. Perform the upload
     SDL_UploadToGPUTexture(copyPass, &src, &dst, false);
 
-    // 7. Finalize
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(cmd);
 
-    // 8. Cleanup staging buffer
     SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
 
     if (texture) {

@@ -7,6 +7,7 @@ class CSceneHandler : public CAbstractSceneHandler {
 public:
     explicit CSceneHandler(Core::CEngineLoop& engineLoop,
                            Component::CComponentManager& componentManager,
+                           Font::CFontHandler& fontHandler,
                            Core::CWindowData& windowData);
 
     void CreateAndSetScene(const std::string& sceneName) override;

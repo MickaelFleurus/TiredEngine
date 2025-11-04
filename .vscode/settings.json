@@ -103,6 +103,7 @@
         "__verbose_abort": "cpp",
         "cwctype": "cpp",
         "execution": "cpp",
-        "print": "cpp"
+        "print": "cpp",
+        "valarray": "cpp"
     }
 }

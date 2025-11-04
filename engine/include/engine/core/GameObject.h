@@ -29,6 +29,9 @@ public:
     GameObjectId getId() const;
     void setParent(CGameObject* parent);
 
+    bool IsVisible() const;
+    void SetVisible(bool isVisible);
+
     const std::vector<std::unique_ptr<CGameObject>>& getChildren() const;
 
 private:
@@ -43,6 +46,7 @@ private:
     void removeChild(CGameObject* child);
 
     const std::string mName;
+    bool mIsVisible{true};
 
     Component::CComponentManager& mComponentManager;
     CGameObject* mParent{nullptr};

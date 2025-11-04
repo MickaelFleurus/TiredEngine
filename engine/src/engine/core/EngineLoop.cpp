@@ -6,14 +6,17 @@
 namespace Core {
 
 CEngineLoop::CEngineLoop(const char* gameName)
-    : mFileHandler(gameName)
+    : mWindowData(mWindow.GetWidth(), mWindow.GetHeight())
+    , mFileHandler(gameName)
     , mOverlordManager(mWindow.Get(), mWindow.GetDevice())
     , mShaderFactory(mWindow.GetDevice())
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
     , mTextureManager(&mWindow.GetDevice(), mFileHandler)
-    , mFontHandler(mTextureManager, mFileHandler)
-    , mComponentManager(mFontHandler) {
+    , mMaterialFactory(mTextureManager, mFileHandler, mWindow.GetDevice(),
+                       mWindow.Get())
+    , mFontHandler(mTextureManager, mFileHandler, mMaterialFactory)
+    , mComponentManager(mFontHandler, mWindow.GetTextRenderer()) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -52,7 +55,7 @@ bool CEngineLoop::Run() {
         mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
 
         if (mWindow.BeginRender()) {
-            mWindow.Render();
+            mWindow.Render(*mCurrentScene, mComponentManager);
             mOverlordManager.Render(mWindow.GetCommandBuffer(),
                                     mWindow.GetRenderPass());
 

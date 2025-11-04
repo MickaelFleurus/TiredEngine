@@ -108,4 +108,12 @@ const std::string& CGameObject::getName() const {
     return mName;
 }
 
+bool CGameObject::IsVisible() const {
+    return mIsVisible;
+}
+
+void CGameObject::SetVisible(bool isVisible) {
+    mIsVisible = isVisible;
+}
+
 } // namespace Core

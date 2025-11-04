@@ -5,16 +5,13 @@
 #include <typeindex>
 #include <unordered_map>
 
+#include "engine/component/CameraComponent.h"
 #include "engine/component/IComponent.h"
 #include "engine/component/TextComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
-
-namespace SDK {
-class Window;
-}
 
 namespace Core {
 class CGameObject;
@@ -24,16 +21,22 @@ namespace Font {
 class CFontHandler;
 } // namespace Font
 
+namespace Renderer {
+class CTextRenderer;
+} // namespace Renderer
+
 namespace Component {
 
 class CSpriteComponent;
 class CInputComponent;
+class CCameraComponent;
 // class CCollisionComponent;
 class CMovementComponent;
 
 class CComponentManager {
 public:
-    CComponentManager(Font::CFontHandler& fontHandler);
+    CComponentManager(Font::CFontHandler& fontHandler,
+                      Renderer::CTextRenderer& textRenderer);
 
     template <typename T>
     T* getComponent(int entityId) {
@@ -89,6 +92,7 @@ public:
                                              float acceleration);
 
     CTextComponent& addTextComponent(Core::CGameObject& owner);
+    CCameraComponent& addCameraComponent(Core::CGameObject& owner);
 
     // CCollisionComponent& addCollisionComponent(Core::CGameObject& owner, bool
     // isStatic,
@@ -120,7 +124,7 @@ private:
         auto& pool = getComponentPool<T>();
         auto component =
             std::make_unique<T>(owner, *this, std::forward<Args>(args)...);
-        T* rawPtr = component.get(); // get raw pointer before moving
+        T* rawPtr = component.get();
 
         size_t newIndex = pool.mComponents.size();
         pool.mComponents.emplace_back(std::move(component));
@@ -143,6 +147,7 @@ private:
     }
 
     Font::CFontHandler& mFontHandler;
+    Renderer::CTextRenderer& mTextRenderer;
     std::unordered_map<std::type_index, ComponentPool> mComponentPools;
 };
 } // namespace Component

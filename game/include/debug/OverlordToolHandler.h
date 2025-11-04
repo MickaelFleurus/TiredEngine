@@ -19,12 +19,17 @@ namespace Component {
 class CComponentManager;
 } // namespace Component
 
+namespace Font {
+class CFontHandler;
+} // namespace Font
+
 namespace Debug {
 class COverlordToolHandler {
 public:
     COverlordToolHandler(Component::CComponentManager& componentManager,
                          Utils::CFileHandler& fileHandler,
-                         Scene::ISceneHandler& sceneLoader);
+                         Scene::ISceneHandler& sceneLoader,
+                         Font::CFontHandler& fontHandler);
 
     void RegisterTools();
 

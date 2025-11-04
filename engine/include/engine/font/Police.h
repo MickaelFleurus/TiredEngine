@@ -3,31 +3,34 @@
 #include "engine/font/FontTypes.h"
 #include <glm/vec4.hpp>
 #include <span>
-#include <string>
 
-struct SDL_GPUTexture;
-namespace Renderer {
-class CTextureManager;
+namespace Material {
+class AbstractMaterial;
 }
 
 namespace Font {
 class CPolice {
 public:
-    CPolice(Renderer::CTextureManager& textureManager, const std::string name,
+    CPolice(const char* name,
+            std::unique_ptr<Material::AbstractMaterial> material,
             unsigned int size, std::span<Font::GlyphInfo> glyphs);
+    ~CPolice();
 
     unsigned int GetSize() const;
-    SDL_GPUTexture* GetAtlas() const;
     glm::vec4 GetColor() const;
 
     void SetColor(const glm::vec4& color);
 
+    const Font::GlyphInfo& GetGlyphInfo(char c) const;
+
+    Material::AbstractMaterial& GetMaterial();
+
+    const std::string& GetName() const;
+
 private:
-    Renderer::CTextureManager& mTextureManager;
     const std::string mName;
+    std::unique_ptr<Material::AbstractMaterial> mMaterial;
     unsigned int mSize;
     std::vector<Font::GlyphInfo> mGlyphs;
-
-    glm::vec4 mColor{1.0f, 1.0f, 1.0f, 1.0f};
 };
 } // namespace Font

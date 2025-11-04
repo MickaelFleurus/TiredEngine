@@ -13,6 +13,10 @@ class CWindowData;
 class CEngineLoop;
 } // namespace Core
 
+namespace Font {
+class CFontHandler;
+}
+
 namespace Scene {
 
 class CAbstractSceneHandler : public ISceneHandler {
@@ -20,7 +24,7 @@ public:
     explicit CAbstractSceneHandler(
         Core::CEngineLoop& engineLoop,
         Component::CComponentManager& componentManager,
-        Core::CWindowData& windowData);
+        Font::CFontHandler& fontHandler, Core::CWindowData& windowData);
 
     CAbstractScene* GetCurrentScene() const override;
 
@@ -31,13 +35,15 @@ protected:
                       "GameSceneType must derive from CAbstractScene");
 
         auto scene = std::make_unique<GameSceneType>(
-            mComponentManager, mWindowData, std::forward<Args>(args)...);
+            mComponentManager, mFontHandler, mWindowData,
+            std::forward<Args>(args)...);
         SetCurrentScene(std::move(scene));
     }
     void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
 
     Core::CEngineLoop& mEngineLoop;
     Component::CComponentManager& mComponentManager;
+    Font::CFontHandler& mFontHandler;
     Core::CWindowData& mWindowData;
 };
 } // namespace Scene

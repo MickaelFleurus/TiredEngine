@@ -16,6 +16,10 @@ namespace Scene {
 class CAbstractScene;
 }
 
+namespace Font {
+class CFontHandler;
+}
+
 namespace Core {
 class CGameObjectBuilder {
 public:
@@ -29,15 +33,17 @@ public:
     public:
         CBuilder(const std::string& name,
                  Component::CComponentManager& componentManager,
-                 CGameObject& parent);
+                 Font::CFontHandler& fontHandler, CGameObject& parent);
 
-        CBuilder& addText(const std::string& text, unsigned size);
+        CBuilder& addText(const std::string& text, unsigned int size,
+                          std::string fontName = "Arial");
         CBuilder& addSprite();
         CBuilder& addAABBCollisionData(float width, float height,
                                        bool isStatic = true,
                                        bool isTrigger = false);
         CBuilder& addCircleCollisionData(float radius, bool isStatic = true,
                                          bool isTrigger = false);
+        CBuilder& addCameraComponent();
         // CBuilder& addCollisionCallback(
         //     std::function<void(Physics::SCollisionInfo)> callback);
         CBuilder& addMovementData(float acceleration);
@@ -47,11 +53,13 @@ public:
 
     private:
         Component::CComponentManager& mComponentManager;
+        Font::CFontHandler& mFontHandler;
         CGameObject& mParent;
         std::unique_ptr<CGameObject> mGameObject;
     };
 
-    explicit CGameObjectBuilder(Component::CComponentManager& componentManager);
+    explicit CGameObjectBuilder(Component::CComponentManager& componentManager,
+                                Font::CFontHandler& fontHandler);
     CBuilder CreateBuilder(const std::string& name, CGameObject& parent);
 
 private:
@@ -60,6 +68,7 @@ private:
 
     static GameObjectId mNextId;
     Component::CComponentManager& mComponentManager;
+    Font::CFontHandler& mFontHandler;
 
     friend class Scene::CAbstractScene;
 };

@@ -11,27 +11,25 @@ public:
     CFileHandler(const std::string& gameName);
 
     std::string GetTempFolder() const;
+    std::string GetAssetsFolder() const;
 
-    bool DoesFileExist(const std::string& filePath) const;
-    bool DoesTextureExist(const std::string& filename) const;
+    bool DoesFileExist(const std::string& filePath,
+                       const char* extension) const;
+    bool DoesDirectoryExists(const std::string& filePath) const;
+    void CreateDirectories(const std::string& path) const;
 
-    bool SaveTextureFileBMP(const std::string& filename, SDL_Surface* surface);
+    bool DeleteFile(const std::string& filePath, const char* extension);
+
+    bool SaveTextureFileBMP(const std::string& filePath, SDL_Surface* surface);
     bool SaveJson(const std::string& filePath, const nlohmann::json& data);
 
-    ;
     nlohmann::json LoadJson(const std::string& filePath);
-    SDL_Surface* LoadTextureFileBMP(const std::string& filename);
+    SDL_Surface* LoadTextureFileBMP(const std::string& filePath);
 
-    std::vector<std::string> GetFonts() const;
-
-    bool DeleteJson(const std::string& filePath);
+    std::vector<std::string> GetFileNames(const char* extension) const;
 
 private:
-    std::string GetAbsolutePath(const std::string& relativePath) const;
-    std::string GetTexturePath(const std::string& filename,
-                               const std::string& ext = "bmp") const;
-    std::string GetTextureMetaPath(const std::string& filename) const;
-
-    std::string mTempFolder;
+    const std::string mTempFolder;
+    const std::string mAssetFolder;
 };
 } // namespace Utils
