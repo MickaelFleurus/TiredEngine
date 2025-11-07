@@ -14,6 +14,7 @@ class COverlordSettings {
 public:
     COverlordSettings(CFileHandler& fileHandler,
                       Scene::ISceneHandler& sceneHandler);
+    bool Initialize();
 
     void LoadSettings();
     void SaveSettings() const;

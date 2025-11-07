@@ -1,22 +1,23 @@
 #include "engine/scene/AbstractScene.h"
 #include "engine/component/CameraComponent.h"
 #include "engine/core/Camera.h"
-#include "engine/core/WindowData.h"
+#include "engine/system/System.h"
 
 namespace Scene {
 
 CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
                                Font::CFontHandler& fontHandler,
-                               const Core::CWindowData& windowData)
+                               const System::CSystem& system)
     : mComponentManager(componentManager)
-    , mWindowData(windowData)
+    , mSystem(system)
     , mGameObjectBuilder(componentManager, fontHandler) {
+    const auto& windowData = mSystem.GetDisplayParameters();
     mSceneRoot = std::unique_ptr<Core::CGameObject>(
         Core::CGameObjectBuilder::createRoot(componentManager));
     mActiveCamera = std::make_unique<Core::CCamera>(
         *mSceneRoot, mGameObjectBuilder, mComponentManager);
     mActiveCamera->GetCameraComponent().SetViewportSize(
-        glm::vec2(windowData.GetWidth(), windowData.GetHeight()));
+        glm::vec2(windowData.width, windowData.height));
 }
 
 CAbstractScene::~CAbstractScene() = default;

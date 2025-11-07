@@ -7,7 +7,6 @@
 #include "engine/renderer/Window.h"
 
 #include "engine/component/ComponentManager.h"
-#include "engine/core/WindowData.h"
 #include "engine/material/MaterialFactory.h"
 
 #include "engine/font/FontHandler.h"
@@ -23,13 +22,17 @@ class CAbstractScene;
 class ISceneHandler;
 } // namespace Scene
 
+namespace System {
+class CSystem;
+}
+
 namespace Core {
 class CEngineLoop {
 public:
-    CEngineLoop(const char* gameName);
+    CEngineLoop(System::CSystem& system);
     virtual ~CEngineLoop();
 
-    std::expected<void, const char*> EverythingInitialisedCorrectly() const;
+    std::expected<void, const char*> Initialize();
 
     void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
     Scene::CAbstractScene* GetCurrentScene() const;
@@ -40,7 +43,6 @@ public:
 
 protected:
     Renderer::CWindow mWindow;
-    Renderer::CShaderFactory mShaderFactory;
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;
     Input::CInputHandler mInputHandler;
@@ -48,8 +50,6 @@ protected:
     std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 
-    Core::CWindowData mWindowData;
-    Utils::CFileHandler mFileHandler;
     Renderer::CTextureManager mTextureManager;
     Material::CMaterialFactory mMaterialFactory;
     Font::CFontHandler mFontHandler;

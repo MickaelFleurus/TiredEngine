@@ -15,11 +15,14 @@ namespace Utils {
 COverlordSettings::COverlordSettings(CFileHandler& fileHandler,
                                      Scene::ISceneHandler& sceneHandler)
     : mFileHandler(fileHandler), mSceneHandler(sceneHandler) {
-    if (!mFileHandler.DoesFileExist(kSettingsFile, ".json")) {
-        return;
+}
+
+bool COverlordSettings::Initialize() {
+    if (mFileHandler.DoesFileExist(kSettingsFile, ".json")) {
+        LoadSettings();
+        ApplySettings();
     }
-    LoadSettings();
-    ApplySettings();
+    return true;
 }
 
 void COverlordSettings::LoadSettings() {

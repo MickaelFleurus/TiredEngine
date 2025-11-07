@@ -1,0 +1,12 @@
+{
+    "parameter": {
+        "gameName": "Breakout (Exclamation mark)"
+    },
+    "settings": {
+        "resolution": {
+            "width": 1920,
+            "height": 1080
+        },
+        "fullscreen": false
+    }
+}

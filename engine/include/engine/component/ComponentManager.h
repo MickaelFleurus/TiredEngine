@@ -22,7 +22,7 @@ class CFontHandler;
 } // namespace Font
 
 namespace Renderer {
-class CTextRenderer;
+class CWindow;
 } // namespace Renderer
 
 namespace Component {
@@ -36,7 +36,7 @@ class CMovementComponent;
 class CComponentManager {
 public:
     CComponentManager(Font::CFontHandler& fontHandler,
-                      Renderer::CTextRenderer& textRenderer);
+                      Renderer::CWindow& window);
 
     template <typename T>
     T* getComponent(int entityId) {
@@ -147,7 +147,7 @@ private:
     }
 
     Font::CFontHandler& mFontHandler;
-    Renderer::CTextRenderer& mTextRenderer;
+    Renderer::CWindow& mWindow;
     std::unordered_map<std::type_index, ComponentPool> mComponentPools;
 };
 } // namespace Component

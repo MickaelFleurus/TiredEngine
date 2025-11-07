@@ -1,20 +1,22 @@
 #include "core/GameLoop.h"
-#include "scene/SceneHandler.h"
-
-#include <magic_enum/magic_enum.hpp>
-
-namespace {
-constexpr const char* kGameName = "BreakoutExclamationMark!";
-}
+#include "engine/system/System.h"
 
 namespace Core {
-CGameLoop::CGameLoop()
-    : CEngineLoop(kGameName)
-    , mSceneHandler(*this, mComponentManager, mFontHandler, mWindowData)
-    , mToolHandler(mComponentManager, mFileHandler, mSceneHandler,
+CGameLoop::CGameLoop(System::CSystem& system)
+    : CEngineLoop(system)
+    , mSceneHandler(*this, mComponentManager, mFontHandler, system)
+    , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
                    mFontHandler) {
+}
+
+std::expected<void, const char*> CGameLoop::Initialize() {
+    if (auto initExpected = CEngineLoop::Initialize(); !initExpected) {
+        return initExpected;
+    }
+
     mOverlordManager.CreateOverlord();
-    mToolHandler.RegisterTools();
+    mToolHandler.Initialize();
+    return {};
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

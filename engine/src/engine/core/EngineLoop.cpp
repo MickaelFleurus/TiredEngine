@@ -1,31 +1,30 @@
 #include "engine/core/EngineLoop.h"
 #include "engine/scene/AbstractScene.h"
+#include "engine/system/System.h"
 
 #include <SDL3/SDL.h>
 
 namespace Core {
 
-CEngineLoop::CEngineLoop(const char* gameName)
-    : mWindowData(mWindow.GetWidth(), mWindow.GetHeight())
-    , mFileHandler(gameName)
-    , mOverlordManager(mWindow.Get(), mWindow.GetDevice())
-    , mShaderFactory(mWindow.GetDevice())
+CEngineLoop::CEngineLoop(System::CSystem& system)
+    : mWindow(system)
+    , mOverlordManager(mWindow)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mTextureManager(&mWindow.GetDevice(), mFileHandler)
-    , mMaterialFactory(mTextureManager, mFileHandler, mWindow.GetDevice(),
-                       mWindow.Get())
-    , mFontHandler(mTextureManager, mFileHandler, mMaterialFactory)
-    , mComponentManager(mFontHandler, mWindow.GetTextRenderer()) {
+    , mTextureManager(mWindow, system.GetFileHandler())
+    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow)
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
+    , mComponentManager(mFontHandler, mWindow) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
 
-std::expected<void, const char*>
-CEngineLoop::EverythingInitialisedCorrectly() const {
-    const char* error = SDL_GetError();
-    if (error && *error) {
-        return std::unexpected(error);
+std::expected<void, const char*> CEngineLoop::Initialize() {
+    if (!mWindow.Initialize()) {
+        const char* error = SDL_GetError();
+        if (error && *error) {
+            return std::unexpected(error);
+        }
     }
     return {};
 }

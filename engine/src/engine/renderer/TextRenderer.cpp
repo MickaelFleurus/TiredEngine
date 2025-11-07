@@ -33,16 +33,16 @@ constexpr uint32_t kQuadIndicesMemSize =
 
 namespace Renderer {
 
-CTextRenderer::CTextRenderer(SDL_GPUDevice& device) : mDevice(device) {
+CTextRenderer::CTextRenderer(SDL_GPUDevice* device) : mDevice(device) {
     Initialize();
 }
 
 CTextRenderer::~CTextRenderer() {
     if (mQuadVertexBuffer) {
-        SDL_ReleaseGPUBuffer(&mDevice, mQuadVertexBuffer);
+        SDL_ReleaseGPUBuffer(mDevice, mQuadVertexBuffer);
     }
     if (mQuadIndexBuffer) {
-        SDL_ReleaseGPUBuffer(&mDevice, mQuadIndexBuffer);
+        SDL_ReleaseGPUBuffer(mDevice, mQuadIndexBuffer);
     }
 }
 
@@ -64,7 +64,7 @@ SDL_GPUBuffer* CTextRenderer::CreateInstanceBuffer(size_t maxCharacters) {
     bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
     bufferInfo.size = maxCharacters * sizeof(SCharacterInstance);
 
-    return SDL_CreateGPUBuffer(&mDevice, &bufferInfo);
+    return SDL_CreateGPUBuffer(mDevice, &bufferInfo);
 }
 
 void CTextRenderer::UpdateInstanceBuffer(
@@ -80,13 +80,13 @@ void CTextRenderer::UpdateInstanceBuffer(
     transferInfo.size = dataSize;
 
     SDL_GPUTransferBuffer* transferBuffer =
-        SDL_CreateGPUTransferBuffer(&mDevice, &transferInfo);
+        SDL_CreateGPUTransferBuffer(mDevice, &transferInfo);
 
-    void* data = SDL_MapGPUTransferBuffer(&mDevice, transferBuffer, false);
+    void* data = SDL_MapGPUTransferBuffer(mDevice, transferBuffer, false);
     memcpy(data, instances.data(), dataSize);
-    SDL_UnmapGPUTransferBuffer(&mDevice, transferBuffer);
+    SDL_UnmapGPUTransferBuffer(mDevice, transferBuffer);
 
-    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(&mDevice);
+    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(mDevice);
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmd);
 
     SDL_GPUTransferBufferLocation src = {};
@@ -102,7 +102,7 @@ void CTextRenderer::UpdateInstanceBuffer(
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(uploadCmd);
 
-    SDL_ReleaseGPUTransferBuffer(&mDevice, transferBuffer);
+    SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
 }
 
 } // namespace Renderer

@@ -4,11 +4,14 @@
 
 class FileHandlerTest : public ::testing::Test {
 protected:
+    FileHandlerTest() {
+        fileHandler.CreateTempFolder("FileHandlerTest");
+    }
     void TearDown() override {
         fileHandler.DeleteFile(testFilename, ".json");
     }
 
-    Utils::CFileHandler fileHandler{"TestGame"};
+    Utils::CFileHandler fileHandler{};
     const std::string testFilename = "test";
 };
 

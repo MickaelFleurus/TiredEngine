@@ -2,11 +2,11 @@
 
 #include <memory>
 #include <string>
-struct SDL_GPUDevice;
+
 struct SDL_GPUShader;
 
 namespace Renderer {
-
+class CWindow;
 struct SShaderResources {
     uint32_t numSamplers = 0;
     uint32_t numStorageTextures = 0;
@@ -16,7 +16,7 @@ struct SShaderResources {
 
 class CShaderFactory {
 public:
-    CShaderFactory(SDL_GPUDevice& device);
+    CShaderFactory(const CWindow& window);
     ~CShaderFactory();
 
     SDL_GPUShader* CreateFragmentShader(std::string name, std::string path,

@@ -12,6 +12,7 @@ struct SDL_Window;
 namespace Renderer {
 struct SPipelineConfig;
 class CTextureManager;
+class CWindow;
 } // namespace Renderer
 
 namespace Utils {
@@ -25,7 +26,7 @@ class CMaterialFactory {
 public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              SDL_GPUDevice& device, SDL_Window& window);
+                              const Renderer::CWindow& window);
 
     // Create material with specified parameters
     std::unique_ptr<AbstractMaterial>
@@ -42,7 +43,7 @@ public:
 private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
-    SDL_GPUDevice& mDevice;
+    const Renderer::CWindow& mWindow;
     Renderer::CPipelineFactory mPipelineFactory;
 };
 

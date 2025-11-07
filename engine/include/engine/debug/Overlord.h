@@ -4,8 +4,9 @@
 
 class CToken;
 
-struct SDL_Window;
-struct SDL_GPUDevice;
+namespace Renderer {
+class CWindow;
+}
 
 namespace Debug {
 
@@ -13,14 +14,16 @@ class IOverlordItem;
 
 class COverlord : public IOverlord {
 public:
-    COverlord(SDL_Window& window, SDL_GPUDevice& device);
+    COverlord(const Renderer::CWindow& window);
     ~COverlord();
+
+    void Initialize() override;
 
     static void AddWidget(IOverlordItem& item, CToken& token);
     static void AddMenu(IOverlordItem& item, CToken& token);
 
-    void PrepareRender(SDL_GPUCommandBuffer& cmd) override;
-    void Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) override;
+    void PrepareRender(SDL_GPUCommandBuffer* cmd) override;
+    void Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass) override;
     void HandleEvent(const SDL_Event* e) override;
 
 private:
@@ -30,7 +33,6 @@ private:
     static CGuardedContainer<IOverlordItem> mWidgets;
     static CGuardedContainer<IOverlordItem> mMenus;
 
-    SDL_Window& mWindow;
-    SDL_GPUDevice& mDevice;
+    const Renderer::CWindow& mWindow;
 };
 } // namespace Debug

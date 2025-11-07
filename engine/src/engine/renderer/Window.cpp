@@ -19,6 +19,7 @@
 #include "engine/renderer/SamplerCache.h"
 #include "engine/renderer/TextRenderer.h"
 #include "engine/scene/AbstractScene.h"
+#include "engine/system/System.h"
 
 #include <functional>
 
@@ -44,23 +45,17 @@ namespace Renderer {
 
 class CWindow::CImpl {
 public:
-    CImpl()
+    CImpl(SDL_Window* window, SDL_GPUDevice* device)
         : mSDLWindow(std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)>(
-              SDL_CreateWindow("SDL3 window", kWindowWidth, kWindowHeight,
-                               SDL_WINDOW_RESIZABLE),
-              kSDLWindowDeleter))
-        , mDevice(
+              window, kSDLWindowDeleter))
+        , mSDLDevice(
               std::unique_ptr<SDL_GPUDevice, decltype(kSDLGPUDeviceDeleter)>(
-                  SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV |
-                                          SDL_GPU_SHADERFORMAT_MSL |
-                                          SDL_GPU_SHADERFORMAT_DXIL,
-                                      true, nullptr),
-                  kSDLGPUDeviceDeleter))
-        , mTextRenderer(*mDevice)
-        , mSamplerCache(*mDevice) {
+                  device, kSDLGPUDeviceDeleter))
+        , mTextRenderer(mSDLDevice.get())
+        , mSamplerCache(mSDLDevice.get()) {
 
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        SDL_ClaimWindowForGPUDevice(mDevice.get(), mSDLWindow.get());
+        SDL_ClaimWindowForGPUDevice(mSDLDevice.get(), mSDLWindow.get());
     }
 
     ~CImpl() {
@@ -120,7 +115,7 @@ public:
 
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager) {
-        if (!mRenderPass) {
+        if (!mSDLRenderPass) {
             return;
         }
         auto& cameraComponent = scene.GetActiveCamera().GetCameraComponent();
@@ -143,14 +138,14 @@ public:
                                     .h = viewportSize.y,
                                     .min_depth = nearFarZ.x,
                                     .max_depth = nearFarZ.y};
-        SDL_SetGPUViewport(mRenderPass, &viewport);
+        SDL_SetGPUViewport(mSDLRenderPass, &viewport);
 
         glm::vec4 scissorVector = cameraComponent.GetScissorRect();
         SDL_Rect scissor = {.x = static_cast<int>(scissorVector.x),
                             .y = static_cast<int>(scissorVector.y),
                             .w = static_cast<int>(scissorVector.z),
                             .h = static_cast<int>(scissorVector.w)};
-        SDL_SetGPUScissor(mRenderPass, &scissor);
+        SDL_SetGPUScissor(mSDLRenderPass, &scissor);
 
         auto pushConstants = cameraComponent.GetMatrices();
         auto camPos =
@@ -165,7 +160,7 @@ public:
             SDL_GPUGraphicsPipeline* pipeline =
                 renderable.material->GetPipeline();
             if (pipeline && pipeline != currentPipeline) {
-                SDL_BindGPUGraphicsPipeline(mRenderPass, pipeline);
+                SDL_BindGPUGraphicsPipeline(mSDLRenderPass, pipeline);
                 currentPipeline = pipeline;
             }
 
@@ -175,7 +170,7 @@ public:
                 SDL_GPUTextureSamplerBinding binding = {};
                 binding.texture = texture;
                 binding.sampler = mSamplerCache.GetLinear();
-                SDL_BindGPUFragmentSamplers(mRenderPass, 0, &binding, 1);
+                SDL_BindGPUFragmentSamplers(mSDLRenderPass, 0, &binding, 1);
                 currentTexture = texture;
             }
 
@@ -184,7 +179,7 @@ public:
                 SDL_GPUBufferBinding vertexBinding = {};
                 vertexBinding.buffer = renderable.vertexBuffer;
                 vertexBinding.offset = 0;
-                SDL_BindGPUVertexBuffers(mRenderPass, 0, &vertexBinding, 1);
+                SDL_BindGPUVertexBuffers(mSDLRenderPass, 0, &vertexBinding, 1);
             }
 
             // Bind instance buffer if present (for instanced rendering)
@@ -192,7 +187,8 @@ public:
                 SDL_GPUBufferBinding instanceBinding = {};
                 instanceBinding.buffer = renderable.instanceBuffer;
                 instanceBinding.offset = 0;
-                SDL_BindGPUVertexBuffers(mRenderPass, 1, &instanceBinding, 1);
+                SDL_BindGPUVertexBuffers(mSDLRenderPass, 1, &instanceBinding,
+                                         1);
             }
 
             // Bind index buffer
@@ -200,7 +196,7 @@ public:
                 SDL_GPUBufferBinding indexBinding = {};
                 indexBinding.buffer = renderable.indexBuffer;
                 indexBinding.offset = 0;
-                SDL_BindGPUIndexBuffer(mRenderPass, &indexBinding,
+                SDL_BindGPUIndexBuffer(mSDLRenderPass, &indexBinding,
                                        SDL_GPU_INDEXELEMENTSIZE_16BIT);
             }
 
@@ -208,30 +204,31 @@ public:
             pushConstants.model = renderable.transform;
 
             SDL_PushGPUVertexUniformData(
-                mCommandBuffer, 0, &pushConstants,
+                mSDLCommandBuffer, 0, &pushConstants,
                 sizeof(Component::CCameraComponent::SMatrices));
 
             if (renderable.instanceCount > 0 && renderable.indexBuffer) {
-                SDL_DrawGPUIndexedPrimitives(mRenderPass, renderable.indexCount,
+                SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
+                                             renderable.indexCount,
                                              renderable.instanceCount, 0, 0, 0);
             } else if (renderable.indexCount > 0 && renderable.indexBuffer) {
-                SDL_DrawGPUIndexedPrimitives(mRenderPass, renderable.indexCount,
-                                             1, 0, 0, 0);
+                SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
+                                             renderable.indexCount, 1, 0, 0, 0);
             }
         }
     }
 
-    SDL_GPUDevice& GetDevice() const {
-        return *mDevice;
+    SDL_GPUDevice* GetDevice() const {
+        return mSDLDevice.get();
     }
 
-    SDL_Window& GetWindow() const {
-        return *mSDLWindow;
+    SDL_Window* GetWindow() const {
+        return mSDLWindow.get();
     }
 
     bool PrepareRender() {
-        mCommandBuffer = SDL_AcquireGPUCommandBuffer(mDevice.get());
-        if (!mCommandBuffer) {
+        mSDLCommandBuffer = SDL_AcquireGPUCommandBuffer(mSDLDevice.get());
+        if (!mSDLCommandBuffer) {
             SDL_Log("Failed to acquire command buffer: %s", SDL_GetError());
             return false;
         }
@@ -241,7 +238,7 @@ public:
     bool BeginRender() {
 
         SDL_GPUTexture* swapchainTexture;
-        if (!SDL_AcquireGPUSwapchainTexture(mCommandBuffer, mSDLWindow.get(),
+        if (!SDL_AcquireGPUSwapchainTexture(mSDLCommandBuffer, mSDLWindow.get(),
                                             &swapchainTexture, nullptr,
                                             nullptr)) {
             SDL_Log("Failed to acquire swapchain texture: %s", SDL_GetError());
@@ -259,9 +256,9 @@ public:
         colorTarget.load_op = SDL_GPU_LOADOP_CLEAR;
         colorTarget.store_op = SDL_GPU_STOREOP_STORE;
 
-        mRenderPass =
-            SDL_BeginGPURenderPass(mCommandBuffer, &colorTarget, 1, nullptr);
-        if (!mRenderPass) {
+        mSDLRenderPass =
+            SDL_BeginGPURenderPass(mSDLCommandBuffer, &colorTarget, 1, nullptr);
+        if (!mSDLRenderPass) {
             SDL_Log("Failed to begin render pass: %s", SDL_GetError());
             return false;
         }
@@ -270,23 +267,22 @@ public:
     }
 
     void EndRender() {
-        if (mRenderPass) {
-            SDL_EndGPURenderPass(mRenderPass);
-            mRenderPass = nullptr;
+        if (mSDLRenderPass) {
+            SDL_EndGPURenderPass(mSDLRenderPass);
+            mSDLRenderPass = nullptr;
         }
-
-        if (mCommandBuffer) {
-            SDL_SubmitGPUCommandBuffer(mCommandBuffer);
-            mCommandBuffer = nullptr;
+        if (mSDLCommandBuffer) {
+            SDL_SubmitGPUCommandBuffer(mSDLCommandBuffer);
+            mSDLCommandBuffer = nullptr;
         }
     }
 
-    SDL_GPUCommandBuffer& GetCommandBuffer() const {
-        return *mCommandBuffer;
+    SDL_GPUCommandBuffer* GetCommandBuffer() const {
+        return mSDLCommandBuffer;
     }
 
-    SDL_GPURenderPass& GetRenderPass() const {
-        return *mRenderPass;
+    SDL_GPURenderPass* GetRenderPass() const {
+        return mSDLRenderPass;
     }
 
     CTextRenderer& GetTextRenderer() {
@@ -295,18 +291,45 @@ public:
 
 private:
     std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)> mSDLWindow;
-    std::unique_ptr<SDL_GPUDevice, decltype(kSDLGPUDeviceDeleter)> mDevice;
-    SDL_GPUCommandBuffer* mCommandBuffer = nullptr;
-    SDL_GPURenderPass* mRenderPass = nullptr;
+    std::unique_ptr<SDL_GPUDevice, decltype(kSDLGPUDeviceDeleter)> mSDLDevice;
+
+    SDL_GPUCommandBuffer* mSDLCommandBuffer = nullptr;
+    SDL_GPURenderPass* mSDLRenderPass = nullptr;
 
     CSamplerCache mSamplerCache;
     CTextRenderer mTextRenderer;
 };
 
-CWindow::CWindow() : mImpl(std::make_unique<CWindow::CImpl>()) {
+CWindow::CWindow(System::CSystem& system) : mSystem(system) {
 }
 
 CWindow::~CWindow() = default;
+
+bool CWindow::Initialize() {
+    const std::string& gameName = mSystem.GetGameName();
+    const System::SDisplayParameter& displayParams =
+        mSystem.GetDisplayParameters();
+
+    SDL_WindowFlags windowFlags = SDL_WINDOW_RESIZABLE;
+    if (displayParams.fullscreen) {
+        windowFlags |= SDL_WINDOW_FULLSCREEN;
+    }
+    auto* window = SDL_CreateWindow(gameName.c_str(), displayParams.width,
+                                    displayParams.height, windowFlags);
+    if (!window) {
+        return false;
+    }
+    auto* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV |
+                                           SDL_GPU_SHADERFORMAT_MSL |
+                                           SDL_GPU_SHADERFORMAT_DXIL,
+                                       true, nullptr);
+    if (!device) {
+        SDL_DestroyWindow(window);
+        return false;
+    }
+    mImpl = std::make_unique<CImpl>(window, device);
+    return true;
+}
 
 bool CWindow::PrepareRender() {
     return mImpl->PrepareRender();
@@ -325,32 +348,24 @@ void CWindow::EndRender() {
     mImpl->EndRender();
 }
 
-SDL_GPUDevice& CWindow::GetDevice() const {
+SDL_GPUDevice* CWindow::GetDevice() const {
     return mImpl->GetDevice();
 }
 
-SDL_Window& CWindow::Get() const {
+SDL_Window* CWindow::Get() const {
     return mImpl->GetWindow();
 }
 
-SDL_GPUCommandBuffer& CWindow::GetCommandBuffer() const {
+SDL_GPUCommandBuffer* CWindow::GetCommandBuffer() const {
     return mImpl->GetCommandBuffer();
 }
 
-SDL_GPURenderPass& CWindow::GetRenderPass() const {
+SDL_GPURenderPass* CWindow::GetRenderPass() const {
     return mImpl->GetRenderPass();
 }
 
 CTextRenderer& CWindow::GetTextRenderer() {
     return mImpl->GetTextRenderer();
-}
-
-int CWindow::GetWidth() const {
-    return kWindowWidth;
-}
-
-int CWindow::GetHeight() const {
-    return kWindowHeight;
 }
 
 } // namespace Renderer

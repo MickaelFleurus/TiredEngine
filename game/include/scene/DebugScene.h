@@ -7,7 +7,7 @@ class CDebugScene : public CAbstractScene {
 public:
     explicit CDebugScene(Component::CComponentManager& componentManager,
                          Font::CFontHandler& fontHandler,
-                         const Core::CWindowData& windowData);
+                         const System::CSystem& system);
 
     void Update(float deltaTime) override;
     CAbstractScene* GetNextScene() const override;

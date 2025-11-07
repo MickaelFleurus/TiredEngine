@@ -104,6 +104,7 @@
         "cwctype": "cpp",
         "execution": "cpp",
         "print": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "__config": "cpp"
     }
 }

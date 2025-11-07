@@ -10,9 +10,10 @@ class CFileHandler;
 }
 
 namespace Renderer {
+class CWindow;
 class CTextureManager {
 public:
-    CTextureManager(SDL_GPUDevice* device, Utils::CFileHandler& fileHandler);
+    CTextureManager(const CWindow& window, Utils::CFileHandler& fileHandler);
     ~CTextureManager();
 
     SDL_GPUTexture* LoadTexture(const std::string& filename);
@@ -21,7 +22,7 @@ public:
     SDL_GPUTexture* GetTexture(const std::string& filename);
 
 private:
-    SDL_GPUDevice* mDevice{nullptr};
+    const CWindow& mWindow;
     Utils::CFileHandler& mFileHandler;
 
     std::unordered_map<std::string, SDL_GPUTexture*> mLoadedTextures;

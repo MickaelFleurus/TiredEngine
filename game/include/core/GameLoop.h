@@ -8,7 +8,9 @@
 namespace Core {
 class CGameLoop : public CEngineLoop {
 public:
-    CGameLoop();
+    CGameLoop(System::CSystem& system);
+
+    std::expected<void, const char*> Initialize();
 
     void GameLoop(float deltaTime) override;
 

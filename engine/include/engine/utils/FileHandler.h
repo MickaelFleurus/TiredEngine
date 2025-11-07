@@ -1,4 +1,5 @@
 #pragma once
+
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -8,7 +9,9 @@ namespace Utils {
 
 class CFileHandler {
 public:
-    CFileHandler(const std::string& gameName);
+    CFileHandler();
+
+    void CreateTempFolder(const std::string& gameName);
 
     std::string GetTempFolder() const;
     std::string GetAssetsFolder() const;
@@ -29,7 +32,7 @@ public:
     std::vector<std::string> GetFileNames(const char* extension) const;
 
 private:
-    const std::string mTempFolder;
+    std::string mTempFolder;
     const std::string mAssetFolder;
 };
 } // namespace Utils

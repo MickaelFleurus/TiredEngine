@@ -6,11 +6,11 @@ namespace Scene {
 CAbstractSceneHandler::CAbstractSceneHandler(
     Core::CEngineLoop& engineLoop,
     Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler, Core::CWindowData& windowData)
+    Font::CFontHandler& fontHandler, const System::CSystem& system)
     : mEngineLoop(engineLoop)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
-    , mWindowData(windowData) {
+    , mSystem(system) {
 }
 
 void CAbstractSceneHandler::SetCurrentScene(

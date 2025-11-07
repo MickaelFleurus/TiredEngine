@@ -15,6 +15,11 @@ COverlordToolHandler::COverlordToolHandler(
     , mSceneHierarchy(mEntityWidget, sceneHandler) {
 }
 
+void COverlordToolHandler::Initialize() {
+    mSettings.Initialize();
+    RegisterTools();
+}
+
 void COverlordToolHandler::RegisterTools() {
     COverlord::AddMenu(mSceneLoaderOverlord, mToken);
 

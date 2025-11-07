@@ -6,9 +6,12 @@ namespace Component {
 class CComponentManager;
 }
 
+namespace System {
+class CSystem;
+}
+
 namespace Core {
 class CGameObject;
-class CWindowData;
 class CCamera;
 } // namespace Core
 
@@ -21,7 +24,7 @@ class CAbstractScene {
 public:
     explicit CAbstractScene(Component::CComponentManager& componentManager,
                             Font::CFontHandler& fontHandler,
-                            const Core::CWindowData& windowData);
+                            const System::CSystem& system);
     virtual ~CAbstractScene();
     virtual void Update(float deltaTime) = 0;
     virtual CAbstractScene* GetNextScene() const = 0;
@@ -39,7 +42,7 @@ protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;
     std::unique_ptr<Core::CCamera> mActiveCamera;
     Component::CComponentManager& mComponentManager;
-    const Core::CWindowData& mWindowData;
+    const System::CSystem& mSystem;
     const Input::CInputWatcher mInputWatcher;
     Core::CGameObjectBuilder mGameObjectBuilder;
 };

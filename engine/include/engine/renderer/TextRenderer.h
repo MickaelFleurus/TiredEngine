@@ -17,7 +17,7 @@ struct SCharacterInstance {
 
 class CTextRenderer {
 public:
-    explicit CTextRenderer(SDL_GPUDevice& device);
+    explicit CTextRenderer(SDL_GPUDevice* device);
     ~CTextRenderer();
 
     void Initialize();
@@ -31,7 +31,7 @@ public:
                               const std::vector<SCharacterInstance>& instances);
 
 private:
-    SDL_GPUDevice& mDevice;
+    SDL_GPUDevice* mDevice;
     SDL_GPUBuffer* mQuadVertexBuffer = nullptr;
     SDL_GPUBuffer* mQuadIndexBuffer = nullptr;
 };

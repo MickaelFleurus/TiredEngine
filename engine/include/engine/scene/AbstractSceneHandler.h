@@ -4,6 +4,10 @@
 #include <memory>
 #include <span>
 
+namespace System {
+class CSystem;
+}
+
 namespace Component {
 class CComponentManager;
 }
@@ -24,7 +28,7 @@ public:
     explicit CAbstractSceneHandler(
         Core::CEngineLoop& engineLoop,
         Component::CComponentManager& componentManager,
-        Font::CFontHandler& fontHandler, Core::CWindowData& windowData);
+        Font::CFontHandler& fontHandler, const System::CSystem& system);
 
     CAbstractScene* GetCurrentScene() const override;
 
@@ -35,7 +39,7 @@ protected:
                       "GameSceneType must derive from CAbstractScene");
 
         auto scene = std::make_unique<GameSceneType>(
-            mComponentManager, mFontHandler, mWindowData,
+            mComponentManager, mFontHandler, mSystem,
             std::forward<Args>(args)...);
         SetCurrentScene(std::move(scene));
     }
@@ -44,6 +48,6 @@ protected:
     Core::CEngineLoop& mEngineLoop;
     Component::CComponentManager& mComponentManager;
     Font::CFontHandler& mFontHandler;
-    Core::CWindowData& mWindowData;
+    const System::CSystem& mSystem;
 };
 } // namespace Scene

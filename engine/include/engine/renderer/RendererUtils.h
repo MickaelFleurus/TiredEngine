@@ -64,7 +64,7 @@ concept ContiguousRange = std::ranges::range<T> &&
                           std::contiguous_iterator<std::ranges::iterator_t<T>>;
 
 template <ContiguousRange R>
-SDL_GPUBuffer* CreateBuffer(SDL_GPUDevice& device, R& content,
+SDL_GPUBuffer* CreateBuffer(SDL_GPUDevice* device, R& content,
                             SDL_GPUBufferUsageFlags bufferType) {
     uint32_t containerMemSize = static_cast<uint32_t>(
         sizeof(std::ranges::range_value_t<R>) * std::ranges::size(content));
@@ -72,20 +72,20 @@ SDL_GPUBuffer* CreateBuffer(SDL_GPUDevice& device, R& content,
     vertexInfo.usage = bufferType;
     vertexInfo.size = containerMemSize;
 
-    SDL_GPUBuffer* buffer = SDL_CreateGPUBuffer(&device, &vertexInfo);
+    SDL_GPUBuffer* buffer = SDL_CreateGPUBuffer(device, &vertexInfo);
 
     SDL_GPUTransferBufferCreateInfo transferInfo = {};
     transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
     transferInfo.size = containerMemSize;
 
     SDL_GPUTransferBuffer* transferBuffer =
-        SDL_CreateGPUTransferBuffer(&device, &transferInfo);
+        SDL_CreateGPUTransferBuffer(device, &transferInfo);
 
-    void* data = SDL_MapGPUTransferBuffer(&device, transferBuffer, false);
+    void* data = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
     memcpy(data, content.data(), containerMemSize);
-    SDL_UnmapGPUTransferBuffer(&device, transferBuffer);
+    SDL_UnmapGPUTransferBuffer(device, transferBuffer);
 
-    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(&device);
+    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(device);
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmd);
 
     SDL_GPUTransferBufferLocation src = {};
@@ -101,17 +101,17 @@ SDL_GPUBuffer* CreateBuffer(SDL_GPUDevice& device, R& content,
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(uploadCmd);
 
-    SDL_ReleaseGPUTransferBuffer(&device, transferBuffer);
+    SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
     return buffer;
 }
 
 template <ContiguousRange R>
-SDL_GPUBuffer* CreateVertexBuffer(SDL_GPUDevice& device, R& vertices) {
+SDL_GPUBuffer* CreateVertexBuffer(SDL_GPUDevice* device, R& vertices) {
     return CreateBuffer(device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
 }
 
 template <ContiguousRange R>
-SDL_GPUBuffer* CreateIndexBuffer(SDL_GPUDevice& device, R& indices) {
+SDL_GPUBuffer* CreateIndexBuffer(SDL_GPUDevice* device, R& indices) {
     return CreateBuffer(device, indices, SDL_GPU_BUFFERUSAGE_INDEX);
 }
 

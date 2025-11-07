@@ -8,7 +8,7 @@ public:
     explicit CSceneHandler(Core::CEngineLoop& engineLoop,
                            Component::CComponentManager& componentManager,
                            Font::CFontHandler& fontHandler,
-                           Core::CWindowData& windowData);
+                           const System::CSystem& system);
 
     void CreateAndSetScene(const std::string& sceneName) override;
     const std::vector<std::string>& GetSceneNames() const override;

@@ -23,10 +23,15 @@ std::string HandleSDLPath(char* sdlPath) {
 
 namespace Utils {
 
-CFileHandler::CFileHandler(const std::string& gameName)
-    : mTempFolder(
-          HandleSDLPath(SDL_GetPrefPath(kCompanyName, gameName.c_str())))
-    , mAssetFolder(std::format("{}{}", SDL_GetBasePath(), kAssetsFolderPath)) {
+CFileHandler::CFileHandler()
+    : mAssetFolder(std::format("{}{}", SDL_GetBasePath(), kAssetsFolderPath)) {
+}
+
+void CFileHandler::CreateTempFolder(const std::string& gameName) {
+    const std::string tempPath =
+        HandleSDLPath(SDL_GetPrefPath(kCompanyName, gameName.c_str()));
+    mTempFolder = tempPath;
+    CreateDirectories(mTempFolder);
 }
 
 std::string CFileHandler::GetTempFolder() const {

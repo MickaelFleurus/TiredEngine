@@ -2,6 +2,7 @@
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/ShaderFactory.h"
+#include "engine/renderer/Window.h"
 #include <SDL3/SDL_gpu.h>
 
 #include <functional>
@@ -66,13 +67,12 @@ namespace Renderer {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(SDL_GPUDevice& device, SDL_Window& window)
-        : mDevice(device), mWindow(window), mShaderFactory(device) {
+    CImpl(const CWindow& window) : mWindow(window), mShaderFactory(window) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            SDL_ReleaseGPUGraphicsPipeline(&mDevice, pipeline);
+            SDL_ReleaseGPUGraphicsPipeline(mWindow.GetDevice(), pipeline);
         }
     }
 
@@ -85,8 +85,8 @@ public:
                 config.shaderName, config.shaderPath, config.fragmentResources);
 
             SDL_GPUColorTargetDescription colorTarget{};
-            colorTarget.format =
-                SDL_GetGPUSwapchainTextureFormat(&mDevice, &mWindow);
+            colorTarget.format = SDL_GetGPUSwapchainTextureFormat(
+                mWindow.GetDevice(), mWindow.Get());
 
             if (config.enableBlending) {
                 colorTarget.blend_state.enable_blend = true;
@@ -146,8 +146,8 @@ public:
             pipelineCreateInfo.vertex_shader = vertexShader;
             pipelineCreateInfo.fragment_shader = fragmentShader;
 
-            SDL_GPUGraphicsPipeline* pipeline =
-                SDL_CreateGPUGraphicsPipeline(&mDevice, &pipelineCreateInfo);
+            SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(
+                mWindow.GetDevice(), &pipelineCreateInfo);
 
             mPipelineCache.emplace(config, pipeline);
         }
@@ -156,16 +156,15 @@ public:
     }
 
 private:
-    SDL_GPUDevice& mDevice;
-    SDL_Window& mWindow;
+    const CWindow& mWindow;
     CShaderFactory mShaderFactory;
     std::unordered_map<SPipelineConfig, SDL_GPUGraphicsPipeline*,
                        SPipelineConfigHash>
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(SDL_GPUDevice& device, SDL_Window& window)
-    : mImpl(std::make_unique<CImpl>(device, window)) {
+CPipelineFactory::CPipelineFactory(const CWindow& window)
+    : mImpl(std::make_unique<CImpl>(window)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;

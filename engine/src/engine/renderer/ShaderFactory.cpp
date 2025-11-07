@@ -1,5 +1,7 @@
 #include "engine/renderer/ShaderFactory.h"
 
+#include "engine/renderer/Window.h"
+
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_iostream.h>
@@ -26,12 +28,12 @@ namespace Renderer {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(SDL_GPUDevice& device) : mDevice(device) {
+    CImpl(const CWindow& window) : mWindow(window) {
     }
 
     ~CImpl() {
         for (auto& [path, shader] : mShaderCache) {
-            SDL_ReleaseGPUShader(&mDevice, shader);
+            SDL_ReleaseGPUShader(mWindow.GetDevice(), shader);
         }
     }
 
@@ -55,7 +57,7 @@ private:
         if (!mShaderCache.contains(name)) {
 
             SDL_GPUShaderFormat backendFormats =
-                SDL_GetGPUShaderFormats(&mDevice);
+                SDL_GetGPUShaderFormats(mWindow.GetDevice());
 
             struct ShaderConfig {
                 SDL_GPUShaderFormat format;
@@ -99,18 +101,19 @@ private:
                 .num_storage_buffers = resources.numStorageBuffers,
                 .num_uniform_buffers = resources.numUniformBuffers};
 
-            SDL_GPUShader* shader = SDL_CreateGPUShader(&mDevice, &shaderInfo);
+            SDL_GPUShader* shader =
+                SDL_CreateGPUShader(mWindow.GetDevice(), &shaderInfo);
             mShaderCache.emplace(name, shader);
         }
         return mShaderCache[name];
     }
 
-    SDL_GPUDevice& mDevice;
+    const CWindow& mWindow;
     std::unordered_map<std::string, SDL_GPUShader*> mShaderCache;
 };
 
-CShaderFactory::CShaderFactory(SDL_GPUDevice& device)
-    : mImpl(std::make_unique<CImpl>(device)) {
+CShaderFactory::CShaderFactory(const CWindow& window)
+    : mImpl(std::make_unique<CImpl>(window)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;

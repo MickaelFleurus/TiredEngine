@@ -16,8 +16,10 @@ namespace Debug {
 CGuardedContainer<IOverlordItem> COverlord::mWidgets;
 CGuardedContainer<IOverlordItem> COverlord::mMenus;
 
-COverlord::COverlord(SDL_Window& window, SDL_GPUDevice& device)
-    : mWindow(window), mDevice(device) {
+COverlord::COverlord(const Renderer::CWindow& window) : mWindow(window) {
+}
+
+void COverlord::Initialize() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -30,11 +32,11 @@ COverlord::COverlord(SDL_Window& window, SDL_GPUDevice& device)
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL3_InitForSDLGPU(&mWindow);
+    ImGui_ImplSDL3_InitForSDLGPU(mWindow.Get());
     ImGui_ImplSDLGPU3_InitInfo info = {};
-    info.Device = &mDevice;
+    info.Device = mWindow.GetDevice();
     info.ColorTargetFormat =
-        SDL_GetGPUSwapchainTextureFormat(&mDevice, &mWindow);
+        SDL_GetGPUSwapchainTextureFormat(mWindow.GetDevice(), mWindow.Get());
     ImGui_ImplSDLGPU3_Init(&info);
 }
 
@@ -44,7 +46,7 @@ COverlord::~COverlord() {
     ImGui::DestroyContext();
 }
 
-void COverlord::PrepareRender(SDL_GPUCommandBuffer& cmd) {
+void COverlord::PrepareRender(SDL_GPUCommandBuffer* cmd) {
     ImGui_ImplSDLGPU3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
 
@@ -53,11 +55,11 @@ void COverlord::PrepareRender(SDL_GPUCommandBuffer& cmd) {
     RenderMenuBar();
     RenderWidgets();
     ImGui::Render();
-    ImGui_ImplSDLGPU3_PrepareDrawData(ImGui::GetDrawData(), &cmd);
+    ImGui_ImplSDLGPU3_PrepareDrawData(ImGui::GetDrawData(), cmd);
 }
 
-void COverlord::Render(SDL_GPUCommandBuffer& cmd, SDL_GPURenderPass& pass) {
-    ImGui_ImplSDLGPU3_RenderDrawData(ImGui::GetDrawData(), &cmd, &pass);
+void COverlord::Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass) {
+    ImGui_ImplSDLGPU3_RenderDrawData(ImGui::GetDrawData(), cmd, pass);
 }
 
 void COverlord::AddWidget(IOverlordItem& item, CToken& token) {

@@ -31,6 +31,8 @@ public:
                          Scene::ISceneHandler& sceneLoader,
                          Font::CFontHandler& fontHandler);
 
+    void Initialize();
+
     void RegisterTools();
 
 private:

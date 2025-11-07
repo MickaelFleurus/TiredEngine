@@ -10,11 +10,11 @@ namespace Material {
 
 CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
                                    Utils::CFileHandler& fileHandler,
-                                   SDL_GPUDevice& device, SDL_Window& window)
+                                   const Renderer::CWindow& window)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mDevice(device)
-    , mPipelineFactory(device, window) {
+    , mWindow(window)
+    , mPipelineFactory(window) {
 }
 
 std::unique_ptr<AbstractMaterial>

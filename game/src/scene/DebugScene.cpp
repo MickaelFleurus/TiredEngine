@@ -3,12 +3,12 @@
 namespace Scene {
 CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          Font::CFontHandler& fontHandler,
-                         const Core::CWindowData& windowData)
-    : CAbstractScene(componentManager, fontHandler, windowData) {
+                         const System::CSystem& system)
+    : CAbstractScene(componentManager, fontHandler, system) {
     CreateGameObjectBuilder("Bibboop").build();
     auto* obj = CreateGameObjectBuilder("Bibboop2").build();
     CreateGameObjectBuilder("ChildOfBibboop2", obj)
-        .addText("bcdfghijpqy!", 40)
+        .addText("Hello!", 40)
         .setLocalPosition({50.0f, 50.0f, 0.0f})
         .build();
 }

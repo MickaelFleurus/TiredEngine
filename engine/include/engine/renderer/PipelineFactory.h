@@ -2,15 +2,14 @@
 #include <memory>
 
 struct SDL_GPUGraphicsPipeline;
-struct SDL_GPUDevice;
-struct SDL_Window;
 
 namespace Renderer {
 struct SPipelineConfig;
+class CWindow;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(SDL_GPUDevice& device, SDL_Window& window);
+    CPipelineFactory(const CWindow& window);
     ~CPipelineFactory();
 
     SDL_GPUGraphicsPipeline*
