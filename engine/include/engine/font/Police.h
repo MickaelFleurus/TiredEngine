@@ -2,7 +2,7 @@
 
 #include "engine/font/FontTypes.h"
 #include <glm/vec4.hpp>
-#include <span>
+#include <unordered_map>
 
 namespace Material {
 class AbstractMaterial;
@@ -11,14 +11,24 @@ class AbstractMaterial;
 namespace Font {
 class CPolice {
 public:
+    struct SMetrics {
+        double ascenderY;
+        double descenderY;
+        double lineHeight;
+        double underlineY;
+        double underlineThickness;
+    };
     CPolice(const char* name,
             std::unique_ptr<Material::AbstractMaterial> material,
-            unsigned int size, std::span<Font::GlyphInfo> glyphs);
+            unsigned int size,
+            std::unordered_map<std::string, Font::GlyphInfo> glyphs,
+            SMetrics fontMetrics);
     ~CPolice();
 
     unsigned int GetSize() const;
-    glm::vec4 GetColor() const;
+    void SetSize(unsigned int size);
 
+    glm::vec4 GetColor() const;
     void SetColor(const glm::vec4& color);
 
     const Font::GlyphInfo& GetGlyphInfo(char c) const;
@@ -31,6 +41,7 @@ private:
     const std::string mName;
     std::unique_ptr<Material::AbstractMaterial> mMaterial;
     unsigned int mSize;
-    std::vector<Font::GlyphInfo> mGlyphs;
+    std::unordered_map<std::string, Font::GlyphInfo> mGlyphs;
+    SMetrics mFontMetrics;
 };
 } // namespace Font

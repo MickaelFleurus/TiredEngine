@@ -55,7 +55,9 @@ bool CEngineLoop::Run() {
         mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
 
         if (mWindow.BeginRender()) {
-            mWindow.Render(*mCurrentScene, mComponentManager);
+            if (mCurrentScene) {
+                mWindow.Render(*mCurrentScene, mComponentManager);
+            }
             mOverlordManager.Render(mWindow.GetCommandBuffer(),
                                     mWindow.GetRenderPass());
 

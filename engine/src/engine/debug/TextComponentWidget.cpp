@@ -30,6 +30,8 @@ CTextComponentWidget::CTextComponentWidget(
     , mFontHandler(fontHandler)
     , mAvailableFonts(fileHandler.GetFileNames(kFontExtension))
     , mCurrentText(textComponent.getText())
+    , mFontSize(mTextComponent.getPolice()->GetSize())
+    , mFontColor(textComponent.getPolice()->GetColor())
     , mFontChoiceIndex(GetFontIndexByName(
           mAvailableFonts, mTextComponent.getPolice()->GetName())) {
     SetVisible(true);
@@ -53,6 +55,21 @@ void CTextComponentWidget::Render() {
             }
         }
         ImGui::EndCombo();
+    }
+    if (ImGui::SliderInt("Font Size", &mFontSize, 8, 72)) {
+        Font::CPolice* police = mTextComponent.getPolice();
+        if (police) {
+            police->SetSize(static_cast<unsigned int>(mFontSize));
+            mTextComponent.setDirty(true);
+        }
+    }
+
+    if (ImGui::ColorEdit4("Font Color", &mFontColor.r)) {
+        Font::CPolice* police = mTextComponent.getPolice();
+        if (police) {
+            police->SetColor(mFontColor);
+            mTextComponent.setDirty(true);
+        }
     }
 }
 

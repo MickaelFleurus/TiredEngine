@@ -6,7 +6,7 @@
 namespace Font {
 struct GlyphInfo {
     glm::vec4 uv{};
-    int advance; // How much to move cursor for next character
+    float advance;
     glm::vec2 offset{};
     glm::vec2 size{};
 };

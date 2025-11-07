@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/vec4.hpp>
 #include <string>
 #include <vector>
 
@@ -34,5 +35,7 @@ private:
     std::string mCurrentText;
     std::string mCurrentPoliceName;
     int mFontChoiceIndex;
+    int mFontSize;
+    glm::vec4 mFontColor;
 };
 } // namespace Debug

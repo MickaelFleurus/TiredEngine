@@ -4,17 +4,24 @@
 namespace Font {
 CPolice::CPolice(const char* name,
                  std::unique_ptr<Material::AbstractMaterial> material,
-                 unsigned int size, std::span<Font::GlyphInfo> glyphs)
+                 unsigned int size,
+                 std::unordered_map<std::string, Font::GlyphInfo> glyphs,
+                 CPolice::SMetrics fontMetrics)
     : mName(name)
     , mMaterial(std::move(material))
     , mSize(size)
-    , mGlyphs(glyphs.begin(), glyphs.end()) {
+    , mGlyphs(std::move(glyphs))
+    , mFontMetrics(fontMetrics) {
 }
 
 CPolice::~CPolice() = default;
 
 unsigned int CPolice::GetSize() const {
     return mSize;
+}
+
+void CPolice::SetSize(unsigned int size) {
+    mSize = size;
 }
 
 glm::vec4 CPolice::GetColor() const {
@@ -26,10 +33,8 @@ void CPolice::SetColor(const glm::vec4& color) {
 }
 
 const Font::GlyphInfo& CPolice::GetGlyphInfo(char c) const {
-
-    size_t index = static_cast<size_t>(c) - 32; // TODO: Magic numbers, fix
-    if (index < mGlyphs.size()) {
-        return mGlyphs[index];
+    if (mGlyphs.contains(std::string(1, c))) {
+        return mGlyphs.at(std::string(1, c));
     } else {
         static Font::GlyphInfo emptyGlyph = {};
         return emptyGlyph;

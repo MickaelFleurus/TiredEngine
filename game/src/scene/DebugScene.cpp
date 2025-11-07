@@ -8,7 +8,7 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
     CreateGameObjectBuilder("Bibboop").build();
     auto* obj = CreateGameObjectBuilder("Bibboop2").build();
     CreateGameObjectBuilder("ChildOfBibboop2", obj)
-        .addText("Blibloou!", 40)
+        .addText("bcdfghijpqy!", 40)
         .setLocalPosition({50.0f, 50.0f, 0.0f})
         .build();
 }

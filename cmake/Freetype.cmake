@@ -10,4 +10,8 @@ function(setup_freetype)
     set(FT_DISABLE_HARFBUZZ OFF CACHE BOOL "" FORCE)
     set(FT_DISABLE_BROTLI OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(freetype)
+    # Create Freetype::Freetype alias if it doesn't exist
+    if(TARGET freetype AND NOT TARGET Freetype::Freetype)
+        add_library(Freetype::Freetype ALIAS freetype)
+    endif()
 endfunction()

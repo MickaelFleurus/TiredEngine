@@ -10,10 +10,10 @@ namespace {
 constexpr int kQuadVertexCount = 4;
 
 constexpr std::array<Renderer::SVertex, kQuadVertexCount> kQuadVertices = {{
-    {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}},
-    {{0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}},
-    {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f}},
+    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
 }};
 constexpr uint32_t kQuadVerticesMemSize =
     static_cast<uint32_t>(kQuadVertexCount * sizeof(Renderer::SVertex));

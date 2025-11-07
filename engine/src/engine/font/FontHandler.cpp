@@ -4,38 +4,43 @@
 #include "engine/material/MaterialFactory.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_surface.h>
-#include <SDL3_ttf/SDL_ttf.h>
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
 
 namespace {
-
-constexpr unsigned int kStartChar =
-    32; // Space. Everything before is non-printable
-constexpr unsigned int kEndChar = 126; // Tilde. Last printable ASCII character
-constexpr unsigned int kMargin = 8;    // Margin around each glyph in atlas
-
 nlohmann::json
-GlyphsToJson(const std::array<Font::GlyphInfo, kEndChar - kStartChar>& glyphs) {
+GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
+             msdfgen::FontMetrics& fontMetrics) {
     nlohmann::json jsonData;
-    unsigned char c = kStartChar;
-    for (const auto& info : glyphs) {
+    jsonData["glyphs"] = nlohmann::json::object();
+    for (const auto it : glyphs) {
         nlohmann::json glyphJson;
-        glyphJson["uv"] = {{"x", info.uv.x},
-                           {"y", info.uv.y},
-                           {"w", info.uv.z},
-                           {"h", info.uv.w}};
-        glyphJson["advance"] = info.advance;
-        glyphJson["offset"] = {{"x", info.offset.x}, {"y", info.offset.y}};
-        glyphJson["size"] = {{"x", info.size.x}, {"y", info.size.y}};
-        jsonData[std::string(1, c++)] = glyphJson;
+        glyphJson["uv"] = {{"x", it.second.uv.x},
+                           {"y", it.second.uv.y},
+                           {"w", it.second.uv.z},
+                           {"h", it.second.uv.w}};
+        glyphJson["advance"] = it.second.advance;
+        glyphJson["offset"] = {{"x", it.second.offset.x},
+                               {"y", it.second.offset.y}};
+        glyphJson["size"] = {{"x", it.second.size.x}, {"y", it.second.size.y}};
+        jsonData["glyphs"][it.first] = glyphJson;
     }
+    jsonData["fontMetrics"] = {
+        {"emSize", fontMetrics.emSize},
+        {"ascenderY", fontMetrics.ascenderY},
+        {"descenderY", fontMetrics.descenderY},
+        {"lineHeight", fontMetrics.lineHeight},
+        {"underlineY", fontMetrics.underlineY},
+        {"underlineThickness", fontMetrics.underlineThickness}};
     return jsonData;
 }
 
-std::vector<Font::GlyphInfo> JsonToGlyphs(const nlohmann::json& jsonData) {
-    std::vector<Font::GlyphInfo> glyphs;
-    for (char c = kStartChar; c < kEndChar; ++c) {
-        const auto& glyphJson = jsonData[std::string(1, c)];
+std::unordered_map<std::string, Font::GlyphInfo>
+JsonToGlyphs(const nlohmann::json& jsonData) {
+    std::unordered_map<std::string, Font::GlyphInfo> glyphs;
+    for (auto it : jsonData["glyphs"].items()) {
+        const auto& glyphJson = it.value();
         Font::GlyphInfo info;
         info.uv.x = glyphJson["uv"]["x"];
         info.uv.y = glyphJson["uv"]["y"];
@@ -46,61 +51,131 @@ std::vector<Font::GlyphInfo> JsonToGlyphs(const nlohmann::json& jsonData) {
         info.offset.y = glyphJson["offset"]["y"];
         info.size.x = glyphJson["size"]["x"];
         info.size.y = glyphJson["size"]["y"];
-        glyphs.push_back(info);
+        glyphs.emplace(it.key(), info);
     }
     return glyphs;
 }
 
-auto CreateFontData(unsigned int fontSize, TTF_Font* font) {
+msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
+    msdfgen::FontMetrics fontMetrics;
+    fontMetrics.emSize = jsonData["fontMetrics"]["emSize"];
+    fontMetrics.ascenderY = jsonData["fontMetrics"]["ascenderY"];
+    fontMetrics.descenderY = jsonData["fontMetrics"]["descenderY"];
+    fontMetrics.lineHeight = jsonData["fontMetrics"]["lineHeight"];
+    fontMetrics.underlineY = jsonData["fontMetrics"]["underlineY"];
+    fontMetrics.underlineThickness =
+        jsonData["fontMetrics"]["underlineThickness"];
+    return fontMetrics;
+}
 
-    const int glyphSize = fontSize + kMargin;
-    const int cols = 16;
-    const int rows = ((kEndChar - kStartChar + 1) + cols - 1) / cols;
+auto CreateFontData(const std::string& fontPath) {
+    using namespace msdf_atlas;
 
-    SDL_Surface* atlasSurface = SDL_CreateSurface(
-        cols * glyphSize, rows * glyphSize, SDL_PIXELFORMAT_RGBA32);
+    std::unordered_map<std::string, Font::GlyphInfo> glyphInfos;
+    SDL_Surface* surface = nullptr;
+    msdfgen::FontMetrics fontMetrics{};
 
-    SDL_FillSurfaceRect(
-        atlasSurface, nullptr,
-        SDL_MapRGBA(SDL_GetPixelFormatDetails(atlasSurface->format), nullptr, 0,
-                    0, 0, 0));
-
-    SDL_Color white = {255, 255, 255, 255};
-    std::array<Font::GlyphInfo, kEndChar - kStartChar> glyphs;
-    int cx = 0, cy = 0;
-    for (unsigned int c = kStartChar; c < kEndChar; ++c) {
-        SDL_Surface* glyph = TTF_RenderGlyph_Solid(font, c, white);
-        if (!glyph) {
-            continue;
-        }
-
-        const int glyphIndex = c - kStartChar;
-        Font::GlyphInfo& glyphInfo = glyphs[glyphIndex];
-        SDL_Rect dst = {cx * glyphSize, cy * glyphSize, glyph->w, glyph->h};
-        SDL_BlitSurface(glyph, NULL, atlasSurface, &dst);
-
-        glm::vec4 uv = {static_cast<float>(dst.x), static_cast<float>(dst.y),
-                        static_cast<float>(dst.w), static_cast<float>(dst.h)};
-        uv.x /= atlasSurface->w;
-        uv.y /= atlasSurface->h;
-        uv.z /= atlasSurface->w;
-        uv.w /= atlasSurface->h;
-        glyphInfo.uv = uv;
-        glyphInfo.size = {static_cast<float>(glyph->w),
-                          static_cast<float>(glyph->h)};
-
-        TTF_GetGlyphMetrics(font, c, NULL, NULL, NULL, NULL,
-                            &glyphInfo.advance);
-
-        SDL_DestroySurface(glyph);
-
-        if (++cx >= cols) {
-            cx = 0;
-            cy++;
-        }
+    auto freeType = msdfgen::initializeFreetype();
+    if (!freeType) {
+        return std::make_tuple(surface, glyphInfos, fontMetrics);
+    }
+    msdfgen::FontHandle* font = msdfgen::loadFont(freeType, fontPath.c_str());
+    if (!font) {
+        msdfgen::deinitializeFreetype(freeType);
+        return std::make_tuple(surface, glyphInfos, fontMetrics);
     }
 
-    return std::make_pair(atlasSurface, glyphs);
+    std::vector<GlyphGeometry> glyphs;
+    FontGeometry fontGeometry(&glyphs);
+    fontGeometry.loadCharset(font, 1.0, Charset::ASCII);
+
+    // Get font metrics for proper baseline alignment
+    fontMetrics = fontGeometry.getMetrics();
+
+    constexpr double maxCornerAngle = 3.0;
+    for (GlyphGeometry& glyph : glyphs) {
+        glyph.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+    }
+
+    TightAtlasPacker packer;
+    packer.setDimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE);
+    packer.setMinimumScale(24.0);
+    packer.setPixelRange(2.0);
+    packer.setMiterLimit(1.0);
+
+    packer.pack(glyphs.data(), glyphs.size());
+
+    int width = 0, height = 0;
+    packer.getDimensions(width, height);
+
+    ImmediateAtlasGenerator<float, 3, msdfGenerator,
+                            BitmapAtlasStorage<byte, 3>>
+        generator(width, height);
+
+    GeneratorAttributes attributes;
+    generator.setAttributes(attributes);
+    generator.generate(glyphs.data(), glyphs.size());
+
+    auto bitmapRef =
+        static_cast<msdfgen::BitmapConstRef<byte, 3>>(generator.atlasStorage());
+
+    surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
+    if (surface) {
+        SDL_LockSurface(surface);
+        Uint8* dst = static_cast<Uint8*>(surface->pixels);
+        int pitch = surface->pitch;
+        const byte* src = bitmapRef.pixels;
+
+        for (int y = 0; y < height; ++y) {
+            Uint8* row = dst + y * pitch;
+            const byte* srcRow = src + y * width * 3;
+            for (int x = 0; x < width; ++x) {
+                row[x * 4 + 0] = srcRow[x * 3 + 0]; // R
+                row[x * 4 + 1] = srcRow[x * 3 + 1]; // G
+                row[x * 4 + 2] = srcRow[x * 3 + 2]; // B
+                row[x * 4 + 3] = 255;               // A
+            }
+        }
+        SDL_UnlockSurface(surface);
+    }
+
+    const double atlasScale = packer.getScale();
+
+    for (const auto& glyph : glyphs) {
+        Font::GlyphInfo info;
+        double l, b, r, t;
+        glyph.getQuadAtlasBounds(l, b, r, t);
+        l /= width;
+        r /= width;
+        b /= height;
+        t /= height;
+
+        // UV coordinates (normalized to 0-1)
+        info.uv.x = static_cast<float>(l);
+        info.uv.y = static_cast<float>(b);
+        info.uv.z = static_cast<float>(r - l);
+        info.uv.w = static_cast<float>(t - b);
+
+        // Glyph metrics
+        double advance = glyph.getAdvance();
+        info.advance = static_cast<float>(advance);
+
+        glyph.getQuadPlaneBounds(l, b, r, t);
+        info.offset.x = static_cast<float>(l);
+        info.offset.y = static_cast<float>(b);
+        info.size.x = static_cast<float>(r - l);
+        info.size.y = static_cast<float>(t - b);
+
+        std::string charKey(1,
+                            static_cast<unsigned char>(glyph.getCodepoint()));
+        glyphInfos.emplace(charKey, info);
+    }
+
+    // Cleanup
+    msdfgen::destroyFont(font);
+    msdfgen::deinitializeFreetype(freeType);
+
+    return std::make_tuple(surface, glyphInfos, fontMetrics);
 }
 
 } // namespace
@@ -112,11 +187,9 @@ CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
     , mMaterialFactory(materialFactory) {
-    TTF_Init();
 }
 
 CFontHandler::~CFontHandler() {
-    TTF_Quit();
 }
 
 CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
@@ -126,32 +199,37 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
         return it->second;
     }
 
-    const std::string glyphTexFilePath = std::format(
-        "{}/font_textures/{}_{}", mFileHandler.GetTempFolder(), name, size);
+    const std::string glyphTexFilePath =
+        std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
     SDL_Surface* surface = nullptr;
-    std::vector<Font::GlyphInfo> glyphs;
+    std::unordered_map<std::string, Font::GlyphInfo> glyphs;
+    msdfgen::FontMetrics fontMetrics{};
     if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
         surface = mFileHandler.LoadTextureFileBMP(glyphTexFilePath);
-        glyphs = JsonToGlyphs(mFileHandler.LoadJson(glyphTexFilePath));
+        auto jsonData = mFileHandler.LoadJson(glyphTexFilePath);
+        glyphs = JsonToGlyphs(jsonData);
+        fontMetrics = JsonToFontMetrics(jsonData);
     } else {
-        auto fontPath = std::format("{}/fonts/{}.ttf",
-                                    mFileHandler.GetAssetsFolder(), name);
-        TTF_Font* font =
-            TTF_OpenFont(fontPath.c_str(), static_cast<float>(size));
-        auto [loadedSurface, loadedGlyphs] = CreateFontData(size, font);
+        auto [loadedSurface, loadedGlyphs, metrics] =
+            CreateFontData(std::format("{}/fonts/{}.ttf",
+                                       mFileHandler.GetAssetsFolder(), name));
         surface = loadedSurface;
-        glyphs = std::vector<Font::GlyphInfo>(loadedGlyphs.begin(),
-                                              loadedGlyphs.end());
+        glyphs = std::move(loadedGlyphs);
+        fontMetrics = metrics;
         mFileHandler.SaveTextureFileBMP(glyphTexFilePath, surface);
-        mFileHandler.SaveJson(glyphTexFilePath, GlyphsToJson(loadedGlyphs));
-        TTF_CloseFont(font);
+        mFileHandler.SaveJson(glyphTexFilePath,
+                              GlyphsToJson(glyphs, fontMetrics));
     }
+
     mTextureManager.LoadTextureFromSurface(name, surface);
     SDL_DestroySurface(surface);
 
     auto [emplaced_it, inserted] = mPolices.try_emplace(
         key, name, std::move(mMaterialFactory.CreateTextMaterial(name)), size,
-        glyphs);
+        glyphs,
+        CPolice::SMetrics{fontMetrics.ascenderY, fontMetrics.descenderY,
+                          fontMetrics.lineHeight, fontMetrics.underlineY,
+                          fontMetrics.underlineThickness});
     return emplaced_it->second;
 }
 

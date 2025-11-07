@@ -4,7 +4,6 @@
 #include "engine/font/Police.h"
 #include <unordered_map>
 
-struct TTF_Font;
 struct SDL_GPUDevice;
 
 namespace Utils {

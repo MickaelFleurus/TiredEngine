@@ -53,36 +53,42 @@ void CTextComponent::GenerateInstances() {
 
     float cursorX = 0.0f;
     float cursorY = 0.0f;
+    float fontSize = mPolice->GetSize();
 
     for (char c : mText) {
         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
+
+        SDL_Log("Char '%c': raw advance=%.4f, size=(%.4f, %.4f), offset=(%.4f, "
+                "%.4f)",
+                c, glyph.advance, glyph.size.x, glyph.size.y, glyph.offset.x,
+                glyph.offset.y);
+
         if (c == '\n') {
             cursorX = 0.0f;
-            cursorY += mPolice->GetSize();
+            cursorY += fontSize;
             continue;
         }
 
         if (c == ' ') {
-            cursorX += glyph.advance;
+            cursorX += glyph.advance * fontSize;
             continue;
         }
 
         Renderer::SCharacterInstance instance;
+        float glyphBottom = cursorY + glyph.offset.y * fontSize;
+        float glyphCenterY = glyphBottom + (glyph.size.y * fontSize) * 0.5f;
 
-        // Add world position to character position
-        instance.position =
-            glm::vec2(cursorX + glyph.offset.x, cursorY + glyph.offset.y);
+        instance.position = glm::vec2(cursorX + glyph.offset.x * fontSize +
+                                          (glyph.size.x * fontSize) * 0.5f,
+                                      glyphCenterY);
 
-        instance.size = glm::vec2(static_cast<float>(glyph.size.x),
-                                  static_cast<float>(glyph.size.y));
-
+        instance.size = glm::vec2(glyph.size.x, glyph.size.y) * fontSize;
         instance.uvRect = glyph.uv;
-
         instance.color = mPolice->GetColor();
 
         mInstances.push_back(instance);
 
-        cursorX += glyph.advance;
+        cursorX += glyph.advance * fontSize;
     }
 
     if (!mInstances.empty()) {

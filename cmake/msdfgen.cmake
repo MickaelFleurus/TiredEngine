@@ -6,13 +6,16 @@ function(setup_msdfgen)
         SOURCE_DIR external/msdfgen
     )
     
-    # Configure msdfgen options - use CORE_ONLY to avoid external dependencies
-    set(MSDFGEN_CORE_ONLY ON CACHE BOOL "" FORCE)
+       # Configure msdfgen options - DON'T use CORE_ONLY since msdf-atlas-gen needs extensions
+    set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
     set(MSDFGEN_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
     set(MSDFGEN_USE_VCPKG OFF CACHE BOOL "" FORCE)
     set(MSDFGEN_USE_OPENMP OFF CACHE BOOL "" FORCE)
     set(MSDFGEN_USE_CPP11 ON CACHE BOOL "" FORCE)
     set(MSDFGEN_INSTALL OFF CACHE BOOL "" FORCE)
+    set(MSDFGEN_USE_SKIA OFF CACHE BOOL "" FORCE)
+    set(MSDFGEN_DISABLE_SVG ON CACHE BOOL "" FORCE)  # Disable SVG to avoid tinyxml2 dependency
+    set(MSDFGEN_DISABLE_PNG OFF CACHE BOOL "" FORCE)
     
     FetchContent_MakeAvailable(msdfgen)
 endfunction()

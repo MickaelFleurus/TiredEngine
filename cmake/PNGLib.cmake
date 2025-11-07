@@ -12,6 +12,8 @@ function(setup_pnglib)
     # Ensure libpng creates the export by not skipping the install targets
     set(SKIP_INSTALL_LIBRARIES OFF CACHE BOOL "" FORCE)
     set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
-
     FetchContent_MakeAvailable(libpng)
+    if(TARGET png_static AND NOT TARGET PNG::PNG)
+        add_library(PNG::PNG ALIAS png_static)
+    endif()
 endfunction()
