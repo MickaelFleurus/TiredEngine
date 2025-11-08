@@ -4,6 +4,31 @@
 
 #include <SDL3/SDL_gpu.h>
 
+namespace {
+constexpr auto kGPUTransferBufferDeleter = [](SDL_GPUDevice* device) {
+    return [device](SDL_GPUTransferBuffer* buffer) {
+        if (buffer) {
+            SDL_ReleaseGPUTransferBuffer(device, buffer);
+        }
+    };
+};
+
+constexpr auto kGPUTextureDeleter = [](SDL_GPUDevice* device) {
+    return [device](SDL_GPUTexture* texture) {
+        if (texture) {
+            SDL_ReleaseGPUTexture(device, texture);
+        }
+    };
+};
+
+constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
+    if (surface) {
+        SDL_DestroySurface(surface);
+    }
+};
+
+} // namespace
+
 namespace Renderer {
 CTextureManager::CTextureManager(const CWindow& window,
                                  Utils::CFileHandler& fileHandler)
@@ -22,13 +47,13 @@ SDL_GPUTexture* CTextureManager::LoadTexture(const std::string& filename) {
         return it->second;
     }
 
-    SDL_Surface* surface = mFileHandler.LoadTextureFileBMP(filename);
+    std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
+        mFileHandler.LoadTextureFileBMP(filename), kGPUSurfaceDeleter};
     if (!surface) {
         return nullptr;
     }
-    auto texture = LoadTextureFromSurface(filename, surface);
+    auto texture = LoadTextureFromSurface(filename, surface.get());
 
-    SDL_DestroySurface(surface);
     return texture;
 }
 
@@ -44,30 +69,49 @@ CTextureManager::LoadTextureFromSurface(const std::string& filename,
         .height = static_cast<Uint32>(surface->h),
         .layer_count_or_depth = 1,
         .num_levels = 1};
-    auto texture = SDL_CreateGPUTexture(mWindow.GetDevice(), &texInfo);
+    std::unique_ptr<SDL_GPUTexture,
+                    decltype(kGPUTextureDeleter(mWindow.GetDevice()))>
+        texture{SDL_CreateGPUTexture(mWindow.GetDevice(), &texInfo),
+                kGPUTextureDeleter(mWindow.GetDevice())};
 
     unsigned int uploadSize = surface->pitch * surface->h;
     SDL_GPUTransferBufferCreateInfo bufInfo = {
         .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = uploadSize};
-    SDL_GPUTransferBuffer* transferBuffer =
-        SDL_CreateGPUTransferBuffer(mWindow.GetDevice(), &bufInfo);
+    std::unique_ptr<SDL_GPUTransferBuffer,
+                    decltype(kGPUTransferBufferDeleter(mWindow.GetDevice()))>
+        transferBuffer{
+            SDL_CreateGPUTransferBuffer(mWindow.GetDevice(), &bufInfo),
+            kGPUTransferBufferDeleter(mWindow.GetDevice())};
 
-    void* ptr =
-        SDL_MapGPUTransferBuffer(mWindow.GetDevice(), transferBuffer, false);
+    if (!transferBuffer) {
+        return nullptr;
+    }
+
+    void* ptr = SDL_MapGPUTransferBuffer(mWindow.GetDevice(),
+                                         transferBuffer.get(), false);
+    if (!ptr) {
+        return nullptr;
+    }
+
     SDL_memcpy(ptr, surface->pixels, uploadSize);
-    SDL_UnmapGPUTransferBuffer(mWindow.GetDevice(), transferBuffer);
+    SDL_UnmapGPUTransferBuffer(mWindow.GetDevice(), transferBuffer.get());
 
     SDL_GPUCommandBuffer* cmd =
         SDL_AcquireGPUCommandBuffer(mWindow.GetDevice());
+
+    if (!cmd) {
+        return nullptr;
+    }
+
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
 
     SDL_GPUTextureTransferInfo src = {
-        .transfer_buffer = transferBuffer,
+        .transfer_buffer = transferBuffer.get(),
         .offset = 0,
         .pixels_per_row = static_cast<Uint32>(surface->w),
         .rows_per_layer = static_cast<Uint32>(surface->h)};
 
-    SDL_GPUTextureRegion dst = {.texture = texture,
+    SDL_GPUTextureRegion dst = {.texture = texture.get(),
                                 .x = 0,
                                 .y = 0,
                                 .z = 0,
@@ -80,12 +124,8 @@ CTextureManager::LoadTextureFromSurface(const std::string& filename,
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(cmd);
 
-    SDL_ReleaseGPUTransferBuffer(mWindow.GetDevice(), transferBuffer);
-
-    if (texture) {
-        mLoadedTextures[filename] = texture;
-    }
-    return texture;
+    mLoadedTextures.emplace(filename, texture.release());
+    return mLoadedTextures[filename];
 }
 
 SDL_GPUTexture* CTextureManager::GetTexture(const std::string& filename) {

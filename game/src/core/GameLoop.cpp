@@ -1,5 +1,6 @@
 #include "core/GameLoop.h"
 #include "engine/system/System.h"
+#include "engine/utils/Asserts.h"
 
 namespace Core {
 CGameLoop::CGameLoop(System::CSystem& system)
@@ -16,6 +17,7 @@ std::expected<void, const char*> CGameLoop::Initialize() {
 
     mOverlordManager.CreateOverlord();
     mToolHandler.Initialize();
+
     return {};
 }
 

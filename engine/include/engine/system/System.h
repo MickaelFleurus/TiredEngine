@@ -9,7 +9,7 @@ namespace System {
 class CSystem {
 public:
     CSystem();
-    virtual ~CSystem() = default;
+    ~CSystem();
 
     bool Initialize();
 

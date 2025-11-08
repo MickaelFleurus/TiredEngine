@@ -20,6 +20,7 @@
 #include "engine/renderer/TextRenderer.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
+#include "engine/utils/Logger.h"
 
 #include <functional>
 
@@ -63,10 +64,10 @@ public:
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void RenderObject(Core::CGameObject& root,
-                      Component::CComponentManager& componentManager,
-                      std::vector<SRenderable>& renderables,
-                      glm::mat4 transform = glm::mat4(1.0f)) {
+    void ExtractRenderable(Core::CGameObject& root,
+                           Component::CComponentManager& componentManager,
+                           std::vector<SRenderable>& renderables,
+                           glm::mat4 transform = glm::mat4(1.0f)) {
         if (!root.IsVisible()) {
             return;
         }
@@ -109,7 +110,7 @@ public:
         }
 
         for (auto& child : root.getChildren()) {
-            RenderObject(*child, componentManager, renderables, transform);
+            ExtractRenderable(*child, componentManager, renderables, transform);
         }
     }
 
@@ -122,7 +123,7 @@ public:
 
         std::vector<SRenderable> renderables;
         for (auto& child : scene.GetRoot().getChildren()) {
-            RenderObject(*child, componentManager, renderables);
+            ExtractRenderable(*child, componentManager, renderables);
         }
 
         std::sort(renderables.begin(), renderables.end());
@@ -229,7 +230,8 @@ public:
     bool PrepareRender() {
         mSDLCommandBuffer = SDL_AcquireGPUCommandBuffer(mSDLDevice.get());
         if (!mSDLCommandBuffer) {
-            SDL_Log("Failed to acquire command buffer: %s", SDL_GetError());
+            LOG_ERROR("Failed to acquire command buffer: {}", SDL_GetError());
+
             return false;
         }
         return true;
@@ -241,12 +243,13 @@ public:
         if (!SDL_AcquireGPUSwapchainTexture(mSDLCommandBuffer, mSDLWindow.get(),
                                             &swapchainTexture, nullptr,
                                             nullptr)) {
-            SDL_Log("Failed to acquire swapchain texture: %s", SDL_GetError());
+            LOG_ERROR("Failed to acquire swapchain texture: {}",
+                      SDL_GetError());
             return false;
         }
 
         if (!swapchainTexture) {
-            SDL_Log("Swapchain texture is null");
+            LOG_ERROR("Swapchain texture is null");
             return false;
         }
 
@@ -259,7 +262,7 @@ public:
         mSDLRenderPass =
             SDL_BeginGPURenderPass(mSDLCommandBuffer, &colorTarget, 1, nullptr);
         if (!mSDLRenderPass) {
-            SDL_Log("Failed to begin render pass: %s", SDL_GetError());
+            LOG_ERROR("Failed to begin render pass: {}", SDL_GetError());
             return false;
         }
 

@@ -2,6 +2,7 @@
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 
+#include "engine/utils/Logger.h"
 #include <SDL3/SDL.h>
 
 namespace Core {
@@ -48,7 +49,7 @@ bool CEngineLoop::Run() {
 
         mInputHandler.Update();
         if (!mWindow.PrepareRender()) {
-            SDL_Log("Failed to prepare render");
+            LOG_ERROR("Failed to prepare render");
             continue;
         }
         mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());

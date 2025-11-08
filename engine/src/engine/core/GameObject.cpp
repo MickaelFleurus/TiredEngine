@@ -66,15 +66,13 @@ void CGameObject::removeChild(CGameObject* child) {
 
 void CGameObject::setParent(CGameObject* parent) {
     if (!mParent) {
-        // Cannot change the parent of the root of the scene
         return;
     }
     auto ptrToSelf = mParent->extractChild(this);
-    mParent = parent;
-    if (!ptrToSelf) {
-        // TODO: handle error
+    if (ptrToSelf) {
+        mParent = parent;
+        mParent->addChild(std::move(ptrToSelf));
     }
-    mParent->addChild(std::move(ptrToSelf));
 }
 
 std::unique_ptr<CGameObject> CGameObject::extractChild(CGameObject* child) {
@@ -85,6 +83,7 @@ std::unique_ptr<CGameObject> CGameObject::extractChild(CGameObject* child) {
         mChildren.erase(it);
         return extracted;
     }
+    std::unreachable();
     return nullptr;
 }
 

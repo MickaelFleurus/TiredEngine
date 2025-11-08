@@ -61,6 +61,10 @@ void CEntityWidget::Render() {
 
     // Position on right side of screen by default
     ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (!viewport) {
+        return;
+    }
+
     ImVec2 work_pos = viewport->WorkPos;
     ImVec2 work_size = viewport->WorkSize;
 

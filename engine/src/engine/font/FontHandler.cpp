@@ -38,20 +38,43 @@ GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
 
 std::unordered_map<std::string, Font::GlyphInfo>
 JsonToGlyphs(const nlohmann::json& jsonData) {
+    constexpr auto validateGlyphJson = [](const nlohmann::json& glyphJson) {
+        return !glyphJson.is_null() && glyphJson.contains("uv") &&
+               glyphJson.contains("advance") && glyphJson.contains("offset") &&
+               glyphJson.contains("size");
+    };
     std::unordered_map<std::string, Font::GlyphInfo> glyphs;
-    for (auto it : jsonData["glyphs"].items()) {
-        const auto& glyphJson = it.value();
-        Font::GlyphInfo info;
-        info.uv.x = glyphJson["uv"]["x"];
-        info.uv.y = glyphJson["uv"]["y"];
-        info.uv.z = glyphJson["uv"]["w"];
-        info.uv.w = glyphJson["uv"]["h"];
-        info.advance = glyphJson["advance"];
-        info.offset.x = glyphJson["offset"]["x"];
-        info.offset.y = glyphJson["offset"]["y"];
-        info.size.x = glyphJson["size"]["x"];
-        info.size.y = glyphJson["size"]["y"];
-        glyphs.emplace(it.key(), info);
+    if (jsonData.contains("glyphs")) {
+        for (auto it : jsonData["glyphs"].items()) {
+            const auto& glyphJson = it.value();
+            if (!validateGlyphJson(glyphJson)) {
+                continue;
+            }
+            Font::GlyphInfo info;
+
+            info.advance = glyphJson["advance"];
+            const auto& uv = glyphJson["uv"];
+            if (uv.contains("x") && uv.contains("y") && uv.contains("w") &&
+                uv.contains("h")) {
+                info.uv.x = uv["x"];
+                info.uv.y = uv["y"];
+                info.uv.z = uv["w"];
+                info.uv.w = uv["h"];
+            }
+
+            const auto& offset = glyphJson["offset"];
+            if (offset.contains("x") && offset.contains("y")) {
+                info.offset.x = offset["x"];
+                info.offset.y = offset["y"];
+            }
+
+            const auto& size = glyphJson["size"];
+            if (offset.contains("x") && offset.contains("y")) {
+                info.size.x = size["x"];
+                info.size.y = size["y"];
+            }
+            glyphs.emplace(it.key(), info);
+        }
     }
     return glyphs;
 }

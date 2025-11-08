@@ -58,11 +58,6 @@ void CTextComponent::GenerateInstances() {
     for (char c : mText) {
         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
 
-        SDL_Log("Char '%c': raw advance=%.4f, size=(%.4f, %.4f), offset=(%.4f, "
-                "%.4f)",
-                c, glyph.advance, glyph.size.x, glyph.size.y, glyph.offset.x,
-                glyph.offset.y);
-
         if (c == '\n') {
             cursorX = 0.0f;
             cursorY += fontSize;
