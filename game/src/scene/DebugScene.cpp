@@ -6,10 +6,52 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          const System::CSystem& system)
     : CAbstractScene(componentManager, fontHandler, system) {
     CreateGameObjectBuilder("Bibboop").build();
-    auto* obj = CreateGameObjectBuilder("Bibboop2").build();
-    CreateGameObjectBuilder("ChildOfBibboop2", obj)
-        .addText("Hello!", 40)
-        .setLocalPosition({50.0f, 50.0f, 0.0f})
+    CreateGameObjectBuilder("TopLeft")
+        .addText("TopLeft", 50)
+        .setAnchor(Utils::EAnchors::TopLeft)
+        .setLocalPosition({0.0f, 1080.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("TopRight")
+        .addText("TopRight", 50)
+        .setAnchor(Utils::EAnchors::TopRight)
+        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("BottomLeft")
+        .addText("BottomLeft", 50)
+        .setAnchor(Utils::EAnchors::BottomLeft)
+        .setLocalPosition({0.0f, 0.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("BottomRight")
+        .addText("BottomRight", 50)
+        .setAnchor(Utils::EAnchors::BottomRight)
+        .setLocalPosition({1920.0f, 0.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("0,0")
+        .addText("X", 50)
+        .setAnchor(Utils::EAnchors::Center)
+        .setLocalPosition({0.0f, 0.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("1920,0")
+        .addText("X", 50)
+        .setAnchor(Utils::EAnchors::Center)
+        .setLocalPosition({1920.0f, 0.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("1920,1080")
+        .addText("X", 50)
+        .setAnchor(Utils::EAnchors::Center)
+        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
+        .build();
+
+    CreateGameObjectBuilder("0,1080")
+        .addText("X", 50)
+        .setAnchor(Utils::EAnchors::Center)
+        .setLocalPosition({0.0f, 1080.0f, 0.0f})
         .build();
 }
 

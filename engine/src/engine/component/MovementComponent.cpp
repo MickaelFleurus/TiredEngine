@@ -14,9 +14,7 @@ void UpdatePosition(Core::CGameObject& current,
     auto spriteComponent =
         componentManager.getComponent<Component::CSpriteComponent>(
             current.getId());
-    if (spriteComponent) {
-        spriteComponent->updatePosition();
-    }
+
     for (const auto& child : current.getChildren()) {
         UpdatePosition(*child, componentManager);
     }

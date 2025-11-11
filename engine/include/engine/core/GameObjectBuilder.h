@@ -3,6 +3,7 @@
 #include "engine/core/GameObject.h"
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionInfo.h"
+#include "engine/utils/Anchors.h"
 
 #include <functional>
 #include <optional>
@@ -49,6 +50,7 @@ public:
         CBuilder& addMovementData(float acceleration);
         CBuilder& addInputInfo(CInputCallbacks callbacks);
         CBuilder& setLocalPosition(const glm::vec3& position);
+        CBuilder& setAnchor(Utils::EAnchors anchor);
         CGameObject* build();
 
     private:

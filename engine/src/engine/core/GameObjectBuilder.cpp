@@ -116,12 +116,14 @@ CGameObjectBuilder::CBuilder::setLocalPosition(const glm::vec3& position) {
     mComponentManager
         .getComponent<Component::CTransformComponent>(mGameObject->getId())
         ->setPosition(position);
-    if (auto* spriteComponent =
-            mComponentManager.getComponent<Component::CSpriteComponent>(
-                mGameObject->getId());
-        spriteComponent) {
-        spriteComponent->updatePosition();
-    }
+    return *this;
+}
+
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::setAnchor(Utils::EAnchors anchor) {
+    mComponentManager
+        .getComponent<Component::CTransformComponent>(mGameObject->getId())
+        ->setAnchor(anchor);
     return *this;
 }
 

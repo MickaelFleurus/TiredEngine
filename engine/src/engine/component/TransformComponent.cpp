@@ -1,4 +1,5 @@
 #include "engine/component/TransformComponent.h"
+#include <SDL3/SDL_log.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Component {
@@ -13,6 +14,7 @@ void CTransformComponent::update(float deltaTime) {
 
 void CTransformComponent::setPosition(const glm::vec3& position) {
     mPosition = position;
+    mIsDirty = true;
 }
 
 const glm::vec3& CTransformComponent::getPosition() const {
@@ -21,6 +23,7 @@ const glm::vec3& CTransformComponent::getPosition() const {
 
 void CTransformComponent::setRotation(const glm::vec3& rotation) {
     mRotation = glm::quat(rotation);
+    mIsDirty = true;
 }
 
 glm::vec3 CTransformComponent::getRotation() const {
@@ -29,14 +32,33 @@ glm::vec3 CTransformComponent::getRotation() const {
 
 void CTransformComponent::setScale(const glm::vec3& scale) {
     mScale = scale;
+    mIsDirty = true;
 }
 
 const glm::vec3& CTransformComponent::getScale() const {
     return mScale;
 }
 
-void CTransformComponent::UpdateMatrix(glm::mat4& parentTransform) const {
-    parentTransform = glm::translate(parentTransform, mPosition);
+void CTransformComponent::setAnchor(Utils::EAnchors anchor) {
+    mAnchor = anchor;
+    mIsDirty = true;
+}
+
+Utils::EAnchors CTransformComponent::getAnchor() const {
+    return mAnchor;
+}
+
+void CTransformComponent::UpdateMatrix(glm::mat4& parentTransform,
+                                       const glm::vec2& size) const {
+    glm::vec2 anchorOffset = Utils::GetAnchorOffset(mAnchor);
+    glm::vec3 adjustedPosition =
+        mPosition - glm::vec3(anchorOffset * size, 0.0f);
+    // Debug output
+    SDL_Log("UpdateMatrix: pos=(%.1f, %.1f), size=(%.1f, %.1f), anchor=(%.1f, "
+            "%.1f), adjusted=(%.1f, %.1f)",
+            mPosition.x, mPosition.y, size.x, size.y, anchorOffset.x,
+            anchorOffset.y, adjustedPosition.x, adjustedPosition.y);
+    parentTransform = glm::translate(parentTransform, adjustedPosition);
     parentTransform *= glm::mat4_cast(mRotation);
     parentTransform = glm::scale(parentTransform, mScale);
 }

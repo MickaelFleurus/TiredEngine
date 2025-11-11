@@ -1,34 +1,22 @@
 #pragma once
-#include "engine/component/IComponent.h"
+#include "engine/component/IDisplayComponent.h"
 
 #include <optional>
 #include <string>
 #include <variant>
 
 namespace Component {
-class CSpriteComponent : public IComponent {
+class CSpriteComponent : public IDisplayComponent {
 public:
     explicit CSpriteComponent(Core::CGameObject& owner,
                               CComponentManager& componentManager);
     ~CSpriteComponent() override;
     // void addSprite(SDK::SpriteType type);
-    void addText(const std::string& text, unsigned size);
-    void updateText(const std::string& text);
-    void update(float deltaTime) override;
 
-    void updatePosition();
+    void update(float deltaTime) override;
+    glm::vec2 getSize() override;
 
 private:
     void removeSprite();
-
-    // struct SpriteIDWrapper {
-    //     SDK::SpriteID id;
-    // };
-    // struct TextIDWrapper {
-    //     SDK::TextID id;
-    // };
-    // std::optional<std::variant<SpriteIDWrapper, TextIDWrapper>> mSpriteId;
-
-    // SDK::Window& mWindow;
 };
 } // namespace Component

@@ -12,13 +12,17 @@ CCameraWidget::CCameraWidget(Component::CCameraComponent& cameraComponent)
 void CCameraWidget::Render() {
 
     float zoom = mCameraComponent.GetZoom();
-    if (ImGui::DragFloat("Zoom", &zoom, 0.1f, 0.1f, 100.0f)) {
+    if (ImGui::DragFloat("Zoom", &zoom, 0.01f, 0.1f, 10.0f)) {
         mCameraComponent.SetZoom(zoom);
     }
-    glm::vec2 viewportSize = mCameraComponent.GetViewportSize();
-    if (ImGui::DragFloat2("Viewport Size", &viewportSize.x, 1.0f, 1.0f,
-                          4000.0f)) {
-        mCameraComponent.SetViewportSize(viewportSize);
+    float orthoSize = mCameraComponent.GetOrthographicSize();
+    if (ImGui::DragFloat("Orthographic Size", &orthoSize, 1.0f, 10.0f,
+                         2000.0f)) {
+        mCameraComponent.SetOrthographicSize(orthoSize);
+    }
+    float aspectRatio = mCameraComponent.GetAspectRatio();
+    if (ImGui::DragFloat("Aspect Ratio", &aspectRatio, 0.001f, 0.001f, 3.0f)) {
+        mCameraComponent.SetAspectRatio(aspectRatio);
     }
 
     glm::vec2 nearFar = mCameraComponent.GetClipPlanes();

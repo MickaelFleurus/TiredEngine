@@ -3,9 +3,8 @@
 #include "engine/component/MovementComponent.h"
 #include "engine/core/GameObject.h"
 
-#include "engine/renderer/TextRenderer.h"
-
 #include "engine/font/Police.h"
+#include "engine/renderer/TextRenderer.h"
 
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_log.h>
@@ -18,7 +17,7 @@ namespace Component {
 CTextComponent::CTextComponent(Core::CGameObject& owner,
                                CComponentManager& componentManager,
                                Renderer::CTextRenderer& textRenderer)
-    : IComponent(owner, componentManager)
+    : IDisplayComponent(owner, componentManager)
     , mTextRenderer(textRenderer)
     , mInstanceBuffer(mTextRenderer.CreateInstanceBuffer(kMaxCharacters)) {
 }
@@ -102,6 +101,35 @@ SDL_GPUBuffer* CTextComponent::GetInstanceBuffer() {
 
 uint32_t CTextComponent::GetInstanceCount() const {
     return static_cast<uint32_t>(mInstances.size());
+}
+
+glm::vec2 CTextComponent::getSize() {
+    if (!isDirty()) {
+        return mSize;
+    }
+
+    float cursorX = 0.0f;
+    float cursorY = 0.0f;
+    float fontSize = mPolice->GetSize();
+    float maxWidth = 0.0f;
+    float totalHeight = fontSize;
+
+    for (char c : mText) {
+        const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
+
+        if (c == '\n') {
+            maxWidth = std::max(maxWidth, cursorX);
+            cursorX = 0.0f;
+            cursorY += fontSize;
+            totalHeight += fontSize;
+        } else {
+            cursorX += glyph.advance * fontSize;
+        }
+    }
+    maxWidth = std::max(maxWidth, cursorX);
+
+    mSize = glm::vec2(maxWidth, totalHeight);
+    return mSize;
 }
 
 } // namespace Component

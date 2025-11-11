@@ -13,6 +13,7 @@ class CSystem;
 namespace Core {
 class CGameObject;
 class CCamera;
+class CUICamera;
 } // namespace Core
 
 namespace Font {
@@ -37,10 +38,12 @@ public:
                             Core::CGameObject* parent = nullptr);
 
     Core::CCamera& GetActiveCamera();
+    Core::CCamera& GetUICamera();
 
 protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;
     std::unique_ptr<Core::CCamera> mActiveCamera;
+    std::unique_ptr<Core::CUICamera> mUICamera;
     Component::CComponentManager& mComponentManager;
     const System::CSystem& mSystem;
     const Input::CInputWatcher mInputWatcher;

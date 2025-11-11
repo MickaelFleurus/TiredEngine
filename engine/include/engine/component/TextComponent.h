@@ -1,5 +1,5 @@
 #pragma once
-#include "engine/component/IComponent.h"
+#include "engine/component/IDisplayComponent.h"
 
 #include <string>
 #include <vector>
@@ -16,7 +16,7 @@ struct SCharacterInstance;
 } // namespace Renderer
 
 namespace Component {
-class CTextComponent : public IComponent {
+class CTextComponent : public IDisplayComponent {
 public:
     explicit CTextComponent(Core::CGameObject& owner,
                             CComponentManager& componentManager,
@@ -32,6 +32,8 @@ public:
     SDL_GPUBuffer* GetInstanceBuffer();
     uint32_t GetInstanceCount() const;
 
+    glm::vec2 getSize() override;
+
 private:
     void GenerateInstances();
 
@@ -41,5 +43,6 @@ private:
 
     std::string mText;
     Font::CPolice* mPolice = nullptr;
+    glm::vec2 mSize{0.0f, 0.0f};
 };
 } // namespace Component
