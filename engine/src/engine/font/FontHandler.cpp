@@ -92,8 +92,6 @@ msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
 }
 
 auto CreateFontData(const std::string& fontPath) {
-    using namespace msdf_atlas;
-
     std::unordered_map<std::string, Font::GlyphInfo> glyphInfos;
     SDL_Surface* surface = nullptr;
     msdfgen::FontMetrics fontMetrics{};
@@ -108,20 +106,22 @@ auto CreateFontData(const std::string& fontPath) {
         return std::make_tuple(surface, glyphInfos, fontMetrics);
     }
 
-    std::vector<GlyphGeometry> glyphs;
-    FontGeometry fontGeometry(&glyphs);
-    fontGeometry.loadCharset(font, 1.0, Charset::ASCII);
+    std::vector<msdf_atlas::GlyphGeometry> glyphs;
+
+    msdf_atlas::FontGeometry fontGeometry(&glyphs);
+    fontGeometry.loadCharset(font, 1.0, msdf_atlas::Charset::ASCII);
 
     // Get font metrics for proper baseline alignment
     fontMetrics = fontGeometry.getMetrics();
 
     constexpr double maxCornerAngle = 3.0;
-    for (GlyphGeometry& glyph : glyphs) {
+    for (auto& glyph : glyphs) {
         glyph.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
     }
 
-    TightAtlasPacker packer;
-    packer.setDimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE);
+    msdf_atlas::TightAtlasPacker packer;
+    packer.setDimensionsConstraint(
+        msdf_atlas::DimensionsConstraint::POWER_OF_TWO_SQUARE);
     packer.setMinimumScale(24.0);
     packer.setPixelRange(2.0);
     packer.setMiterLimit(1.0);
@@ -131,27 +131,28 @@ auto CreateFontData(const std::string& fontPath) {
     int width = 0, height = 0;
     packer.getDimensions(width, height);
 
-    ImmediateAtlasGenerator<float, 3, msdfGenerator,
-                            BitmapAtlasStorage<byte, 3>>
+    msdf_atlas::ImmediateAtlasGenerator<
+        float, 3, msdf_atlas::msdfGenerator,
+        msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, 3>>
         generator(width, height);
 
-    GeneratorAttributes attributes;
+    msdf_atlas::GeneratorAttributes attributes;
     generator.setAttributes(attributes);
     generator.generate(glyphs.data(), glyphs.size());
 
-    auto bitmapRef =
-        static_cast<msdfgen::BitmapConstRef<byte, 3>>(generator.atlasStorage());
+    auto bitmapRef = static_cast<msdfgen::BitmapConstRef<msdf_atlas::byte, 3>>(
+        generator.atlasStorage());
 
     surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
     if (surface) {
         SDL_LockSurface(surface);
         Uint8* dst = static_cast<Uint8*>(surface->pixels);
         int pitch = surface->pitch;
-        const byte* src = bitmapRef.pixels;
+        const msdf_atlas::byte* src = bitmapRef.pixels;
 
         for (int y = 0; y < height; ++y) {
             Uint8* row = dst + y * pitch;
-            const byte* srcRow = src + y * width * 3;
+            const msdf_atlas::byte* srcRow = src + y * width * 3;
             for (int x = 0; x < width; ++x) {
                 row[x * 4 + 0] = srcRow[x * 3 + 0]; // R
                 row[x * 4 + 1] = srcRow[x * 3 + 1]; // G

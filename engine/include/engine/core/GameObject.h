@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace Component {
@@ -37,7 +38,7 @@ public:
 private:
     CGameObject(const std::string& name,
                 Component::CComponentManager& componentManager,
-                CGameObject* mParent = nullptr, GameObjectId id = 0);
+                CGameObject* parent = nullptr, GameObjectId id = 0);
     void free();
 
     std::unique_ptr<CGameObject> extractChild(CGameObject* child);

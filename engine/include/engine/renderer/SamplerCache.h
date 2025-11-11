@@ -1,12 +1,12 @@
 #pragma once
 
-class SDL_GPUDevice;
-class SDL_GPUSampler;
+struct SDL_GPUDevice;
+struct SDL_GPUSampler;
 
 namespace Renderer {
 class CSamplerCache {
 public:
-    CSamplerCache(SDL_GPUDevice* device);
+    explicit CSamplerCache(SDL_GPUDevice* device);
     ~CSamplerCache();
     SDL_GPUSampler* GetLinear() const;
     SDL_GPUSampler* GetNearest() const;

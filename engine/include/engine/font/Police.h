@@ -2,6 +2,8 @@
 
 #include "engine/font/FontTypes.h"
 #include <glm/vec4.hpp>
+#include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace Material {

@@ -3,6 +3,7 @@
 
 #include "scene/DebugScene.h"
 #include <magic_enum/magic_enum.hpp>
+#include <stdexcept>
 
 namespace Scene {
 CSceneHandler::CSceneHandler(Core::CEngineLoop& engineLoop,

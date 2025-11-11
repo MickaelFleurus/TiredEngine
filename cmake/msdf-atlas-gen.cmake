@@ -6,10 +6,11 @@ function(setup_msdfatlasgen)
         SOURCE_DIR external/msdfatlasgen
     )
     
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static" FORCE)
     # Configure msdfgen options - use CORE_ONLY to avoid external dependencies
     set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
     set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
     set(MSDF_ATLAS_NO_ARTERY_FONT OFF CACHE BOOL "" FORCE)
-    set(MSDF_ATLAS_MSDFGEN_EXTERNAL ON CACHE BOOL "" FORCE)   
+    set(MSDF_ATLAS_MSDFGEN_EXTERNAL ON CACHE BOOL "" FORCE) 
     FetchContent_MakeAvailable(msdfatlasgen)
 endfunction()

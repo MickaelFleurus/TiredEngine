@@ -24,8 +24,6 @@ CSamplerCache::CSamplerCache(SDL_GPUDevice* device) : mDevice(device) {
     SDL_GPUSamplerCreateInfo repeatDesc{};
     repeatDesc.min_filter = SDL_GPU_FILTER_LINEAR;
     repeatDesc.mag_filter = SDL_GPU_FILTER_LINEAR;
-    repeatDesc.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-    repeatDesc.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
     mRepeat = SDL_CreateGPUSampler(mDevice, &repeatDesc);
 }
 
@@ -44,10 +42,13 @@ CSamplerCache::~CSamplerCache() {
 SDL_GPUSampler* CSamplerCache::GetLinear() const {
     return mLinear;
 }
+
 SDL_GPUSampler* CSamplerCache::GetNearest() const {
     return mNearest;
 }
+
 SDL_GPUSampler* CSamplerCache::GetRepeat() const {
     return mRepeat;
 }
+
 } // namespace Renderer

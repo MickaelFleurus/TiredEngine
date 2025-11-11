@@ -4,6 +4,7 @@
 #include "engine/renderer/PipelineFactory.h"
 
 #include <memory>
+#include <string>
 
 struct SDL_GPUTexture;
 struct SDL_GPUDevice;

@@ -5,10 +5,10 @@
 namespace Core {
 CGameObject::CGameObject(const std::string& name,
                          Component::CComponentManager& componentManager,
-                         CGameObject* mParent, GameObjectId id)
+                         CGameObject* parent, GameObjectId id)
     : mName(name)
     , mComponentManager(componentManager)
-    , mParent(mParent)
+    , mParent(parent)
     , mId(id)
     , mTransformComponent(componentManager.addTransformComponent(*this)) {
 }

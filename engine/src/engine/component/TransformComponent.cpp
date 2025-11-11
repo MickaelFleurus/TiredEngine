@@ -1,5 +1,4 @@
 #include "engine/component/TransformComponent.h"
-#include <SDL3/SDL_log.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Component {
@@ -53,11 +52,6 @@ void CTransformComponent::UpdateMatrix(glm::mat4& parentTransform,
     glm::vec2 anchorOffset = Utils::GetAnchorOffset(mAnchor);
     glm::vec3 adjustedPosition =
         mPosition - glm::vec3(anchorOffset * size, 0.0f);
-    // Debug output
-    SDL_Log("UpdateMatrix: pos=(%.1f, %.1f), size=(%.1f, %.1f), anchor=(%.1f, "
-            "%.1f), adjusted=(%.1f, %.1f)",
-            mPosition.x, mPosition.y, size.x, size.y, anchorOffset.x,
-            anchorOffset.y, adjustedPosition.x, adjustedPosition.y);
     parentTransform = glm::translate(parentTransform, adjustedPosition);
     parentTransform *= glm::mat4_cast(mRotation);
     parentTransform = glm::scale(parentTransform, mScale);

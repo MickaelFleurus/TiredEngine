@@ -56,6 +56,10 @@ void CFileHandler::CreateDirectories(const std::string& path) const {
     std::filesystem::create_directories(path);
 }
 
+void CFileHandler::CreateDirectories(const std::filesystem::path& path) const {
+    std::filesystem::create_directories(path);
+}
+
 bool CFileHandler::DeleteFile(const std::string& filePath,
                               const char* extension) {
     return std::filesystem::remove(filePath + extension);
@@ -64,7 +68,7 @@ bool CFileHandler::DeleteFile(const std::string& filePath,
 bool CFileHandler::SaveTextureFileBMP(const std::string& filePath,
                                       SDL_Surface* surface) {
     if (const auto parent = std::filesystem::path(filePath).parent_path();
-        !DoesDirectoryExists(parent)) {
+        !DoesDirectoryExists(parent.string())) {
         CreateDirectories(parent);
     }
     const auto completePath = filePath + ".bmp";
@@ -109,7 +113,7 @@ CFileHandler::GetFileNames(const char* extension) const {
     for (auto const& dir_entry :
          std::filesystem::recursive_directory_iterator{mAssetFolder}) {
         if (dir_entry.path().extension() == extension) {
-            files.push_back(dir_entry.path().stem());
+            files.push_back(dir_entry.path().stem().string());
         }
     }
     return files;

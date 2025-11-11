@@ -321,13 +321,6 @@ private:
                 SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
                                              renderable.indexCount, 1, 0, 0, 0);
             }
-
-            // Debug for text renderables
-            if (renderable.layer == ERenderLayer::UI) {
-                SDL_Log("Renderable transform[3]: (%.2f, %.2f, %.2f)",
-                        renderable.transform[3][0], renderable.transform[3][1],
-                        renderable.transform[3][2]);
-            }
         }
     }
 

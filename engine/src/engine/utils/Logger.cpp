@@ -1,4 +1,7 @@
 #include "engine/utils/Logger.h"
+#include <array>
+#include <ctime>
+#include <filesystem>
 
 namespace {
 
@@ -8,24 +11,22 @@ std::string FormatTimeLog(std::chrono::system_clock::time_point tp) {
                   tp.time_since_epoch()) %
               1000;
 
-    std::tm tm{};
-    localtime_r(&time_t, &tm);
+    std::tm* tm = std::localtime(&time_t);
 
     char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-    return std::format("{}.{:03d}", std::string_view(buf), ms.count());
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
+    return std::format("{}.{:03d}", std::string(buf), ms.count());
 }
 
 std::string FormatTimeFilename() {
     auto time_t =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-    std::tm tm{};
-    localtime_r(&time_t, &tm);
+    std::tm* tm = std::localtime(&time_t);
 
     char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", &tm);
-    return std::format("/{}.txt", std::string_view(buf));
+    std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", tm);
+    return std::format("/{}.txt", std::string(buf));
 }
 
 constexpr std::array<std::string_view, 5> kLevelStrs{"TRACE", "INFO ", "WARN ",

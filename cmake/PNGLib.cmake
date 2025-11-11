@@ -8,10 +8,8 @@ function(setup_pnglib)
     set(PNG_SHARED OFF CACHE BOOL "" FORCE)
     set(PNG_STATIC ON CACHE BOOL "" FORCE)
     set(PNG_TESTS OFF CACHE BOOL "" FORCE)
-    # Fix for the install(EXPORT libpng) error
-    # Ensure libpng creates the export by not skipping the install targets
-    set(SKIP_INSTALL_LIBRARIES OFF CACHE BOOL "" FORCE)
-    set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
+    set(SKIP_INSTALL_LIBRARIES ON CACHE BOOL "" FORCE)
+    set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(libpng)
     if(TARGET png_static AND NOT TARGET PNG::PNG)
         add_library(PNG::PNG ALIAS png_static)

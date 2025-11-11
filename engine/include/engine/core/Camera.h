@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/mat4x4.hpp>
+#include <string>
 
 namespace Component {
 class CCameraComponent;

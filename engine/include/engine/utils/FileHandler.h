@@ -20,6 +20,7 @@ public:
                        const char* extension) const;
     bool DoesDirectoryExists(const std::string& filePath) const;
     void CreateDirectories(const std::string& path) const;
+    void CreateDirectories(const std::filesystem::path& path) const;
 
     bool DeleteFile(const std::string& filePath, const char* extension);
 
