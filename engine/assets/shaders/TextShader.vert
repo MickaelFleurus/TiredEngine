@@ -9,11 +9,12 @@ layout(location = 3) in vec2 instanceSize;
 layout(location = 4) in vec4 instanceUVRect;
 layout(location = 5) in vec4 instanceColor;
 
-layout(push_constant) uniform SMatrices {
+// Change from push_constant to uniform buffer (set 1, binding 0 for vertex stage)
+layout(set = 1, binding = 0) uniform Matrices {
     mat4 projection;
     mat4 view;
-    mat4 model;  // Add model matrix
-} pc;
+    mat4 model;
+} ubo;
 
 
 layout(location = 0) out vec2 fragTexCoord;
@@ -24,7 +25,7 @@ void main() {
 
     vec2 localPosition = scaledPosition + instancePosition;
 
-    gl_Position = pc.projection * pc.view * pc.model * vec4(localPosition, 0.0, 1.0);
+    gl_Position = ubo.projection * ubo.view * ubo.model * vec4(localPosition, 0.0, 1.0);
     fragTexCoord = instanceUVRect.xy + inTexCoord * instanceUVRect.zw;
     fragColor = instanceColor;
 }

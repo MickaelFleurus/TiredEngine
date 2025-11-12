@@ -18,13 +18,13 @@ COverlordToolHandler::COverlordToolHandler(
 void COverlordToolHandler::Initialize() {
     mSettings.Initialize();
     RegisterTools();
+    mSceneHierarchy.SetVisible(true);
 }
 
 void COverlordToolHandler::RegisterTools() {
     COverlord::AddMenu(mSceneLoaderOverlord, mToken);
 
     COverlord::AddWidget(mSceneHierarchy, mToken);
-    COverlord::AddWidget(mEntityWidget, mToken);
 
     COverlord::AddMenu(mOverlordSettings, mToken);
 }

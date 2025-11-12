@@ -23,6 +23,7 @@ void CSceneHierarchy::Render() {
     if (currentScene) {
         ImGui::Text("Current Scene: %s", currentScene->GetName());
         DrawNodeRecursive(currentScene->GetRoot());
+        mEntityWidget.Render();
     }
 }
 

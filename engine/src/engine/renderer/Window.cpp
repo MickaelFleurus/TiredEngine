@@ -198,9 +198,9 @@ public:
 
     bool BeginRender() {
         SDL_GPUTexture* swapchainTexture;
-        if (!SDL_AcquireGPUSwapchainTexture(mSDLCommandBuffer, mSDLWindow.get(),
-                                            &swapchainTexture, nullptr,
-                                            nullptr)) {
+        if (!SDL_WaitAndAcquireGPUSwapchainTexture(
+                mSDLCommandBuffer, mSDLWindow.get(), &swapchainTexture, nullptr,
+                nullptr)) {
             LOG_ERROR("Failed to acquire swapchain texture: {}",
                       SDL_GetError());
             return false;

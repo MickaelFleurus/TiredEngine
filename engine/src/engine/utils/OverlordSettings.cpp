@@ -18,7 +18,8 @@ COverlordSettings::COverlordSettings(CFileHandler& fileHandler,
 }
 
 bool COverlordSettings::Initialize() {
-    if (mFileHandler.DoesFileExist(kSettingsFile, ".json")) {
+    mPath = mFileHandler.GetTempFolder() + kSettingsFile;
+    if (mFileHandler.DoesFileExist(mPath, ".json")) {
         LoadSettings();
         ApplySettings();
     }
@@ -26,14 +27,14 @@ bool COverlordSettings::Initialize() {
 }
 
 void COverlordSettings::LoadSettings() {
-    const auto config = mFileHandler.LoadJson(kSettingsFile);
+    const auto config = mFileHandler.LoadJson(mPath);
     config.at("default_scene").get_to(mDefaultSceneToLoad);
 }
 
 void COverlordSettings::SaveSettings() const {
     nlohmann::json config;
     config[kDefaultSceneKey] = mDefaultSceneToLoad;
-    mFileHandler.SaveJson(kSettingsFile, config);
+    mFileHandler.SaveJson(mPath, config);
 }
 
 void COverlordSettings::ApplySettings() {

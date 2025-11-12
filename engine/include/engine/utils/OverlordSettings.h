@@ -28,6 +28,7 @@ private:
 
     CFileHandler& mFileHandler;
     Scene::ISceneHandler& mSceneHandler;
+    std::string mPath;
 
     std::string mDefaultSceneToLoad;
 };
