@@ -34,7 +34,7 @@ constexpr uint32_t kQuadIndicesMemSize =
 namespace Renderer {
 
 CTextRenderer::CTextRenderer(SDL_GPUDevice* device) : mDevice(device) {
-    Initialize();
+    // Initialize();
 }
 
 CTextRenderer::~CTextRenderer() {

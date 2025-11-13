@@ -48,21 +48,21 @@ bool CEngineLoop::Run() {
         mLastFrameTime = currentTime;
 
         mInputHandler.Update();
-        if (!mWindow.PrepareRender()) {
-            LOG_ERROR("Failed to prepare render");
-            continue;
-        }
-        mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
+        // if (!mWindow.PrepareRender()) {
+        //     LOG_ERROR("Failed to prepare render");
+        //     continue;
+        // }
+        // mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
 
-        if (mWindow.BeginRender()) {
-            if (mCurrentScene) {
-                mWindow.Render(*mCurrentScene, mComponentManager);
-            }
-            mOverlordManager.Render(mWindow.GetCommandBuffer(),
-                                    mWindow.GetRenderPass());
+        // if (mWindow.BeginRender()) {
+        //     if (mCurrentScene) {
+        //         mWindow.Render(*mCurrentScene, mComponentManager);
+        //     }
+        //     mOverlordManager.Render(mWindow.GetCommandBuffer(),
+        //                             mWindow.GetRenderPass());
 
-            mWindow.EndRender();
-        }
+        //     mWindow.EndRender();
+        // }
         mInputHandler.Swap();
     }
     return true;

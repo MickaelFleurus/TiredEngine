@@ -3,6 +3,8 @@
 #include <ctime>
 #include <filesystem>
 
+#include <vulkan/vulkan.h>
+
 namespace {
 
 std::string FormatTimeLog(std::chrono::system_clock::time_point tp) {

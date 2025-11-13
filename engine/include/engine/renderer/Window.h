@@ -34,11 +34,18 @@ public:
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager);
     void EndRender();
-    SDL_GPUDevice* GetDevice() const;
+    SDL_GPUDevice* GetDevice() const {
+        return nullptr;
+    }
     SDL_Window* Get() const;
 
-    SDL_GPUCommandBuffer* GetCommandBuffer() const;
-    SDL_GPURenderPass* GetRenderPass() const;
+    SDL_GPUCommandBuffer* GetCommandBuffer() const {
+        return nullptr;
+    }
+
+    SDL_GPURenderPass* GetRenderPass() const {
+        return nullptr;
+    }
 
     CTextRenderer& GetTextRenderer();
 
