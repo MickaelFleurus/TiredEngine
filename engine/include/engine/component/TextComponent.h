@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/component/IDisplayComponent.h"
+#include "engine/renderer/RendererUtils.h"
 
 #include <string>
 #include <vector>
@@ -29,7 +30,7 @@ public:
     Font::CPolice* getPolice() const;
     const std::string& getText() const;
 
-    SDL_GPUBuffer* GetInstanceBuffer();
+    VkBuffer GetInstanceBuffer();
     uint32_t GetInstanceCount() const;
 
     glm::vec2 getSize() override;
@@ -38,7 +39,7 @@ private:
     void GenerateInstances();
 
     Renderer::CTextRenderer& mTextRenderer;
-    SDL_GPUBuffer* mInstanceBuffer = nullptr;
+    Renderer::VulkanBuffer mInstanceBuffer{};
     std::vector<Renderer::SCharacterInstance> mInstances;
 
     std::string mText;

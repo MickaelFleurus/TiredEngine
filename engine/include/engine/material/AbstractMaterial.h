@@ -2,9 +2,8 @@
 #include "engine/material/MaterialTypes.h"
 
 #include <glm/vec4.hpp>
+#include <vulkan/vulkan.h>
 
-struct SDL_GPURenderPass;
-struct SDL_GPUGraphicsPipeline;
 struct SDL_GPUTexture;
 
 namespace Material {
@@ -14,7 +13,7 @@ public:
     virtual ~AbstractMaterial() = default;
 
     EMaterialType GetType() const;
-    SDL_GPUGraphicsPipeline* GetPipeline() const;
+    VkPipeline GetPipeline() const;
 
     void SetColor(const glm::vec4& color);
     void SetTexture(SDL_GPUTexture* texture);
@@ -22,18 +21,17 @@ public:
     const glm::vec4& GetColor() const;
     SDL_GPUTexture* GetTexture() const;
 
-    virtual void Bind(SDL_GPURenderPass* renderPass);
+    virtual void Bind(VkRenderPass renderPass);
 
 protected:
-    explicit AbstractMaterial(EMaterialType type,
-                              SDL_GPUGraphicsPipeline* pipeline);
+    explicit AbstractMaterial(EMaterialType type, VkPipeline pipeline);
     AbstractMaterial(const AbstractMaterial& other);
     AbstractMaterial& operator=(const AbstractMaterial& other);
     AbstractMaterial(AbstractMaterial&& other) noexcept;
     AbstractMaterial& operator=(AbstractMaterial&& other) noexcept;
 
     EMaterialType mType = EMaterialType::Unlit;
-    SDL_GPUGraphicsPipeline* mPipeline = nullptr;
+    VkPipeline mPipeline = VK_NULL_HANDLE;
     glm::vec4 mColor = glm::vec4(1.0f);
     SDL_GPUTexture* mTexture = nullptr;
 };

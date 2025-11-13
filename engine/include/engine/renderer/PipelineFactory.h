@@ -1,19 +1,17 @@
 #pragma once
 #include <memory>
-
-struct SDL_GPUGraphicsPipeline;
+#include <vulkan/vulkan.h>
 
 namespace Renderer {
 struct SPipelineConfig;
-class CWindow;
+class VulkanRenderer;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(const CWindow& window);
+    CPipelineFactory(const VulkanRenderer& renderer);
     ~CPipelineFactory();
 
-    SDL_GPUGraphicsPipeline*
-    CreateGraphicsPipeline(const SPipelineConfig& config);
+    VkPipeline CreateGraphicsPipeline(const SPipelineConfig& config);
 
 private:
     class CImpl;

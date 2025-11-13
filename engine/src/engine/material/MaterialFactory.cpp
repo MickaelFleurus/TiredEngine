@@ -10,11 +10,11 @@ namespace Material {
 
 CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
                                    Utils::CFileHandler& fileHandler,
-                                   const Renderer::CWindow& window)
+                                   const Renderer::VulkanRenderer& renderer)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mWindow(window)
-    , mPipelineFactory(window) {
+    , mRenderer(renderer)
+    , mPipelineFactory(renderer) {
 }
 
 std::unique_ptr<AbstractMaterial>
@@ -22,8 +22,7 @@ CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
     // Get or create pipeline
-    SDL_GPUGraphicsPipeline* pipeline =
-        mPipelineFactory.CreateGraphicsPipeline(info);
+    VkPipeline pipeline = mPipelineFactory.CreateGraphicsPipeline(info);
     return std::make_unique<CMaterial>(type, pipeline);
 }
 

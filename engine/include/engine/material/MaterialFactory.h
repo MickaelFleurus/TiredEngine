@@ -6,14 +6,10 @@
 #include <memory>
 #include <string>
 
-struct SDL_GPUTexture;
-struct SDL_GPUDevice;
-struct SDL_Window;
-
 namespace Renderer {
 struct SPipelineConfig;
 class CTextureManager;
-class CWindow;
+class VulkanRenderer;
 } // namespace Renderer
 
 namespace Utils {
@@ -27,7 +23,7 @@ class CMaterialFactory {
 public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Renderer::CWindow& window);
+                              const Renderer::VulkanRenderer& renderer);
 
     // Create material with specified parameters
     std::unique_ptr<AbstractMaterial>
@@ -44,7 +40,7 @@ public:
 private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
-    const Renderer::CWindow& mWindow;
+    const Renderer::VulkanRenderer& mRenderer;
     Renderer::CPipelineFactory mPipelineFactory;
 };
 

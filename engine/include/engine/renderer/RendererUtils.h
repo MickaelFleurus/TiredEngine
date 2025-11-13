@@ -3,12 +3,12 @@
 #include "engine/material/AbstractMaterial.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/Vertex.h"
-#include <SDL3/SDL_gpu.h>
 #include <concepts>
 #include <cstdint>
 #include <glm/mat4x4.hpp>
 #include <ranges>
 #include <span>
+#include <vulkan/vulkan.h>
 
 struct SDL_GPUBuffer;
 
@@ -31,11 +31,11 @@ struct SRenderable {
     ERenderLayer layer;
     float depth;
 
-    SDL_GPUBuffer* vertexBuffer;
-    SDL_GPUBuffer* indexBuffer;
-    uint32_t indexCount;
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkBuffer indexBuffer = VK_NULL_HANDLE;
+    uint32_t indexCount = 0;
 
-    SDL_GPUBuffer* instanceBuffer = nullptr;
+    VkBuffer instanceBuffer = VK_NULL_HANDLE;
     uint32_t instanceCount = 0;
 
     uint64_t sortKey;
@@ -54,65 +54,52 @@ struct SRenderable {
     }
 };
 
+struct VulkanBuffer {
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+};
+
 struct VertexLayoutInfo {
-    std::vector<SDL_GPUVertexAttribute> attributes;
-    std::vector<SDL_GPUVertexBufferDescription> bufferDescriptions;
+    std::vector<VkVertexInputAttributeDescription> attributes;
+    std::vector<VkVertexInputBindingDescription> bufferDescriptions;
 };
 
 template <typename T>
 concept ContiguousRange = std::ranges::range<T> &&
                           std::contiguous_iterator<std::ranges::iterator_t<T>>;
 
+VulkanBuffer CreateBuffer(VkDevice device, uint32_t size,
+                          VkBufferUsageFlags bufferType,
+                          VkPhysicalDeviceMemoryProperties memProperties);
+
+void FillBuffer(VkDevice device, VulkanBuffer buffer, const void* data,
+                uint32_t size);
+
+VulkanBuffer
+CreateAndFillBuffer(VkDevice device, const void* content, uint32_t size,
+                    VkBufferUsageFlags bufferType,
+                    VkPhysicalDeviceMemoryProperties memProperties);
+
 template <ContiguousRange R>
-SDL_GPUBuffer* CreateBuffer(SDL_GPUDevice* device, R& content,
-                            SDL_GPUBufferUsageFlags bufferType) {
-    uint32_t containerMemSize = static_cast<uint32_t>(
-        sizeof(std::ranges::range_value_t<R>) * std::ranges::size(content));
-    SDL_GPUBufferCreateInfo vertexInfo = {};
-    vertexInfo.usage = bufferType;
-    vertexInfo.size = containerMemSize;
-
-    SDL_GPUBuffer* buffer = SDL_CreateGPUBuffer(device, &vertexInfo);
-
-    SDL_GPUTransferBufferCreateInfo transferInfo = {};
-    transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    transferInfo.size = containerMemSize;
-
-    SDL_GPUTransferBuffer* transferBuffer =
-        SDL_CreateGPUTransferBuffer(device, &transferInfo);
-
-    void* data = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
-    memcpy(data, content.data(), containerMemSize);
-    SDL_UnmapGPUTransferBuffer(device, transferBuffer);
-
-    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(device);
-    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmd);
-
-    SDL_GPUTransferBufferLocation src = {};
-    src.transfer_buffer = transferBuffer;
-    src.offset = 0;
-
-    SDL_GPUBufferRegion dst = {};
-    dst.buffer = buffer;
-    dst.offset = 0;
-    dst.size = containerMemSize;
-
-    SDL_UploadToGPUBuffer(copyPass, &src, &dst, false);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(uploadCmd);
-
-    SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-    return buffer;
+VulkanBuffer
+CreateAndFillVertexBuffer(VkDevice device, R& vertices,
+                          VkPhysicalDeviceMemoryProperties memProperties) {
+    uint32_t memSize = static_cast<uint32_t>(
+        sizeof(std::ranges::range_value_t<R>) * std::ranges::size(vertices));
+    return CreateAndFillBuffer(device, std::ranges::data(vertices), memSize,
+                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                               memProperties);
 }
 
 template <ContiguousRange R>
-SDL_GPUBuffer* CreateVertexBuffer(SDL_GPUDevice* device, R& vertices) {
-    return CreateBuffer(device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
-}
+VulkanBuffer
+CreateAndFillIndexBuffer(VkDevice device, R& indices,
+                         VkPhysicalDeviceMemoryProperties memProperties) {
 
-template <ContiguousRange R>
-SDL_GPUBuffer* CreateIndexBuffer(SDL_GPUDevice* device, R& indices) {
-    return CreateBuffer(device, indices, SDL_GPU_BUFFERUSAGE_INDEX);
+    uint32_t memSize = static_cast<uint32_t>(
+        sizeof(std::ranges::range_value_t<R>) * std::ranges::size(indices));
+    return CreateAndFillBuffer(device, std::ranges::data(indices), memSize,
+                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT, memProperties);
 }
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);

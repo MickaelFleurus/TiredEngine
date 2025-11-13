@@ -1,8 +1,9 @@
 #include "engine/renderer/Window.h"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_vulkan.h>
+#include <vulkan/vulkan.h>
 
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
@@ -18,11 +19,13 @@
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/SamplerCache.h"
 #include "engine/renderer/TextRenderer.h"
+#include "engine/renderer/VulkanRenderer.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
 
 #include <functional>
+#include <vector>
 
 namespace {
 
@@ -32,34 +35,27 @@ constexpr auto kSDLWindowDeleter = [](SDL_Window* window) {
     }
 };
 
-constexpr auto kSDLGPUDeviceDeleter = [](SDL_GPUDevice* device) {
-    if (device) {
-        SDL_DestroyGPUDevice(device);
-    }
-};
-
-SDL_GPUViewport GetViewport(SDL_Window* window,
-                            const System::SDisplayParameter& displayParams) {
+VkViewport GetViewport(SDL_Window* window,
+                       const System::SDisplayParameter& displayParams) {
 
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
 
-    SDL_GPUViewport viewport;
+    VkViewport viewport;
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.w = static_cast<float>(std::min(displayParams.width, w));
-    viewport.h = static_cast<float>(std::min(displayParams.height, h));
-    viewport.min_depth = 0.0f;
-    viewport.max_depth = 1.0f;
+    viewport.width = static_cast<float>(std::min(displayParams.width, w));
+    viewport.height = static_cast<float>(std::min(displayParams.height, h));
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
     return viewport;
 }
 
-SDL_Rect GetScissor(SDL_GPUViewport viewport) {
-    SDL_Rect scissor;
-    scissor.x = 0;
-    scissor.y = 0;
-    scissor.w = viewport.w;
-    scissor.h = viewport.h;
+VkRect2D GetScissor(VkViewport viewport) {
+    VkRect2D scissor;
+    scissor.offset = {0, 0};
+    scissor.extent = {static_cast<uint32_t>(viewport.width),
+                      static_cast<uint32_t>(viewport.height)};
     return scissor;
 }
 } // namespace
@@ -68,21 +64,21 @@ namespace Renderer {
 
 class CWindow::CImpl {
 public:
-    CImpl(const System::CSystem& system, SDL_Window* window,
-          SDL_GPUDevice* device)
+    CImpl(const System::CSystem& system, SDL_Window* window)
         : mSystem(system)
         , mSDLWindow(std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)>(
               window, kSDLWindowDeleter))
-        , mSDLDevice(
-              std::unique_ptr<SDL_GPUDevice, decltype(kSDLGPUDeviceDeleter)>(
-                  device, kSDLGPUDeviceDeleter))
-        , mTextRenderer(mSDLDevice.get())
-        , mSamplerCache(mSDLDevice.get())
-        , mViewport(GetViewport(window, system.GetDisplayParameters()))
-        , mScissor(GetScissor(mViewport)) {
+        , mViewport(
+              GetViewport(mSDLWindow.get(), mSystem.GetDisplayParameters()))
+        , mScissor(GetScissor(mViewport))
 
+    {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        SDL_ClaimWindowForGPUDevice(mSDLDevice.get(), mSDLWindow.get());
+        mRenderer.Init(mSDLWindow.get(), mSystem);
+
+        mTextRenderer = std::make_unique<CTextRenderer>(
+            mRenderer.GetVulkanDevice().device,
+            mRenderer.GetVulkanPhysicalDevice().memoryProperties);
     }
 
     ~CImpl() {
@@ -125,8 +121,8 @@ public:
             renderable.layer = ERenderLayer::UI;
             renderable.depth = transform[3][2];
 
-            renderable.vertexBuffer = mTextRenderer.GetQuadVertexBuffer();
-            renderable.indexBuffer = mTextRenderer.GetQuadIndexBuffer();
+            renderable.vertexBuffer = mTextRenderer->GetQuadVertexBuffer();
+            renderable.indexBuffer = mTextRenderer->GetQuadIndexBuffer();
             renderable.instanceBuffer = textComponent->GetInstanceBuffer();
 
             renderable.instanceCount = textComponent->GetInstanceCount();
@@ -145,9 +141,6 @@ public:
 
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager) {
-        if (!mSDLRenderPass) {
-            return;
-        }
         auto& camera = scene.GetActiveCamera();
 
         std::vector<SRenderable> renderables;
@@ -168,9 +161,6 @@ public:
             }
         }
 
-        SDL_SetGPUViewport(mSDLRenderPass, &mViewport);
-        SDL_SetGPUScissor(mSDLRenderPass, &mScissor);
-
         // === WORLD PASS ===
         RenderPass(worldRenderables, scene.GetActiveCamera());
 
@@ -178,76 +168,40 @@ public:
         RenderPass(uiRenderables, scene.GetUICamera());
     }
 
-    SDL_GPUDevice* GetDevice() const {
-        return mSDLDevice.get();
-    }
-
-    SDL_Window* GetWindow() const {
-        return mSDLWindow.get();
-    }
-
-    bool PrepareRender() {
-        mSDLCommandBuffer = SDL_AcquireGPUCommandBuffer(mSDLDevice.get());
-        if (!mSDLCommandBuffer) {
-            LOG_ERROR("Failed to acquire command buffer: {}", SDL_GetError());
-
-            return false;
-        }
-        return true;
-    }
-
     bool BeginRender() {
-        SDL_GPUTexture* swapchainTexture;
-        if (!SDL_WaitAndAcquireGPUSwapchainTexture(
-                mSDLCommandBuffer, mSDLWindow.get(), &swapchainTexture, nullptr,
-                nullptr)) {
-            LOG_ERROR("Failed to acquire swapchain texture: {}",
-                      SDL_GetError());
-            return false;
-        }
-
-        if (!swapchainTexture) {
-            LOG_ERROR("Swapchain texture is null");
-            return false;
-        }
-
-        SDL_GPUColorTargetInfo colorTarget = {};
-        colorTarget.texture = swapchainTexture;
-        colorTarget.clear_color = {0.0f, 0.0f, 0.0f, 1.0f}; // Black background
-        colorTarget.load_op = SDL_GPU_LOADOP_CLEAR;
-        colorTarget.store_op = SDL_GPU_STOREOP_STORE;
-
-        mSDLRenderPass =
-            SDL_BeginGPURenderPass(mSDLCommandBuffer, &colorTarget, 1, nullptr);
-        if (!mSDLRenderPass) {
-            LOG_ERROR("Failed to begin render pass: {}", SDL_GetError());
-            return false;
-        }
-
-        return true;
+        auto& queue = mRenderer.GetQueue();
+        queue.WaitIdle();
+        mImageIndex = queue.AcquireNextImage();
+        mRenderer.BeginRenderPass(mImageIndex.value(), mViewport, mScissor);
+        return mImageIndex.has_value();
     }
 
     void EndRender() {
-        if (mSDLRenderPass) {
-            SDL_EndGPURenderPass(mSDLRenderPass);
-            mSDLRenderPass = nullptr;
+        if (mImageIndex.has_value()) {
+            mRenderer.EndRenderPass(mImageIndex.value());
+            auto& queue = mRenderer.GetQueue();
+            queue.SubmitAsync(mRenderer.GetCommandBuffer(mImageIndex.value()));
+            queue.Present(mImageIndex.value());
+            mImageIndex = std::nullopt;
         }
-        if (mSDLCommandBuffer) {
-            SDL_SubmitGPUCommandBuffer(mSDLCommandBuffer);
-            mSDLCommandBuffer = nullptr;
-        }
-    }
-
-    SDL_GPUCommandBuffer* GetCommandBuffer() const {
-        return mSDLCommandBuffer;
-    }
-
-    SDL_GPURenderPass* GetRenderPass() const {
-        return mSDLRenderPass;
     }
 
     CTextRenderer& GetTextRenderer() {
-        return mTextRenderer;
+        return *mTextRenderer;
+    }
+    const VulkanRenderer& GetVulkanRenderer() const {
+        return mRenderer;
+    }
+
+    VkCommandBuffer GetCommandBuffer() {
+        if (!mImageIndex.has_value()) {
+            return VK_NULL_HANDLE;
+        }
+        return mRenderer.GetCommandBuffer(mImageIndex.value());
+    }
+
+    SDL_Window* GetSDLWindow() const {
+        return mSDLWindow.get();
     }
 
 private:
@@ -256,86 +210,89 @@ private:
         SDL_GPUGraphicsPipeline* currentPipeline = nullptr;
         SDL_GPUTexture* currentTexture = nullptr;
 
-        auto pushConstants = camera.GetMatrices();
+        // auto pushConstants = camera.GetMatrices();
 
-        for (const auto& renderable : renderables) {
-            if (!renderable.material) {
-                continue;
-            }
+        // for (const auto& renderable : renderables) {
+        //     if (!renderable.material) {
+        //         continue;
+        //     }
 
-            // Bind pipeline if changed
-            SDL_GPUGraphicsPipeline* pipeline =
-                renderable.material->GetPipeline();
-            if (pipeline && pipeline != currentPipeline) {
-                SDL_BindGPUGraphicsPipeline(mSDLRenderPass, pipeline);
-                currentPipeline = pipeline;
-            }
+        //     // Bind pipeline if changed
+        //     SDL_GPUGraphicsPipeline* pipeline =
+        //         renderable.material->GetPipeline();
+        //     if (pipeline && pipeline != currentPipeline) {
+        //         SDL_BindGPUGraphicsPipeline(mSDLRenderPass, pipeline);
+        //         currentPipeline = pipeline;
+        //     }
 
-            // Bind texture if changed
-            SDL_GPUTexture* texture = renderable.material->GetTexture();
-            if (texture && texture != currentTexture) {
-                SDL_GPUTextureSamplerBinding binding = {};
-                binding.texture = texture;
-                binding.sampler = mSamplerCache.GetLinear();
-                SDL_BindGPUFragmentSamplers(mSDLRenderPass, 0, &binding, 1);
-                currentTexture = texture;
-            }
-            // Bind vertex buffers
-            if (renderable.vertexBuffer) {
-                SDL_GPUBufferBinding vertexBinding = {};
-                vertexBinding.buffer = renderable.vertexBuffer;
-                vertexBinding.offset = 0;
-                SDL_BindGPUVertexBuffers(mSDLRenderPass, 0, &vertexBinding, 1);
-            }
+        //     // Bind texture if changed
+        //     SDL_GPUTexture* texture = renderable.material->GetTexture();
+        //     if (texture && texture != currentTexture) {
+        //         SDL_GPUTextureSamplerBinding binding = {};
+        //         binding.texture = texture;
+        //         binding.sampler = mSamplerCache.GetLinear();
+        //         SDL_BindGPUFragmentSamplers(mSDLRenderPass, 0, &binding, 1);
+        //         currentTexture = texture;
+        //     }
+        //     // Bind vertex buffers
+        //     if (renderable.vertexBuffer) {
+        //         SDL_GPUBufferBinding vertexBinding = {};
+        //         vertexBinding.buffer = renderable.vertexBuffer;
+        //         vertexBinding.offset = 0;
+        //         SDL_BindGPUVertexBuffers(mSDLRenderPass, 0, &vertexBinding,
+        //         1);
+        //     }
 
-            // Bind instance buffer if present
-            if (renderable.instanceBuffer) {
-                SDL_GPUBufferBinding instanceBinding = {};
-                instanceBinding.buffer = renderable.instanceBuffer;
-                instanceBinding.offset = 0;
-                SDL_BindGPUVertexBuffers(mSDLRenderPass, 1, &instanceBinding,
-                                         1);
-            }
+        //     // Bind instance buffer if present
+        //     if (renderable.instanceBuffer) {
+        //         SDL_GPUBufferBinding instanceBinding = {};
+        //         instanceBinding.buffer = renderable.instanceBuffer;
+        //         instanceBinding.offset = 0;
+        //         SDL_BindGPUVertexBuffers(mSDLRenderPass, 1, &instanceBinding,
+        //                                  1);
+        //     }
 
-            // Bind index buffer
-            if (renderable.indexBuffer) {
-                SDL_GPUBufferBinding indexBinding = {};
-                indexBinding.buffer = renderable.indexBuffer;
-                indexBinding.offset = 0;
-                SDL_BindGPUIndexBuffer(mSDLRenderPass, &indexBinding,
-                                       SDL_GPU_INDEXELEMENTSIZE_16BIT);
-            }
+        //     // Bind index buffer
+        //     if (renderable.indexBuffer) {
+        //         SDL_GPUBufferBinding indexBinding = {};
+        //         indexBinding.buffer = renderable.indexBuffer;
+        //         indexBinding.offset = 0;
+        //         SDL_BindGPUIndexBuffer(mSDLRenderPass, &indexBinding,
+        //                                SDL_GPU_INDEXELEMENTSIZE_16BIT);
+        //     }
 
-            // Set model matrix for this renderable
-            pushConstants.model = renderable.transform;
+        //     // Set model matrix for this renderable
+        //     pushConstants.model = renderable.transform;
 
-            SDL_PushGPUVertexUniformData(mSDLCommandBuffer, 0, &pushConstants,
-                                         sizeof(Core::CCamera::SMatrices));
+        //     SDL_PushGPUVertexUniformData(mSDLCommandBuffer, 0,
+        //     &pushConstants,
+        //                                  sizeof(Core::CCamera::SMatrices));
 
-            // Draw
-            if (renderable.instanceCount > 0 && renderable.indexBuffer) {
-                SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
-                                             renderable.indexCount,
-                                             renderable.instanceCount, 0, 0, 0);
-            } else if (renderable.indexCount > 0 && renderable.indexBuffer) {
-                SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
-                                             renderable.indexCount, 1, 0, 0, 0);
-            }
-        }
+        //     // Draw
+        //     if (renderable.instanceCount > 0 && renderable.indexBuffer) {
+        //         SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
+        //                                      renderable.indexCount,
+        //                                      renderable.instanceCount, 0, 0,
+        //                                      0);
+        //     } else if (renderable.indexCount > 0 && renderable.indexBuffer) {
+        //         SDL_DrawGPUIndexedPrimitives(mSDLRenderPass,
+        //                                      renderable.indexCount, 1, 0, 0,
+        //                                      0);
+        //     }
+        // }
     }
 
     const System::CSystem& mSystem;
     std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)> mSDLWindow;
-    std::unique_ptr<SDL_GPUDevice, decltype(kSDLGPUDeviceDeleter)> mSDLDevice;
+    VulkanRenderer mRenderer;
 
-    SDL_GPUCommandBuffer* mSDLCommandBuffer = nullptr;
-    SDL_GPURenderPass* mSDLRenderPass = nullptr;
+    std::optional<uint32_t> mImageIndex = std::nullopt;
 
-    SDL_GPUViewport mViewport;
-    SDL_Rect mScissor;
+    VkViewport mViewport;
+    VkRect2D mScissor;
 
-    CSamplerCache mSamplerCache;
-    CTextRenderer mTextRenderer;
+    CSamplerCache* mSamplerCache;
+    std::unique_ptr<CTextRenderer> mTextRenderer;
 };
 
 CWindow::CWindow(System::CSystem& system) : mSystem(system) {
@@ -348,7 +305,7 @@ bool CWindow::Initialize() {
     const System::SDisplayParameter& displayParams =
         mSystem.GetDisplayParameters();
 
-    SDL_WindowFlags windowFlags = SDL_WINDOW_RESIZABLE;
+    SDL_WindowFlags windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
     if (displayParams.fullscreen) {
         windowFlags |= SDL_WINDOW_FULLSCREEN;
     }
@@ -357,20 +314,8 @@ bool CWindow::Initialize() {
     if (!window) {
         return false;
     }
-    auto* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV |
-                                           SDL_GPU_SHADERFORMAT_MSL |
-                                           SDL_GPU_SHADERFORMAT_DXIL,
-                                       true, nullptr);
-    if (!device) {
-        SDL_DestroyWindow(window);
-        return false;
-    }
-    mImpl = std::make_unique<CImpl>(mSystem, window, device);
+    mImpl = std::make_unique<CImpl>(mSystem, window);
     return true;
-}
-
-bool CWindow::PrepareRender() {
-    return mImpl->PrepareRender();
 }
 
 bool CWindow::BeginRender() {
@@ -386,24 +331,20 @@ void CWindow::EndRender() {
     mImpl->EndRender();
 }
 
-SDL_GPUDevice* CWindow::GetDevice() const {
-    return mImpl->GetDevice();
-}
-
-SDL_Window* CWindow::Get() const {
-    return mImpl->GetWindow();
-}
-
-SDL_GPUCommandBuffer* CWindow::GetCommandBuffer() const {
-    return mImpl->GetCommandBuffer();
-}
-
-SDL_GPURenderPass* CWindow::GetRenderPass() const {
-    return mImpl->GetRenderPass();
+SDL_Window* CWindow::GetSDLWindow() const {
+    return mImpl->GetSDLWindow();
 }
 
 CTextRenderer& CWindow::GetTextRenderer() {
     return mImpl->GetTextRenderer();
+}
+
+const VulkanRenderer& CWindow::GetVulkanRenderer() const {
+    return mImpl->GetVulkanRenderer();
+}
+
+VkCommandBuffer CWindow::GetCommandBuffer() {
+    return mImpl->GetCommandBuffer();
 }
 
 } // namespace Renderer

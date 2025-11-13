@@ -1,8 +1,6 @@
 #pragma once
 #include <memory>
-
-struct SDL_GPUCommandBuffer;
-struct SDL_GPURenderPass;
+#include <vulkan/vulkan.h>
 union SDL_Event;
 
 namespace Renderer {
@@ -17,8 +15,8 @@ public:
     COverlordManager(const Renderer::CWindow& window);
     ~COverlordManager();
 
-    void PrepareRender(SDL_GPUCommandBuffer* cmd);
-    void Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass);
+    bool PrepareRender();
+    void Render(VkCommandBuffer cmd, VkPipeline pipeline = VK_NULL_HANDLE);
 
     void HandleEvent(const SDL_Event* e);
 

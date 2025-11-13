@@ -1,9 +1,9 @@
 #pragma once
 #include <memory>
+#include <vulkan/vulkan.h>
 
 struct SDL_GPUDevice;
 struct SDL_Window;
-struct SDL_GPUCommandBuffer;
 struct SDL_GPURenderPass;
 
 namespace Scene {
@@ -21,6 +21,7 @@ class CSystem;
 namespace Renderer {
 
 class CTextRenderer;
+class VulkanRenderer;
 
 class CWindow {
 public:
@@ -29,18 +30,24 @@ public:
 
     bool Initialize();
 
-    bool PrepareRender();
     bool BeginRender();
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager);
     void EndRender();
-    SDL_GPUDevice* GetDevice() const;
-    SDL_Window* Get() const;
 
-    SDL_GPUCommandBuffer* GetCommandBuffer() const;
-    SDL_GPURenderPass* GetRenderPass() const;
+    SDL_GPUDevice* GetDevice() const {
+        return nullptr;
+    }
+    SDL_Window* GetSDLWindow() const;
+
+    SDL_GPURenderPass* GetRenderPass() const {
+        return nullptr;
+    }
+
+    const VulkanRenderer& GetVulkanRenderer() const;
 
     CTextRenderer& GetTextRenderer();
+    VkCommandBuffer GetCommandBuffer();
 
 private:
     class CImpl;

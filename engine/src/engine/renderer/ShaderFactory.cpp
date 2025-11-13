@@ -1,133 +1,84 @@
 #include "engine/renderer/ShaderFactory.h"
 
-#include "engine/renderer/Window.h"
+#include "engine/renderer/VulkanRenderer.h"
+#include "engine/utils/Logger.h"
 
 #include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_iostream.h>
+#include <vulkan/vulkan.h>
 
 #include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
 
-namespace {
-constexpr const char* ShaderStageToExtension(SDL_GPUShaderStage stage) {
-    switch (stage) {
-    case SDL_GPU_SHADERSTAGE_VERTEX:
-        return ".vert";
-    case SDL_GPU_SHADERSTAGE_FRAGMENT:
-        return ".frag";
-    default:
-        return "";
-    }
-}
-} // namespace
-
 namespace Renderer {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(const CWindow& window) : mWindow(window) {
+    CImpl(const VulkanRenderer& renderer) : mRenderer(renderer) {
     }
 
     ~CImpl() {
         for (auto& [path, shader] : mShaderCache) {
-            SDL_ReleaseGPUShader(mWindow.GetDevice(), shader);
+            vkDestroyShaderModule(mRenderer.GetVulkanDevice().device, shader,
+                                  nullptr);
         }
     }
 
-    SDL_GPUShader* CreateFragmentShader(std::string name, std::string path,
-                                        const SShaderResources& resources) {
-        return CreateShader(name, path, SDL_GPU_SHADERSTAGE_FRAGMENT,
-                            resources);
-    }
-
-    SDL_GPUShader* CreateVertexShader(std::string name, std::string path,
-                                      const SShaderResources& resources) {
-        return CreateShader(name, path, SDL_GPU_SHADERSTAGE_VERTEX, resources);
-    }
-
-private:
-    SDL_GPUShader* CreateShader(std::string name, std::string path,
-                                SDL_GPUShaderStage stage,
+    VkShaderModule CreateShader(std::string name, std::string path,
                                 const SShaderResources& resources) {
-        name += ShaderStageToExtension(stage);
-        path += name;
+        path += name + ".spv";
         if (!mShaderCache.contains(name)) {
-
-            SDL_GPUShaderFormat backendFormats =
-                SDL_GetGPUShaderFormats(mWindow.GetDevice());
-
-            struct ShaderConfig {
-                SDL_GPUShaderFormat format;
-                const char* extension;
-                const char* entrypoint;
-            };
-
-            std::optional<ShaderConfig> config;
-
-            if (backendFormats & SDL_GPU_SHADERFORMAT_SPIRV) {
-                config =
-                    ShaderConfig{SDL_GPU_SHADERFORMAT_SPIRV, ".spv", "main"};
-            } else if (backendFormats & SDL_GPU_SHADERFORMAT_MSL) {
-                config =
-                    ShaderConfig{SDL_GPU_SHADERFORMAT_MSL, ".msl", "main0"};
-            } else if (backendFormats & SDL_GPU_SHADERFORMAT_DXIL) {
-                config =
-                    ShaderConfig{SDL_GPU_SHADERFORMAT_DXIL, ".dxil", "main"};
-            } else {
-                // Unrecognized backend shader format
-                return nullptr;
-            }
-
-            std::string fullPath = path + config->extension;
             size_t codeSize = 0;
-            void* rawCode = SDL_LoadFile(fullPath.c_str(), &codeSize);
+            std::unique_ptr<void, decltype(&SDL_free)> rawCode =
+                std::unique_ptr<void, decltype(&SDL_free)>(
+                    SDL_LoadFile(path.c_str(), &codeSize), SDL_free);
             if (rawCode == nullptr) {
                 return nullptr;
             }
+            VkShaderModuleCreateInfo shaderModuleCreateInfo{};
+            shaderModuleCreateInfo.sType =
+                VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+            shaderModuleCreateInfo.codeSize = codeSize;
+            shaderModuleCreateInfo.pCode =
+                reinterpret_cast<const uint32_t*>(rawCode.get());
+            VkShaderModule shaderModule;
+            if (vkCreateShaderModule(mRenderer.GetVulkanDevice().device,
+                                     &shaderModuleCreateInfo, nullptr,
+                                     &shaderModule) != VK_SUCCESS) {
 
-            std::unique_ptr<void, decltype(&SDL_free)> code(rawCode, SDL_free);
-
-            SDL_GPUShaderCreateInfo shaderInfo{
-                .code_size = codeSize,
-                .code = static_cast<const Uint8*>(code.get()),
-                .entrypoint = config->entrypoint,
-                .format = config->format,
-                .stage = stage,
-                .num_samplers = resources.numSamplers,
-                .num_storage_textures = resources.numStorageTextures,
-                .num_storage_buffers = resources.numStorageBuffers,
-                .num_uniform_buffers = resources.numUniformBuffers};
-
-            SDL_GPUShader* shader =
-                SDL_CreateGPUShader(mWindow.GetDevice(), &shaderInfo);
-            mShaderCache.emplace(name, shader);
+                mShaderCache.emplace(name, shaderModule);
+            } else {
+                LOG_ERROR("Failed to create shader module for shader: {}",
+                          name);
+                return VK_NULL_HANDLE;
+            }
         }
         return mShaderCache[name];
     }
 
-    const CWindow& mWindow;
-    std::unordered_map<std::string, SDL_GPUShader*> mShaderCache;
+private:
+    const VulkanRenderer& mRenderer;
+    std::unordered_map<std::string, VkShaderModule> mShaderCache;
 };
 
-CShaderFactory::CShaderFactory(const CWindow& window)
-    : mImpl(std::make_unique<CImpl>(window)) {
+CShaderFactory::CShaderFactory(const VulkanRenderer& renderer)
+    : mImpl(std::make_unique<CImpl>(renderer)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;
 
-SDL_GPUShader*
+VkShaderModule
 CShaderFactory::CreateFragmentShader(std::string name, std::string path,
                                      const SShaderResources& resources) {
-    return mImpl->CreateFragmentShader(name, path, resources);
+    return mImpl->CreateShader(name + ".frag", path, resources);
 }
 
-SDL_GPUShader*
+VkShaderModule
 CShaderFactory::CreateVertexShader(std::string name, std::string path,
                                    const SShaderResources& resources) {
-    return mImpl->CreateVertexShader(name, path, resources);
+    return mImpl->CreateShader(name + ".vert", path, resources);
 }
 
 } // namespace Renderer

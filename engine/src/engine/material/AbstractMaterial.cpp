@@ -1,8 +1,7 @@
 #include "engine/material/AbstractMaterial.h"
 
 namespace Material {
-AbstractMaterial::AbstractMaterial(EMaterialType type,
-                                   SDL_GPUGraphicsPipeline* pipeline)
+AbstractMaterial::AbstractMaterial(EMaterialType type, VkPipeline pipeline)
     : mType(type), mPipeline(pipeline) {
 }
 
@@ -49,7 +48,7 @@ EMaterialType AbstractMaterial::GetType() const {
     return mType;
 }
 
-SDL_GPUGraphicsPipeline* AbstractMaterial::GetPipeline() const {
+VkPipeline AbstractMaterial::GetPipeline() const {
     return mPipeline;
 }
 
@@ -69,7 +68,7 @@ SDL_GPUTexture* AbstractMaterial::GetTexture() const {
     return mTexture;
 }
 
-void AbstractMaterial::Bind(SDL_GPURenderPass* renderPass) {
+void AbstractMaterial::Bind(VkRenderPass renderPass) {
     // Default implementation does nothing
 }
 

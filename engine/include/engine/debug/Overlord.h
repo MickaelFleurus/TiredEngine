@@ -22,8 +22,8 @@ public:
     static void AddWidget(IOverlordItem& item, CToken& token);
     static void AddMenu(IOverlordItem& item, CToken& token);
 
-    void PrepareRender(SDL_GPUCommandBuffer* cmd) override;
-    void Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass) override;
+    bool PrepareRender() override;
+    void Render(VkCommandBuffer cmd, VkPipeline pipeline) override;
     void HandleEvent(const SDL_Event* e) override;
 
 private:
@@ -34,5 +34,7 @@ private:
     static CGuardedContainer<IOverlordItem> mMenus;
 
     const Renderer::CWindow& mWindow;
+
+    VkDescriptorPool mImguiPool = VK_NULL_HANDLE;
 };
 } // namespace Debug

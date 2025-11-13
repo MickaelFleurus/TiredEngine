@@ -92,11 +92,11 @@ void CTextComponent::GenerateInstances() {
     setDirty(false);
 }
 
-SDL_GPUBuffer* CTextComponent::GetInstanceBuffer() {
+VkBuffer CTextComponent::GetInstanceBuffer() {
     if (isDirty()) {
         GenerateInstances();
     }
-    return mInstanceBuffer;
+    return mInstanceBuffer.buffer;
 }
 
 uint32_t CTextComponent::GetInstanceCount() const {

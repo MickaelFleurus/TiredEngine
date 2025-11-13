@@ -5,7 +5,7 @@
 namespace Material {
 class CMaterial : public AbstractMaterial {
 public:
-    CMaterial(EMaterialType type, SDL_GPUGraphicsPipeline* pipeline)
+    CMaterial(EMaterialType type, VkPipeline pipeline)
         : AbstractMaterial(type, pipeline) {
     }
 

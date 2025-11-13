@@ -1,8 +1,6 @@
 #include "engine/renderer/TextRenderer.h"
 #include "engine/renderer/Vertex.h"
 
-#include "engine/renderer/RendererUtils.h"
-#include <SDL3/SDL_gpu.h>
 #include <array>
 #include <cstring>
 
@@ -33,76 +31,60 @@ constexpr uint32_t kQuadIndicesMemSize =
 
 namespace Renderer {
 
-CTextRenderer::CTextRenderer(SDL_GPUDevice* device) : mDevice(device) {
+CTextRenderer::CTextRenderer(VkDevice device,
+                             VkPhysicalDeviceMemoryProperties memProperties)
+    : mDevice(device), mMemProperties(memProperties) {
     Initialize();
 }
 
 CTextRenderer::~CTextRenderer() {
-    if (mQuadVertexBuffer) {
-        SDL_ReleaseGPUBuffer(mDevice, mQuadVertexBuffer);
-    }
-    if (mQuadIndexBuffer) {
-        SDL_ReleaseGPUBuffer(mDevice, mQuadIndexBuffer);
-    }
+    vkDestroyBuffer(mDevice, mQuadVertexBuffer.buffer, nullptr);
+    vkFreeMemory(mDevice, mQuadVertexBuffer.memory, nullptr);
+
+    vkDestroyBuffer(mDevice, mQuadIndexBuffer.buffer, nullptr);
+    vkFreeMemory(mDevice, mQuadIndexBuffer.memory, nullptr);
 }
 
 void CTextRenderer::Initialize() {
-    mQuadVertexBuffer = Renderer::CreateVertexBuffer(mDevice, kQuadVertices);
-    mQuadIndexBuffer = Renderer::CreateIndexBuffer(mDevice, kQuadIndices);
+    mQuadVertexBuffer = Renderer::CreateAndFillVertexBuffer(
+        mDevice, kQuadVertices, mMemProperties);
+    mQuadIndexBuffer = Renderer::CreateAndFillIndexBuffer(mDevice, kQuadIndices,
+                                                          mMemProperties);
 }
 
-SDL_GPUBuffer* CTextRenderer::GetQuadVertexBuffer() const {
-    return mQuadVertexBuffer;
+VkBuffer CTextRenderer::GetQuadVertexBuffer() const {
+    return mQuadVertexBuffer.buffer;
 }
 
-SDL_GPUBuffer* CTextRenderer::GetQuadIndexBuffer() const {
-    return mQuadIndexBuffer;
+VkBuffer CTextRenderer::GetQuadIndexBuffer() const {
+    return mQuadIndexBuffer.buffer;
 }
 
-SDL_GPUBuffer* CTextRenderer::CreateInstanceBuffer(size_t maxCharacters) {
-    SDL_GPUBufferCreateInfo bufferInfo = {};
-    bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-    bufferInfo.size = maxCharacters * sizeof(SCharacterInstance);
-
-    return SDL_CreateGPUBuffer(mDevice, &bufferInfo);
+VulkanBuffer CTextRenderer::CreateInstanceBuffer(size_t maxCharacters) {
+    return Renderer::CreateBuffer(
+        mDevice,
+        static_cast<uint32_t>(maxCharacters * sizeof(SCharacterInstance)),
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mMemProperties);
 }
 
 void CTextRenderer::UpdateInstanceBuffer(
-    SDL_GPUBuffer* buffer, const std::vector<SCharacterInstance>& instances) {
+    VulkanBuffer buffer, const std::vector<SCharacterInstance>& instances) {
 
     if (instances.empty())
         return;
 
     size_t dataSize = instances.size() * sizeof(SCharacterInstance);
 
-    SDL_GPUTransferBufferCreateInfo transferInfo = {};
-    transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    transferInfo.size = dataSize;
-
-    SDL_GPUTransferBuffer* transferBuffer =
-        SDL_CreateGPUTransferBuffer(mDevice, &transferInfo);
-
-    void* data = SDL_MapGPUTransferBuffer(mDevice, transferBuffer, false);
+    void* data;
+    vkMapMemory(mDevice, buffer.memory, 0, dataSize, 0, &data);
     memcpy(data, instances.data(), dataSize);
-    SDL_UnmapGPUTransferBuffer(mDevice, transferBuffer);
-
-    SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(mDevice);
-    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmd);
-
-    SDL_GPUTransferBufferLocation src = {};
-    src.transfer_buffer = transferBuffer;
-    src.offset = 0;
-
-    SDL_GPUBufferRegion dst = {};
-    dst.buffer = buffer;
-    dst.offset = 0;
-    dst.size = dataSize;
-
-    SDL_UploadToGPUBuffer(copyPass, &src, &dst, false);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(uploadCmd);
-
-    SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
+    VkMappedMemoryRange range{};
+    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range.memory = buffer.memory;
+    range.offset = 0;
+    range.size = dataSize;
+    vkFlushMappedMemoryRanges(mDevice, 1, &range);
+    vkUnmapMemory(mDevice, buffer.memory);
 }
 
 } // namespace Renderer

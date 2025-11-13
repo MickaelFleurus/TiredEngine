@@ -2,6 +2,8 @@
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 
+#include "engine/renderer/Window.h"
+
 #include "engine/utils/Logger.h"
 #include <SDL3/SDL.h>
 
@@ -13,7 +15,8 @@ CEngineLoop::CEngineLoop(System::CSystem& system)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
     , mTextureManager(mWindow, system.GetFileHandler())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow)
+    , mMaterialFactory(mTextureManager, system.GetFileHandler(),
+                       mWindow.GetVulkanRenderer())
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
     , mComponentManager(mFontHandler, mWindow) {
 }
@@ -48,18 +51,16 @@ bool CEngineLoop::Run() {
         mLastFrameTime = currentTime;
 
         mInputHandler.Update();
-        if (!mWindow.PrepareRender()) {
-            LOG_ERROR("Failed to prepare render");
-            continue;
-        }
-        mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
+
+        bool prepared = mOverlordManager.PrepareRender();
 
         if (mWindow.BeginRender()) {
-            if (mCurrentScene) {
-                mWindow.Render(*mCurrentScene, mComponentManager);
+            //     if (mCurrentScene) {
+            //         mWindow.Render(*mCurrentScene, mComponentManager);
+            //     }
+            if (prepared) {
+                mOverlordManager.Render(mWindow.GetCommandBuffer());
             }
-            mOverlordManager.Render(mWindow.GetCommandBuffer(),
-                                    mWindow.GetRenderPass());
 
             mWindow.EndRender();
         }

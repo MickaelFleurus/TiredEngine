@@ -16,7 +16,7 @@ std::expected<void, const char*> CGameLoop::Initialize() {
     }
 
     mOverlordManager.CreateOverlord();
-    mToolHandler.Initialize();
+    // mToolHandler.Initialize();
 
     return {};
 }

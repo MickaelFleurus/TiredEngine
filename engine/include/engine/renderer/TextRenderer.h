@@ -2,9 +2,10 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
+#include <vulkan/vulkan.h>
 
-struct SDL_GPUBuffer;
-struct SDL_GPUDevice;
+#include "engine/renderer/RendererUtils.h"
+
 namespace Renderer {
 
 // Per-character instance data
@@ -17,23 +18,25 @@ struct SCharacterInstance {
 
 class CTextRenderer {
 public:
-    explicit CTextRenderer(SDL_GPUDevice* device);
+    explicit CTextRenderer(VkDevice device,
+                           VkPhysicalDeviceMemoryProperties memProperties);
     ~CTextRenderer();
 
     void Initialize();
 
-    SDL_GPUBuffer* GetQuadVertexBuffer() const;
-    SDL_GPUBuffer* GetQuadIndexBuffer() const;
+    VkBuffer GetQuadVertexBuffer() const;
+    VkBuffer GetQuadIndexBuffer() const;
 
-    SDL_GPUBuffer* CreateInstanceBuffer(size_t maxCharacters);
+    VulkanBuffer CreateInstanceBuffer(size_t maxCharacters);
 
-    void UpdateInstanceBuffer(SDL_GPUBuffer* buffer,
+    void UpdateInstanceBuffer(VulkanBuffer buffer,
                               const std::vector<SCharacterInstance>& instances);
 
 private:
-    SDL_GPUDevice* mDevice;
-    SDL_GPUBuffer* mQuadVertexBuffer = nullptr;
-    SDL_GPUBuffer* mQuadIndexBuffer = nullptr;
+    VkDevice mDevice = VK_NULL_HANDLE;
+    VkPhysicalDeviceMemoryProperties mMemProperties{};
+    Renderer::VulkanBuffer mQuadVertexBuffer{};
+    Renderer::VulkanBuffer mQuadIndexBuffer{};
 };
 
 } // namespace Renderer

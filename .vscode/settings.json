@@ -1,4 +1,6 @@
 {
+    "C_Cpp.buildTasks": [],
+    "C_Cpp.autoAddFileAssociations": false,
     "files.associations": {
         "algorithm": "cpp",
         "array": "cpp",

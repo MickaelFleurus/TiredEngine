@@ -2,62 +2,77 @@
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/ShaderFactory.h"
+#include "engine/renderer/VulkanRenderer.h"
 #include "engine/renderer/Window.h"
-#include <SDL3/SDL_gpu.h>
-
+#include "engine/utils/Logger.h"
+#include <array>
 #include <functional>
+#include <vulkan/vulkan.h>
 
 namespace {
 
-SDL_GPUPrimitiveType ConvertPrimitiveType(Renderer::EPrimitiveType type) {
+constexpr std::array<VkDynamicState, 2> kDynamicStates = {
+    VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+constexpr VkPipelineDynamicStateCreateInfo kDynamicStateInfo = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+    .dynamicStateCount = static_cast<uint32_t>(kDynamicStates.size()),
+    .pDynamicStates = kDynamicStates.data()};
+
+constexpr VkPipelineViewportStateCreateInfo kViewportStateInfo = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    .viewportCount = 1,
+    .scissorCount = 1};
+
+VkPrimitiveTopology ConvertPrimitiveType(Renderer::EPrimitiveType type) {
     switch (type) {
     case Renderer::EPrimitiveType::TriangleList:
-        return SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     case Renderer::EPrimitiveType::TriangleStrip:
-        return SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP;
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     case Renderer::EPrimitiveType::LineList:
-        return SDL_GPU_PRIMITIVETYPE_LINELIST;
+        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     case Renderer::EPrimitiveType::LineStrip:
-        return SDL_GPU_PRIMITIVETYPE_LINESTRIP;
+        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
     case Renderer::EPrimitiveType::PointList:
-        return SDL_GPU_PRIMITIVETYPE_POINTLIST;
+        return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     default:
-        return SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 }
 
-SDL_GPUFillMode ConvertFillMode(Renderer::EFillMode mode) {
+VkPolygonMode ConvertFillMode(Renderer::EFillMode mode) {
     switch (mode) {
     case Renderer::EFillMode::Fill:
-        return SDL_GPU_FILLMODE_FILL;
+        return VK_POLYGON_MODE_FILL;
     case Renderer::EFillMode::Line:
-        return SDL_GPU_FILLMODE_LINE;
+        return VK_POLYGON_MODE_LINE;
     default:
-        return SDL_GPU_FILLMODE_FILL;
+        return VK_POLYGON_MODE_FILL;
     }
 }
 
-SDL_GPUCullMode ConvertCullMode(Renderer::ECullMode mode) {
+VkCullModeFlags ConvertCullMode(Renderer::ECullMode mode) {
     switch (mode) {
     case Renderer::ECullMode::None:
-        return SDL_GPU_CULLMODE_NONE;
+        return VK_CULL_MODE_NONE;
     case Renderer::ECullMode::Front:
-        return SDL_GPU_CULLMODE_FRONT;
+        return VK_CULL_MODE_FRONT_BIT;
     case Renderer::ECullMode::Back:
-        return SDL_GPU_CULLMODE_BACK;
+        return VK_CULL_MODE_BACK_BIT;
     default:
-        return SDL_GPU_CULLMODE_BACK;
+        return VK_CULL_MODE_BACK_BIT;
     }
 }
 
-SDL_GPUFrontFace ConvertFrontFace(Renderer::EFrontFace face) {
+VkFrontFace ConvertFrontFace(Renderer::EFrontFace face) {
     switch (face) {
     case Renderer::EFrontFace::Clockwise:
-        return SDL_GPU_FRONTFACE_CLOCKWISE;
+        return VK_FRONT_FACE_CLOCKWISE;
     case Renderer::EFrontFace::CounterClockwise:
-        return SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE;
+        return VK_FRONT_FACE_COUNTER_CLOCKWISE;
     default:
-        return SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE;
+        return VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
 }
 
@@ -67,109 +82,171 @@ namespace Renderer {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const CWindow& window) : mWindow(window), mShaderFactory(window) {
+    CImpl(const VulkanRenderer& renderer)
+        : mRenderer(renderer), mShaderFactory(renderer) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            SDL_ReleaseGPUGraphicsPipeline(mWindow.GetDevice(), pipeline);
+            vkDestroyPipeline(mRenderer.GetVulkanDevice().device, pipeline,
+                              nullptr);
         }
     }
 
-    SDL_GPUGraphicsPipeline* CreateGraphicsPipeline(SPipelineConfig config) {
+    VkPipeline CreateGraphicsPipeline(SPipelineConfig config) {
         if (!mPipelineCache.contains(config)) {
 
-            auto* vertexShader = mShaderFactory.CreateVertexShader(
+            VkShaderModule vertexShader = mShaderFactory.CreateVertexShader(
                 config.shaderName, config.shaderPath, config.vertexResources);
-            auto* fragmentShader = mShaderFactory.CreateFragmentShader(
+            VkShaderModule fragmentShader = mShaderFactory.CreateFragmentShader(
                 config.shaderName, config.shaderPath, config.fragmentResources);
 
-            SDL_GPUColorTargetDescription colorTarget{};
-            colorTarget.format = SDL_GetGPUSwapchainTextureFormat(
-                mWindow.GetDevice(), mWindow.Get());
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+            inputAssembly.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            inputAssembly.topology = ConvertPrimitiveType(config.primitiveType);
+            inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+            VkPipelineRasterizationStateCreateInfo rasterizer{};
+            rasterizer.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+            rasterizer.depthClampEnable = VK_FALSE;
+            rasterizer.rasterizerDiscardEnable = VK_FALSE;
+            rasterizer.polygonMode = ConvertFillMode(config.fillMode);
+            rasterizer.cullMode = ConvertCullMode(config.cullMode);
+            rasterizer.frontFace = ConvertFrontFace(config.frontFace);
+            rasterizer.depthBiasEnable = VK_FALSE;
+
+            VkPipelineMultisampleStateCreateInfo multisampling{};
+            multisampling.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+            multisampling.sampleShadingEnable = VK_FALSE;
+            multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+            multisampling.minSampleShading = 1.0f;
+            multisampling.pSampleMask = nullptr;
+            multisampling.alphaToCoverageEnable = VK_FALSE;
+            multisampling.alphaToOneEnable = VK_FALSE;
+
+            VkPipelineColorBlendAttachmentState colorBlendAttachment{};
             if (config.enableBlending) {
-                colorTarget.blend_state.enable_blend = true;
+                colorBlendAttachment.blendEnable = VK_TRUE;
+                colorBlendAttachment.srcColorBlendFactor =
+                    VK_BLEND_FACTOR_SRC_ALPHA;
+                colorBlendAttachment.dstColorBlendFactor =
+                    VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+                colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+                colorBlendAttachment.dstAlphaBlendFactor =
+                    VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+                colorBlendAttachment.colorWriteMask =
+                    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                    VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
-                // Standard alpha blending: srcAlpha * src + (1-srcAlpha) * dst
-                colorTarget.blend_state.src_color_blendfactor =
-                    SDL_GPU_BLENDFACTOR_SRC_ALPHA;
-                colorTarget.blend_state.dst_color_blendfactor =
-                    SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
-                colorTarget.blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
-
-                // Same for alpha channel
-                colorTarget.blend_state.src_alpha_blendfactor =
-                    SDL_GPU_BLENDFACTOR_ONE;
-                colorTarget.blend_state.dst_alpha_blendfactor =
-                    SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
-                colorTarget.blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
-
-                // Write to all color channels
-                colorTarget.blend_state.color_write_mask =
-                    SDL_GPU_COLORCOMPONENT_R | SDL_GPU_COLORCOMPONENT_G |
-                    SDL_GPU_COLORCOMPONENT_B | SDL_GPU_COLORCOMPONENT_A;
             } else {
-                colorTarget.blend_state.enable_blend = false;
+                colorBlendAttachment.blendEnable = VK_FALSE;
                 // When blending is disabled, still write all channels
-                colorTarget.blend_state.color_write_mask =
-                    SDL_GPU_COLORCOMPONENT_R | SDL_GPU_COLORCOMPONENT_G |
-                    SDL_GPU_COLORCOMPONENT_B | SDL_GPU_COLORCOMPONENT_A;
+                colorBlendAttachment.colorWriteMask =
+                    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                    VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
             }
-
-            SDL_GPUGraphicsPipelineTargetInfo targetInfo{};
-            targetInfo.num_color_targets = 1;
-            targetInfo.color_target_descriptions = &colorTarget;
+            VkPipelineColorBlendStateCreateInfo colorBlending{};
+            colorBlending.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            colorBlending.logicOpEnable = VK_FALSE;
+            colorBlending.logicOp = VK_LOGIC_OP_COPY;
+            colorBlending.attachmentCount = 1;
+            colorBlending.pAttachments = &colorBlendAttachment;
+            colorBlending.blendConstants[0] = 0.0f;
+            colorBlending.blendConstants[1] = 0.0f;
+            colorBlending.blendConstants[2] = 0.0f;
+            colorBlending.blendConstants[3] = 0.0f;
 
             auto layoutInfo = CreateVertexLayout(config.vertexLayout);
 
-            SDL_GPUVertexInputState vertexInputState = {};
-            vertexInputState.vertex_buffer_descriptions =
+            VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+            vertexInputInfo.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            vertexInputInfo.pNext = nullptr;
+
+            vertexInputInfo.pVertexBindingDescriptions =
                 layoutInfo.bufferDescriptions.data();
-            vertexInputState.num_vertex_buffers =
-                static_cast<Uint32>(layoutInfo.bufferDescriptions.size());
-            vertexInputState.vertex_attributes = layoutInfo.attributes.data();
-            vertexInputState.num_vertex_attributes =
-                static_cast<Uint32>(layoutInfo.attributes.size());
+            vertexInputInfo.vertexBindingDescriptionCount =
+                static_cast<uint32_t>(layoutInfo.bufferDescriptions.size());
+            vertexInputInfo.pVertexAttributeDescriptions =
+                layoutInfo.attributes.data();
+            vertexInputInfo.vertexAttributeDescriptionCount =
+                static_cast<uint32_t>(layoutInfo.attributes.size());
 
-            SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo{};
-            pipelineCreateInfo.target_info = targetInfo;
-            pipelineCreateInfo.vertex_input_state = vertexInputState;
-            pipelineCreateInfo.rasterizer_state.fill_mode =
-                ConvertFillMode(config.fillMode);
-            pipelineCreateInfo.rasterizer_state.cull_mode =
-                ConvertCullMode(config.cullMode);
-            pipelineCreateInfo.rasterizer_state.front_face =
-                ConvertFrontFace(config.frontFace);
-            pipelineCreateInfo.primitive_type =
-                ConvertPrimitiveType(config.primitiveType);
-            pipelineCreateInfo.vertex_shader = vertexShader;
-            pipelineCreateInfo.fragment_shader = fragmentShader;
+            VkPipelineLayout pipelineLayout;
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+            pipelineLayoutInfo.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-            SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(
-                mWindow.GetDevice(), &pipelineCreateInfo);
+            // Create the pipeline layout first
+            if (vkCreatePipelineLayout(mRenderer.GetVulkanDevice().device,
+                                       &pipelineLayoutInfo, nullptr,
+                                       &pipelineLayout) != VK_SUCCESS) {
+                LOG_ERROR("Failed to create pipeline layout!");
+            }
 
-            mPipelineCache.emplace(config, pipeline);
+            // Define shader stages
+            VkPipelineShaderStageCreateInfo vertexShaderStageInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .module = vertexShader,
+                .pName = "main"};
+            VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .module = fragmentShader,
+                .pName = "main"};
+            std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
+                vertexShaderStageInfo, fragmentShaderStageInfo};
+
+            VkGraphicsPipelineCreateInfo pipelineInfo{};
+            pipelineInfo.sType =
+                VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+            pipelineInfo.stageCount = shaderStages.size();
+            pipelineInfo.pStages = shaderStages.data();
+            pipelineInfo.pVertexInputState = &vertexInputInfo;
+            pipelineInfo.pInputAssemblyState = &inputAssembly;
+            pipelineInfo.pViewportState = &kViewportStateInfo;
+            pipelineInfo.pRasterizationState = &rasterizer;
+            pipelineInfo.pMultisampleState = &multisampling;
+            pipelineInfo.pColorBlendState = &colorBlending;
+            pipelineInfo.pDynamicState = &kDynamicStateInfo;
+            pipelineInfo.layout = pipelineLayout;
+            pipelineInfo.renderPass = mRenderer.GetRenderPass();
+            pipelineInfo.subpass = 0;
+
+            VkPipeline graphicsPipeline;
+            if (vkCreateGraphicsPipelines(
+                    mRenderer.GetVulkanDevice().device, VK_NULL_HANDLE, 1,
+                    &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+                // Handle error
+            }
+
+            mPipelineCache.emplace(config, graphicsPipeline);
         }
 
         return mPipelineCache[config];
     }
 
 private:
-    const CWindow& mWindow;
+    const VulkanRenderer& mRenderer;
     CShaderFactory mShaderFactory;
-    std::unordered_map<SPipelineConfig, SDL_GPUGraphicsPipeline*,
-                       SPipelineConfigHash>
+    std::unordered_map<SPipelineConfig, VkPipeline, SPipelineConfigHash>
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(const CWindow& window)
-    : mImpl(std::make_unique<CImpl>(window)) {
+CPipelineFactory::CPipelineFactory(const VulkanRenderer& renderer)
+    : mImpl(std::make_unique<CImpl>(renderer)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;
 
-SDL_GPUGraphicsPipeline*
+VkPipeline
 CPipelineFactory::CreateGraphicsPipeline(const SPipelineConfig& config) {
     return mImpl->CreateGraphicsPipeline(config);
 }

@@ -9,16 +9,16 @@ COverlordManager::COverlordManager(const Renderer::CWindow& window)
 
 COverlordManager::~COverlordManager() = default;
 
-void COverlordManager::PrepareRender(SDL_GPUCommandBuffer* cmd) {
+bool COverlordManager::PrepareRender() {
     if (mOverlordImpl) {
-        mOverlordImpl->PrepareRender(cmd);
+        return mOverlordImpl->PrepareRender();
     }
+    return false;
 }
 
-void COverlordManager::Render(SDL_GPUCommandBuffer* cmd,
-                              SDL_GPURenderPass* pass) {
+void COverlordManager::Render(VkCommandBuffer cmd, VkPipeline pipeline) {
     if (mOverlordImpl) {
-        mOverlordImpl->Render(cmd, pass);
+        mOverlordImpl->Render(cmd, pipeline);
     }
 }
 

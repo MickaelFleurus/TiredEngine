@@ -3,10 +3,11 @@
 #include <memory>
 #include <string>
 
-struct SDL_GPUShader;
+#include <vulkan/vulkan.h>
 
 namespace Renderer {
-class CWindow;
+class VulkanRenderer;
+
 struct SShaderResources {
     uint32_t numSamplers = 0;
     uint32_t numStorageTextures = 0;
@@ -16,12 +17,12 @@ struct SShaderResources {
 
 class CShaderFactory {
 public:
-    CShaderFactory(const CWindow& window);
+    CShaderFactory(const VulkanRenderer& renderer);
     ~CShaderFactory();
 
-    SDL_GPUShader* CreateFragmentShader(std::string name, std::string path,
+    VkShaderModule CreateFragmentShader(std::string name, std::string path,
                                         const SShaderResources& resources = {});
-    SDL_GPUShader* CreateVertexShader(std::string name, std::string path,
+    VkShaderModule CreateVertexShader(std::string name, std::string path,
                                       const SShaderResources& resources = {});
 
 private:
