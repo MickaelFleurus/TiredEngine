@@ -72,7 +72,7 @@ bool VulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
 }
 void VulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
                                      VkRect2D scissor) {
-    VkClearColorValue red{1.0f, 0.0f, 0.0f, 1.0f};
+    VkClearColorValue red{0.0f, 0.0f, 0.0f, 0.0f};
     VkClearValue clearColor{};
     clearColor.color = red;
     VkRenderPassBeginInfo renderPassInfo{};

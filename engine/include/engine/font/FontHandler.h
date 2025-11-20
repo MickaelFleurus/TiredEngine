@@ -4,8 +4,6 @@
 #include "engine/font/Police.h"
 #include <unordered_map>
 
-struct SDL_GPUDevice;
-
 namespace Utils {
 class CFileHandler;
 }

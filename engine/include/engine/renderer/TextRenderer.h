@@ -20,7 +20,6 @@ class CTextRenderer {
 public:
     explicit CTextRenderer(VkDevice device,
                            VkPhysicalDeviceMemoryProperties memProperties);
-    ~CTextRenderer();
 
     void Initialize();
 
@@ -29,7 +28,7 @@ public:
 
     VulkanBuffer CreateInstanceBuffer(size_t maxCharacters);
 
-    void UpdateInstanceBuffer(VulkanBuffer buffer,
+    void UpdateInstanceBuffer(VulkanBuffer& buffer,
                               const std::vector<SCharacterInstance>& instances);
 
 private:

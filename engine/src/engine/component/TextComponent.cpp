@@ -22,8 +22,7 @@ CTextComponent::CTextComponent(Core::CGameObject& owner,
     , mInstanceBuffer(mTextRenderer.CreateInstanceBuffer(kMaxCharacters)) {
 }
 
-CTextComponent::~CTextComponent() {
-}
+CTextComponent::~CTextComponent() = default;
 
 void CTextComponent::setText(const std::string& text) {
     mText = text;

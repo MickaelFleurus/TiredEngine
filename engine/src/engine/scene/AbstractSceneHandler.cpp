@@ -15,7 +15,7 @@ CAbstractSceneHandler::CAbstractSceneHandler(
 
 void CAbstractSceneHandler::SetCurrentScene(
     std::unique_ptr<Scene::CAbstractScene>&& scene) {
-    mEngineLoop.SetCurrentScene(std::move(scene));
+    mEngineLoop.SetPendingScene(std::move(scene));
 }
 
 CAbstractScene* CAbstractSceneHandler::GetCurrentScene() const {

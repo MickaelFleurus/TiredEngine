@@ -77,7 +77,7 @@ public:
         mRenderer.Init(mSDLWindow.get(), mSystem);
 
         mTextRenderer = std::make_unique<CTextRenderer>(
-            mRenderer.GetVulkanDevice().device,
+            mRenderer.GetDevice(),
             mRenderer.GetVulkanPhysicalDevice().memoryProperties);
     }
 
@@ -172,8 +172,12 @@ public:
         auto& queue = mRenderer.GetQueue();
         queue.WaitIdle();
         mImageIndex = queue.AcquireNextImage();
+        if (!mImageIndex.has_value()) {
+            LOG_ERROR("Failed to acquire next swapchain image!");
+            return false;
+        }
         mRenderer.BeginRenderPass(mImageIndex.value(), mViewport, mScissor);
-        return mImageIndex.has_value();
+        return true;
     }
 
     void EndRender() {

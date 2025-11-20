@@ -37,19 +37,11 @@ CTextRenderer::CTextRenderer(VkDevice device,
     Initialize();
 }
 
-CTextRenderer::~CTextRenderer() {
-    vkDestroyBuffer(mDevice, mQuadVertexBuffer.buffer, nullptr);
-    vkFreeMemory(mDevice, mQuadVertexBuffer.memory, nullptr);
-
-    vkDestroyBuffer(mDevice, mQuadIndexBuffer.buffer, nullptr);
-    vkFreeMemory(mDevice, mQuadIndexBuffer.memory, nullptr);
-}
-
 void CTextRenderer::Initialize() {
-    mQuadVertexBuffer = Renderer::CreateAndFillVertexBuffer(
-        mDevice, kQuadVertices, mMemProperties);
-    mQuadIndexBuffer = Renderer::CreateAndFillIndexBuffer(mDevice, kQuadIndices,
-                                                          mMemProperties);
+    mQuadVertexBuffer = std::move(Renderer::CreateAndFillVertexBuffer(
+        mDevice, kQuadVertices, mMemProperties));
+    mQuadIndexBuffer = std::move(Renderer::CreateAndFillIndexBuffer(mDevice, kQuadIndices,
+                                                          mMemProperties));
 }
 
 VkBuffer CTextRenderer::GetQuadVertexBuffer() const {
@@ -68,23 +60,15 @@ VulkanBuffer CTextRenderer::CreateInstanceBuffer(size_t maxCharacters) {
 }
 
 void CTextRenderer::UpdateInstanceBuffer(
-    VulkanBuffer buffer, const std::vector<SCharacterInstance>& instances) {
+    VulkanBuffer& buffer, const std::vector<SCharacterInstance>& instances) {
 
     if (instances.empty())
         return;
 
     size_t dataSize = instances.size() * sizeof(SCharacterInstance);
 
-    void* data;
-    vkMapMemory(mDevice, buffer.memory, 0, dataSize, 0, &data);
-    memcpy(data, instances.data(), dataSize);
-    VkMappedMemoryRange range{};
-    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    range.memory = buffer.memory;
-    range.offset = 0;
-    range.size = dataSize;
-    vkFlushMappedMemoryRanges(mDevice, 1, &range);
-    vkUnmapMemory(mDevice, buffer.memory);
+    Renderer::FillBuffer(mDevice, buffer, instances.data(),
+                         static_cast<uint32_t>(dataSize));
 }
 
 } // namespace Renderer

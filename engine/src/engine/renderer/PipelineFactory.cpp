@@ -82,13 +82,12 @@ namespace Renderer {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const VulkanRenderer& renderer)
-        : mRenderer(renderer), mShaderFactory(renderer) {
+    CImpl(const CWindow& window) : mWindow(window), mShaderFactory(window) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            vkDestroyPipeline(mRenderer.GetVulkanDevice().device, pipeline,
+            vkDestroyPipeline(mWindow.GetVulkanRenderer().GetDevice(), pipeline,
                               nullptr);
         }
     }
@@ -100,6 +99,13 @@ public:
                 config.shaderName, config.shaderPath, config.vertexResources);
             VkShaderModule fragmentShader = mShaderFactory.CreateFragmentShader(
                 config.shaderName, config.shaderPath, config.fragmentResources);
+
+            if (vertexShader == VK_NULL_HANDLE ||
+                fragmentShader == VK_NULL_HANDLE) {
+                LOG_ERROR("Failed to create shaders for pipeline: {}",
+                          config.shaderName);
+                return VK_NULL_HANDLE;
+            }
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
             inputAssembly.sType =
@@ -115,6 +121,7 @@ public:
             rasterizer.polygonMode = ConvertFillMode(config.fillMode);
             rasterizer.cullMode = ConvertCullMode(config.cullMode);
             rasterizer.frontFace = ConvertFrontFace(config.frontFace);
+            rasterizer.lineWidth = 1.0f;
             rasterizer.depthBiasEnable = VK_FALSE;
 
             VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -183,11 +190,13 @@ public:
             pipelineLayoutInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
+            auto& vulkanRenderer = mWindow.GetVulkanRenderer();
             // Create the pipeline layout first
-            if (vkCreatePipelineLayout(mRenderer.GetVulkanDevice().device,
+            if (vkCreatePipelineLayout(vulkanRenderer.GetDevice(),
                                        &pipelineLayoutInfo, nullptr,
                                        &pipelineLayout) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create pipeline layout!");
+                return VK_NULL_HANDLE;
             }
 
             // Define shader stages
@@ -217,14 +226,15 @@ public:
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
             pipelineInfo.layout = pipelineLayout;
-            pipelineInfo.renderPass = mRenderer.GetRenderPass();
+            pipelineInfo.renderPass = vulkanRenderer.GetRenderPass();
             pipelineInfo.subpass = 0;
 
             VkPipeline graphicsPipeline;
             if (vkCreateGraphicsPipelines(
-                    mRenderer.GetVulkanDevice().device, VK_NULL_HANDLE, 1,
+                    vulkanRenderer.GetDevice(), VK_NULL_HANDLE, 1,
                     &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-                // Handle error
+                LOG_ERROR("Failed to create graphics pipeline!");
+                return VK_NULL_HANDLE;
             }
 
             mPipelineCache.emplace(config, graphicsPipeline);
@@ -234,14 +244,14 @@ public:
     }
 
 private:
-    const VulkanRenderer& mRenderer;
+    const CWindow& mWindow;
     CShaderFactory mShaderFactory;
     std::unordered_map<SPipelineConfig, VkPipeline, SPipelineConfigHash>
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(const VulkanRenderer& renderer)
-    : mImpl(std::make_unique<CImpl>(renderer)) {
+CPipelineFactory::CPipelineFactory(const CWindow& window)
+    : mImpl(std::make_unique<CImpl>(window)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;

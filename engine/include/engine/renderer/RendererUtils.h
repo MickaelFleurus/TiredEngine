@@ -55,8 +55,47 @@ struct SRenderable {
 };
 
 struct VulkanBuffer {
+    VulkanBuffer() = default;
+    VulkanBuffer(const VulkanBuffer&) = delete;
+    VulkanBuffer& operator=(const VulkanBuffer&) = delete;
+    VulkanBuffer(VulkanBuffer&& other) noexcept
+        : device(other.device), buffer(other.buffer), memory(other.memory) {
+        other.buffer = VK_NULL_HANDLE;
+        other.memory = VK_NULL_HANDLE;
+    }
+    VulkanBuffer& operator=(VulkanBuffer&& other) noexcept {
+        if (this != &other) {
+            if (buffer != VK_NULL_HANDLE) {
+                vkDestroyBuffer(device, buffer, nullptr);
+            }
+            if (memory != VK_NULL_HANDLE) {
+                vkFreeMemory(device, memory, nullptr);
+            }
+            device = other.device;
+            buffer = other.buffer;
+            memory = other.memory;
+            other.buffer = VK_NULL_HANDLE;
+            other.memory = VK_NULL_HANDLE;
+        }
+        return *this;
+    }
+
+    VulkanBuffer(VkDevice device, VkBuffer buffer, VkDeviceMemory memory)
+        : device(device), buffer(buffer), memory(memory) {
+    }
+    ~VulkanBuffer() {
+        if (buffer != VK_NULL_HANDLE) {
+            vkDestroyBuffer(device, buffer, nullptr);
+        }
+        if (memory != VK_NULL_HANDLE) {
+            vkFreeMemory(device, memory, nullptr);
+        }
+    }
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
+
+private:
+    VkDevice device = VK_NULL_HANDLE;
 };
 
 struct VertexLayoutInfo {
@@ -72,7 +111,7 @@ VulkanBuffer CreateBuffer(VkDevice device, uint32_t size,
                           VkBufferUsageFlags bufferType,
                           VkPhysicalDeviceMemoryProperties memProperties);
 
-void FillBuffer(VkDevice device, VulkanBuffer buffer, const void* data,
+void FillBuffer(VkDevice device, VulkanBuffer& buffer, const void* data,
                 uint32_t size);
 
 VulkanBuffer

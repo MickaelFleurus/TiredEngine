@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 namespace Renderer {
-class VulkanRenderer;
+class CWindow;
 
 struct SShaderResources {
     uint32_t numSamplers = 0;
@@ -17,7 +17,7 @@ struct SShaderResources {
 
 class CShaderFactory {
 public:
-    CShaderFactory(const VulkanRenderer& renderer);
+    CShaderFactory(const CWindow& window);
     ~CShaderFactory();
 
     VkShaderModule CreateFragmentShader(std::string name, std::string path,

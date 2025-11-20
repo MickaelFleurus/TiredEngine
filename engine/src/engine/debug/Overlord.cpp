@@ -69,11 +69,11 @@ void COverlord::Initialize() {
 
 COverlord::~COverlord() {
 
-    vkDestroyDescriptorPool(mWindow.GetVulkanRenderer().GetDevice(), mImguiPool,
-                            nullptr);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+    vkDestroyDescriptorPool(mWindow.GetVulkanRenderer().GetDevice(), mImguiPool,
+                            nullptr);
 }
 
 bool COverlord::PrepareRender() {

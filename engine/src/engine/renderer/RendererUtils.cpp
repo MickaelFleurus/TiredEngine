@@ -163,6 +163,7 @@ VulkanBuffer CreateBuffer(VkDevice device, uint32_t size,
     bufferInfo.usage = bufferType;
     bufferInfo.size = size;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
     VkBuffer buffer;
     if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
         LOG_ERROR("Failed to create buffer!");
@@ -187,10 +188,10 @@ VulkanBuffer CreateBuffer(VkDevice device, uint32_t size,
     }
     vkBindBufferMemory(device, buffer, vertexBufferMemory, 0);
 
-    return {buffer, vertexBufferMemory};
+    return {device, buffer, vertexBufferMemory};
 }
 
-void FillBuffer(VkDevice device, VulkanBuffer buffer, const void* data,
+void FillBuffer(VkDevice device, VulkanBuffer& buffer, const void* data,
                 uint32_t size) {
     void* mappedData;
     vkMapMemory(device, buffer.memory, 0, size, 0, &mappedData);
@@ -211,7 +212,7 @@ CreateAndFillBuffer(VkDevice device, const void* content, uint32_t size,
 
     VulkanBuffer buffer = CreateBuffer(device, size, bufferType, memProperties);
     FillBuffer(device, buffer, content, size);
-    return buffer;
+    return std::move(buffer);
 }
 
 } // namespace Renderer

@@ -4,11 +4,11 @@
 
 namespace Renderer {
 struct SPipelineConfig;
-class VulkanRenderer;
+class CWindow;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(const VulkanRenderer& renderer);
+    CPipelineFactory(const CWindow& window);
     ~CPipelineFactory();
 
     VkPipeline CreateGraphicsPipeline(const SPipelineConfig& config);

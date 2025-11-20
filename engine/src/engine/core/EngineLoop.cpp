@@ -15,8 +15,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
     , mTextureManager(mWindow, system.GetFileHandler())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(),
-                       mWindow.GetVulkanRenderer())
+    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
     , mComponentManager(mFontHandler, mWindow) {
 }
@@ -33,9 +32,9 @@ std::expected<void, const char*> CEngineLoop::Initialize() {
     return {};
 }
 
-void CEngineLoop::SetCurrentScene(
+void CEngineLoop::SetPendingScene(
     std::unique_ptr<Scene::CAbstractScene>&& scene) {
-    mCurrentScene.swap(scene);
+    mPendingScene.swap(scene);
 }
 
 Scene::CAbstractScene* CEngineLoop::GetCurrentScene() const {
@@ -52,17 +51,19 @@ bool CEngineLoop::Run() {
 
         mInputHandler.Update();
 
-        bool prepared = mOverlordManager.PrepareRender();
+        mOverlordManager.PrepareRender();
 
         if (mWindow.BeginRender()) {
-            //     if (mCurrentScene) {
-            //         mWindow.Render(*mCurrentScene, mComponentManager);
-            //     }
-            if (prepared) {
-                mOverlordManager.Render(mWindow.GetCommandBuffer());
+            if (mCurrentScene) {
+                mWindow.Render(*mCurrentScene, mComponentManager);
             }
+            mOverlordManager.Render(mWindow.GetCommandBuffer());
 
             mWindow.EndRender();
+        }
+        if (mPendingScene) {
+            mCurrentScene.swap(mPendingScene);
+            mPendingScene.reset();
         }
         mInputHandler.Swap();
     }

@@ -1,6 +1,7 @@
 #include "engine/renderer/ShaderFactory.h"
 
 #include "engine/renderer/VulkanRenderer.h"
+#include "engine/renderer/Window.h"
 #include "engine/utils/Logger.h"
 
 #include <SDL3/SDL_filesystem.h>
@@ -16,13 +17,13 @@ namespace Renderer {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(const VulkanRenderer& renderer) : mRenderer(renderer) {
+    CImpl(const CWindow& window) : mWindow(window) {
     }
 
     ~CImpl() {
         for (auto& [path, shader] : mShaderCache) {
-            vkDestroyShaderModule(mRenderer.GetVulkanDevice().device, shader,
-                                  nullptr);
+            vkDestroyShaderModule(mWindow.GetVulkanRenderer().GetDevice(),
+                                  shader, nullptr);
         }
     }
 
@@ -43,11 +44,11 @@ public:
             shaderModuleCreateInfo.codeSize = codeSize;
             shaderModuleCreateInfo.pCode =
                 reinterpret_cast<const uint32_t*>(rawCode.get());
-            VkShaderModule shaderModule;
-            if (vkCreateShaderModule(mRenderer.GetVulkanDevice().device,
-                                     &shaderModuleCreateInfo, nullptr,
-                                     &shaderModule) != VK_SUCCESS) {
 
+            auto device = mWindow.GetVulkanRenderer().GetDevice();
+            VkShaderModule shaderModule;
+            if (vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr,
+                                     &shaderModule) == VK_SUCCESS) {
                 mShaderCache.emplace(name, shaderModule);
             } else {
                 LOG_ERROR("Failed to create shader module for shader: {}",
@@ -59,12 +60,12 @@ public:
     }
 
 private:
-    const VulkanRenderer& mRenderer;
+    const CWindow& mWindow;
     std::unordered_map<std::string, VkShaderModule> mShaderCache;
 };
 
-CShaderFactory::CShaderFactory(const VulkanRenderer& renderer)
-    : mImpl(std::make_unique<CImpl>(renderer)) {
+CShaderFactory::CShaderFactory(const CWindow& window)
+    : mImpl(std::make_unique<CImpl>(window)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;

@@ -9,7 +9,7 @@
 namespace Renderer {
 struct SPipelineConfig;
 class CTextureManager;
-class VulkanRenderer;
+class CWindow;
 } // namespace Renderer
 
 namespace Utils {
@@ -23,7 +23,7 @@ class CMaterialFactory {
 public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Renderer::VulkanRenderer& renderer);
+                              const Renderer::CWindow& window);
 
     // Create material with specified parameters
     std::unique_ptr<AbstractMaterial>
@@ -40,7 +40,6 @@ public:
 private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
-    const Renderer::VulkanRenderer& mRenderer;
     Renderer::CPipelineFactory mPipelineFactory;
 };
 

@@ -34,7 +34,7 @@ public:
 
     std::expected<void, const char*> Initialize();
 
-    void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
+    void SetPendingScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
     Scene::CAbstractScene* GetCurrentScene() const;
 
     bool Run();
@@ -48,6 +48,7 @@ protected:
     Input::CInputHandler mInputHandler;
     Component::CComponentManager mComponentManager;
     std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
+    std::unique_ptr<Scene::CAbstractScene> mPendingScene;
     std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 
     Renderer::CTextureManager mTextureManager;
