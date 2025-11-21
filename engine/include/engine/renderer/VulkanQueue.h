@@ -13,10 +13,10 @@ public:
               uint32_t queueIndex);
     void Destroy();
     std::optional<uint32_t> AcquireNextImage();
-    void SubmitSync(VkCommandBuffer commandBuffer);
-    void SubmitAsync(VkCommandBuffer commandBuffer);
+    void SubmitSync(VkCommandBuffer commandBuffer) const;
+    void SubmitAsync(VkCommandBuffer commandBuffer) const;
     void Present(uint32_t imageIndex);
-    void WaitIdle();
+    void WaitIdle() const;
 
     VkQueue GetHandle() const;
     uint32_t GetFamilyIndex() const;

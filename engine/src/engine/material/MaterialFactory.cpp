@@ -35,7 +35,7 @@ CMaterialFactory::CreateTextMaterial(std::string fontAtlasName) {
     config.enableBlending = true;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
-    material->SetTexture(mTextureManager.GetTexture(fontAtlasName));
+   // material->SetTexture(mTextureManager.GetTexture(fontAtlasName));
     return material;
 }
 

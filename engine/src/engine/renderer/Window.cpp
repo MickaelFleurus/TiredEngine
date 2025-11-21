@@ -195,7 +195,7 @@ public:
         return *mTextRenderer;
     }
 
-    const VulkanRenderer& GetVulkanRenderer() const {
+    const CVulkanRenderer& GetVulkanRenderer() const {
         return mRenderer;
     }
 
@@ -290,7 +290,7 @@ private:
 
     const System::CSystem& mSystem;
     std::unique_ptr<SDL_Window, decltype(kSDLWindowDeleter)> mSDLWindow;
-    VulkanRenderer mRenderer;
+    CVulkanRenderer mRenderer;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;
 
@@ -345,7 +345,7 @@ CTextRenderer& CWindow::GetTextRenderer() {
     return mImpl->GetTextRenderer();
 }
 
-const VulkanRenderer& CWindow::GetVulkanRenderer() const {
+const CVulkanRenderer& CWindow::GetVulkanRenderer() const {
     return mImpl->GetVulkanRenderer();
 }
 

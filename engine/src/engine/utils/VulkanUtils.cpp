@@ -1,5 +1,6 @@
 #include "engine/utils/VulkanUtils.h"
 
+#include "engine/renderer/RendererUtils.h"
 #include "engine/utils/Logger.h"
 
 #include <SDL3/SDL.h>
@@ -189,18 +190,9 @@ VulkanSwapchain CreateSwapchain(VkPhysicalDevice physicalDevice,
     // Create image views
     result.imageViews.resize(result.images.size());
     for (size_t i = 0; i < result.images.size(); i++) {
-        VkImageViewCreateInfo viewInfo{};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = result.images[i];
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = result.imageFormat;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(device, &viewInfo, nullptr,
-                              &result.imageViews[i]) != VK_SUCCESS)
-            LOG_FATAL("Failed to create image view!");
+        Renderer::CreateImageView(device, result.images[i], result.imageFormat,
+                                  VK_IMAGE_ASPECT_COLOR_BIT,
+                                  result.imageViews[i]);
     }
 
     return result;

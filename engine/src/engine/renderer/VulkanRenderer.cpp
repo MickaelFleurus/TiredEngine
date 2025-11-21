@@ -5,9 +5,9 @@
 #include "engine/utils/Logger.h"
 
 namespace Renderer {
-VulkanRenderer::VulkanRenderer() = default;
+CVulkanRenderer::CVulkanRenderer() = default;
 
-VulkanRenderer::~VulkanRenderer() {
+CVulkanRenderer::~CVulkanRenderer() {
     mQueue.Destroy();
     vkDestroyCommandPool(mVulkanDevice.device, mCommandPool, nullptr);
     for (auto framebuffer : mFramebuffers) {
@@ -30,7 +30,7 @@ VulkanRenderer::~VulkanRenderer() {
     vkDestroyInstance(mInstance, nullptr);
 }
 
-bool VulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
+bool CVulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
     // Create Vulkan instance
     mInstance = Utils::CreateVulkanInstance(system.GetGameName());
 
@@ -72,8 +72,8 @@ bool VulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
                                     1000); // Arbitrary large size, to fix later
     return true;
 }
-void VulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
-                                     VkRect2D scissor) {
+void CVulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
+                                      VkRect2D scissor) {
     VkClearColorValue red{0.0f, 0.0f, 0.0f, 0.0f};
     VkClearValue clearColor{};
     clearColor.color = red;
@@ -100,7 +100,7 @@ void VulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
     vkCmdSetScissor(mCommandBuffers[index], 0, 1, &scissor);
 }
 
-void VulkanRenderer::EndRenderPass(uint32_t index) {
+void CVulkanRenderer::EndRenderPass(uint32_t index) {
     vkCmdEndRenderPass(mCommandBuffers[index]);
 
     if (vkEndCommandBuffer(mCommandBuffers[index]) != VK_SUCCESS) {
@@ -108,48 +108,77 @@ void VulkanRenderer::EndRenderPass(uint32_t index) {
     }
 }
 
-VkCommandBuffer VulkanRenderer::GetCommandBuffer(uint32_t imageIndex) {
+VkCommandBuffer CVulkanRenderer::GetCommandBuffer(uint32_t imageIndex) {
     return mCommandBuffers[imageIndex];
 }
 
-CVulkanQueue& VulkanRenderer::GetQueue() {
+CVulkanQueue& CVulkanRenderer::GetQueue() {
     return mQueue;
 }
 
-const CVulkanQueue& VulkanRenderer::GetQueue() const {
+const CVulkanQueue& CVulkanRenderer::GetQueue() const {
     return mQueue;
 }
 
-const Utils::VulkanDevice& VulkanRenderer::GetVulkanDevice() const {
+const Utils::VulkanDevice& CVulkanRenderer::GetVulkanDevice() const {
     return mVulkanDevice;
 }
 const Utils::VulkanPhysicalDevice&
-VulkanRenderer::GetVulkanPhysicalDevice() const {
+CVulkanRenderer::GetVulkanPhysicalDevice() const {
     return mPhysicalDevice;
 }
 
-VkRenderPass VulkanRenderer::GetRenderPass() const {
+VkRenderPass CVulkanRenderer::GetRenderPass() const {
     return mRenderPass;
 }
 
-VkInstance VulkanRenderer::GetInstance() const {
+VkInstance CVulkanRenderer::GetInstance() const {
     return mInstance;
 }
 
-VkPhysicalDevice VulkanRenderer::GetPhysicalDevice() const {
+VkPhysicalDevice CVulkanRenderer::GetPhysicalDevice() const {
     return mPhysicalDevice.device;
 }
 
-VkDevice VulkanRenderer::GetDevice() const {
+VkDevice CVulkanRenderer::GetDevice() const {
     return mVulkanDevice.device;
 }
 
-const Utils::VulkanSwapchain& VulkanRenderer::GetSwapchain() const {
+const Utils::VulkanSwapchain& CVulkanRenderer::GetSwapchain() const {
     return mSwapchain;
 }
 
-VkDescriptorPool VulkanRenderer::GetDescriptorPool() const {
+VkDescriptorPool CVulkanRenderer::GetDescriptorPool() const {
     return mDescriptorPool;
+}
+
+VkCommandBuffer CVulkanRenderer::BeginSingleTimeCommands() const {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = mCommandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(mVulkanDevice.device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void CVulkanRenderer::EndSingleTimeCommands(
+    VkCommandBuffer commandBuffer) const {
+
+    vkEndCommandBuffer(commandBuffer);
+    mQueue.SubmitSync(commandBuffer);
+    mQueue.WaitIdle();
+
+    vkFreeCommandBuffers(mVulkanDevice.device, mCommandPool, 1, &commandBuffer);
 }
 
 } // namespace Renderer

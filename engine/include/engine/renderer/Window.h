@@ -21,7 +21,7 @@ class CSystem;
 namespace Renderer {
 
 class CTextRenderer;
-class VulkanRenderer;
+class CVulkanRenderer;
 class CDescriptorLayoutStorage;
 
 class CWindow {
@@ -45,7 +45,7 @@ public:
         return nullptr;
     }
 
-    const VulkanRenderer& GetVulkanRenderer() const;
+    const CVulkanRenderer& GetVulkanRenderer() const;
 
     CTextRenderer& GetTextRenderer();
     VkCommandBuffer GetCommandBuffer();

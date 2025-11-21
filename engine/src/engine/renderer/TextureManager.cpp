@@ -1,7 +1,9 @@
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/VulkanRenderer.h"
 #include "engine/renderer/Window.h"
 #include "engine/utils/FileHandler.h"
+#include <SDL3/SDL_surface.h>
 
 namespace {
 constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
@@ -46,72 +48,54 @@ VulkanTexture CTextureManager::LoadTexture(const std::string& filename) {
 VulkanTexture
 CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                         SDL_Surface* surface) {
+    if (!surface)
+        return VulkanTexture{};
 
-    SDL_GPUTextureCreateInfo texInfo = {
-        .type = SDL_GPU_TEXTURETYPE_2D,
-        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
-        .width = static_cast<Uint32>(surface->w),
-        .height = static_cast<Uint32>(surface->h),
-        .layer_count_or_depth = 1,
-        .num_levels = 1};
-    std::unique_ptr<SDL_GPUTexture,
-                    decltype(kGPUTextureDeleter(mWindow.GetDevice()))>
-        texture{SDL_CreateGPUTexture(mWindow.GetDevice(), &texInfo),
-                kGPUTextureDeleter(mWindow.GetDevice())};
+    VkDevice device = mWindow.GetVulkanRenderer().GetDevice();
 
-    unsigned int uploadSize = surface->pitch * surface->h;
-    SDL_GPUTransferBufferCreateInfo bufInfo = {
-        .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = uploadSize};
-    std::unique_ptr<SDL_GPUTransferBuffer,
-                    decltype(kGPUTransferBufferDeleter(mWindow.GetDevice()))>
-        transferBuffer{
-            SDL_CreateGPUTransferBuffer(mWindow.GetDevice(), &bufInfo),
-            kGPUTransferBufferDeleter(mWindow.GetDevice())};
+    int width = surface->w;
+    int height = surface->h;
+    void* pixels = surface->pixels;
+    size_t imageSize = width * height * 4; // Assuming SDL_PIXELFORMAT_RGBA32
 
-    if (!transferBuffer) {
-        return nullptr;
-    }
+    // 1. Create staging buffer and copy pixel data
+    Renderer::VulkanBuffer buffer = Renderer::CreateBuffer(
+        device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        mWindow.GetVulkanRenderer().GetVulkanPhysicalDevice().memoryProperties);
 
-    void* ptr = SDL_MapGPUTransferBuffer(mWindow.GetDevice(),
-                                         transferBuffer.get(), false);
-    if (!ptr) {
-        return nullptr;
-    }
+    void* data;
+    vkMapMemory(device, buffer.memory, 0, imageSize, 0, &data);
+    memcpy(data, pixels, imageSize);
+    vkUnmapMemory(device, buffer.memory);
 
-    SDL_memcpy(ptr, surface->pixels, uploadSize);
-    SDL_UnmapGPUTransferBuffer(mWindow.GetDevice(), transferBuffer.get());
+    // 2. Create Vulkan image
+    VulkanImage image = CreateImage(
+        device, width, height, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        mWindow.GetVulkanRenderer().GetVulkanPhysicalDevice().memoryProperties,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    SDL_GPUCommandBuffer* cmd =
-        SDL_AcquireGPUCommandBuffer(mWindow.GetDevice());
+    // 3. Transition image layout and copy buffer to image
+    TransitionImageLayout(
+        image.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mWindow.GetVulkanRenderer());
+    CopyBufferToImage(buffer.buffer, image.image, width, height,
+                      mWindow.GetVulkanRenderer());
+    TransitionImageLayout(image.image, VK_FORMAT_R8G8B8A8_UNORM,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          mWindow.GetVulkanRenderer());
 
-    if (!cmd) {
-        return nullptr;
-    }
+    // 4. Create image view and sampler
+    VkImageView imageView;
+    CreateImageView(device, image.image, VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_IMAGE_ASPECT_COLOR_BIT, imageView);
+    VkSampler sampler = CreateSampler(device);
 
-    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-
-    SDL_GPUTextureTransferInfo src = {
-        .transfer_buffer = transferBuffer.get(),
-        .offset = 0,
-        .pixels_per_row = static_cast<Uint32>(surface->w),
-        .rows_per_layer = static_cast<Uint32>(surface->h)};
-
-    SDL_GPUTextureRegion dst = {.texture = texture.get(),
-                                .x = 0,
-                                .y = 0,
-                                .z = 0,
-                                .w = static_cast<Uint32>(surface->w),
-                                .h = static_cast<Uint32>(surface->h),
-                                .d = 1};
-
-    SDL_UploadToGPUTexture(copyPass, &src, &dst, false);
-
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-
-    mLoadedTextures.emplace(filename, texture.release());
-    return mLoadedTextures[filename];
+    VulkanTexture texture{image.image, image.memory, imageView, sampler};
+    mLoadedTextures[filename] = texture;
+    return texture;
 }
 
 VulkanTexture CTextureManager::GetTexture(const std::string& filename) {
@@ -119,6 +103,7 @@ VulkanTexture CTextureManager::GetTexture(const std::string& filename) {
     if (it != mLoadedTextures.end()) {
         return it->second;
     }
+
     return VulkanTexture{};
 }
 

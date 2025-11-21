@@ -49,7 +49,7 @@ std::optional<uint32_t> CVulkanQueue::AcquireNextImage() {
     return imageIndex;
 }
 
-void CVulkanQueue::SubmitSync(VkCommandBuffer commandBuffer) {
+void CVulkanQueue::SubmitSync(VkCommandBuffer commandBuffer) const {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -61,7 +61,7 @@ void CVulkanQueue::SubmitSync(VkCommandBuffer commandBuffer) {
     }
 }
 
-void CVulkanQueue::SubmitAsync(VkCommandBuffer commandBuffer) {
+void CVulkanQueue::SubmitAsync(VkCommandBuffer commandBuffer) const {
     VkPipelineStageFlags waitStages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -99,7 +99,7 @@ void CVulkanQueue::Present(uint32_t imageIndex) {
     }
 }
 
-void CVulkanQueue::WaitIdle() {
+void CVulkanQueue::WaitIdle() const {
     vkQueueWaitIdle(mQueue);
 }
 

@@ -17,7 +17,7 @@ class AbstractMaterial;
 }
 
 namespace Renderer {
-
+class CVulkanRenderer;
 enum class ERenderLayer : uint8_t {
     Background = 0,
     World = 1,
@@ -98,6 +98,11 @@ private:
     VkDevice device = VK_NULL_HANDLE;
 };
 
+struct VulkanImage {
+    VkImage image = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+};
+
 struct VertexLayoutInfo {
     std::vector<VkVertexInputAttributeDescription> attributes;
     std::vector<VkVertexInputBindingDescription> bufferDescriptions;
@@ -142,5 +147,23 @@ CreateAndFillIndexBuffer(VkDevice device, R& indices,
 }
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);
+
+VulkanImage CreateImage(VkDevice device, uint32_t width, uint32_t height,
+                        VkFormat format, VkImageTiling tiling,
+                        VkImageUsageFlags usage,
+                        VkPhysicalDeviceMemoryProperties memProperties,
+                        VkMemoryPropertyFlags properties);
+
+void TransitionImageLayout(VkImage image, VkFormat format,
+                           VkImageLayout oldLayout, VkImageLayout newLayout,
+                           const CVulkanRenderer& renderer);
+
+void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
+                       uint32_t height, const CVulkanRenderer& renderer);
+
+void CreateImageView(VkDevice device, VkImage image, VkFormat format,
+                     VkImageAspectFlags aspectFlags, VkImageView& imageView);
+
+VkSampler CreateSampler(VkDevice device);
 
 } // namespace Renderer

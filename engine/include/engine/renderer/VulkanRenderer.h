@@ -11,10 +11,10 @@ class CSystem;
 }
 
 namespace Renderer {
-class VulkanRenderer {
+class CVulkanRenderer {
 public:
-    explicit VulkanRenderer();
-    ~VulkanRenderer();
+    explicit CVulkanRenderer();
+    ~CVulkanRenderer();
 
     bool Init(SDL_Window* window, const System::CSystem& system);
 
@@ -31,8 +31,10 @@ public:
     VkDescriptorPool GetDescriptorPool() const;
 
     void BeginRenderPass(uint32_t index, VkViewport viewport, VkRect2D scissor);
-
     void EndRenderPass(uint32_t index);
+
+    VkCommandBuffer BeginSingleTimeCommands() const;
+    void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
 private:
     VkInstance mInstance;
