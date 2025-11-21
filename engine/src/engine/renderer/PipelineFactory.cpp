@@ -1,4 +1,5 @@
 #include "engine/renderer/PipelineFactory.h"
+#include "engine/renderer/DescriptorLayoutStorage.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/ShaderFactory.h"
@@ -82,29 +83,32 @@ namespace Renderer {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const CWindow& window) : mWindow(window), mShaderFactory(window) {
+    CImpl(const CWindow& window,
+          CDescriptorLayoutStorage& descriptorLayoutStorage)
+        : mWindow(window)
+        , mShaderFactory(window)
+        , mDescriptorLayoutStorage(descriptorLayoutStorage) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            vkDestroyPipeline(mWindow.GetVulkanRenderer().GetDevice(), pipeline,
-                              nullptr);
+            vkDestroyPipeline(mWindow.GetVulkanRenderer().GetDevice(),
+                              pipeline.pipeline, nullptr);
         }
     }
 
-    VkPipeline CreateGraphicsPipeline(SPipelineConfig config) {
+    SPipelineDescriptors CreateGraphicsPipeline(SPipelineConfig config) {
         if (!mPipelineCache.contains(config)) {
+            auto vertexShader = mShaderFactory.CreateVertexShader(
+                config.shaderName, config.shaderPath, mDescriptorLayoutStorage);
+            auto fragmentShader = mShaderFactory.CreateFragmentShader(
+                config.shaderName, config.shaderPath, mDescriptorLayoutStorage);
 
-            VkShaderModule vertexShader = mShaderFactory.CreateVertexShader(
-                config.shaderName, config.shaderPath, config.vertexResources);
-            VkShaderModule fragmentShader = mShaderFactory.CreateFragmentShader(
-                config.shaderName, config.shaderPath, config.fragmentResources);
-
-            if (vertexShader == VK_NULL_HANDLE ||
-                fragmentShader == VK_NULL_HANDLE) {
+            if (vertexShader.shaderModule == VK_NULL_HANDLE ||
+                fragmentShader.shaderModule == VK_NULL_HANDLE) {
                 LOG_ERROR("Failed to create shaders for pipeline: {}",
                           config.shaderName);
-                return VK_NULL_HANDLE;
+                return {};
             }
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -189,6 +193,20 @@ public:
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
             pipelineLayoutInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+            std::vector<std::size_t> hashes =
+                vertexShader.descriptorSetLayoutsHashes;
+            hashes.insert(hashes.end(),
+                          fragmentShader.descriptorSetLayoutsHashes.begin(),
+                          fragmentShader.descriptorSetLayoutsHashes.end());
+            for (const auto& hash : hashes) {
+                descriptorSetLayouts.push_back(
+                    mDescriptorLayoutStorage.GetLayout(hash));
+            }
+
+            pipelineLayoutInfo.setLayoutCount =
+                static_cast<uint32_t>(descriptorSetLayouts.size());
+            pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
             auto& vulkanRenderer = mWindow.GetVulkanRenderer();
             // Create the pipeline layout first
@@ -196,19 +214,19 @@ public:
                                        &pipelineLayoutInfo, nullptr,
                                        &pipelineLayout) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create pipeline layout!");
-                return VK_NULL_HANDLE;
+                return {};
             }
 
             // Define shader stages
             VkPipelineShaderStageCreateInfo vertexShaderStageInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                .module = vertexShader,
+                .module = vertexShader.shaderModule,
                 .pName = "main"};
             VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .module = fragmentShader,
+                .module = fragmentShader.shaderModule,
                 .pName = "main"};
             std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
                 vertexShaderStageInfo, fragmentShaderStageInfo};
@@ -234,10 +252,10 @@ public:
                     vulkanRenderer.GetDevice(), VK_NULL_HANDLE, 1,
                     &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create graphics pipeline!");
-                return VK_NULL_HANDLE;
+                return {};
             }
 
-            mPipelineCache.emplace(config, graphicsPipeline);
+            mPipelineCache.try_emplace(config, graphicsPipeline, hashes);
         }
 
         return mPipelineCache[config];
@@ -245,18 +263,21 @@ public:
 
 private:
     const CWindow& mWindow;
+    CDescriptorLayoutStorage& mDescriptorLayoutStorage;
     CShaderFactory mShaderFactory;
-    std::unordered_map<SPipelineConfig, VkPipeline, SPipelineConfigHash>
+    std::unordered_map<SPipelineConfig, SPipelineDescriptors,
+                       SPipelineConfigHash>
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(const CWindow& window)
-    : mImpl(std::make_unique<CImpl>(window)) {
+CPipelineFactory::CPipelineFactory(
+    const CWindow& window, CDescriptorLayoutStorage& descriptorLayoutStorage)
+    : mImpl(std::make_unique<CImpl>(window, descriptorLayoutStorage)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;
 
-VkPipeline
+SPipelineDescriptors
 CPipelineFactory::CreateGraphicsPipeline(const SPipelineConfig& config) {
     return mImpl->CreateGraphicsPipeline(config);
 }

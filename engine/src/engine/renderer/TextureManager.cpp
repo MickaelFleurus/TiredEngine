@@ -1,32 +1,14 @@
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/VulkanRenderer.h"
 #include "engine/renderer/Window.h"
 #include "engine/utils/FileHandler.h"
 
-#include <SDL3/SDL_gpu.h>
-
 namespace {
-constexpr auto kGPUTransferBufferDeleter = [](SDL_GPUDevice* device) {
-    return [device](SDL_GPUTransferBuffer* buffer) {
-        if (buffer) {
-            SDL_ReleaseGPUTransferBuffer(device, buffer);
-        }
-    };
-};
-
-constexpr auto kGPUTextureDeleter = [](SDL_GPUDevice* device) {
-    return [device](SDL_GPUTexture* texture) {
-        if (texture) {
-            SDL_ReleaseGPUTexture(device, texture);
-        }
-    };
-};
-
 constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
     if (surface) {
         SDL_DestroySurface(surface);
     }
 };
-
 } // namespace
 
 namespace Renderer {
@@ -36,12 +18,16 @@ CTextureManager::CTextureManager(const CWindow& window,
 }
 
 CTextureManager::~CTextureManager() {
+    VkDevice device = mWindow.GetVulkanRenderer().GetDevice();
     for (auto& pair : mLoadedTextures) {
-        SDL_ReleaseGPUTexture(mWindow.GetDevice(), pair.second);
+        vkDestroyImageView(device, pair.second.imageView, nullptr);
+        vkDestroySampler(device, pair.second.sampler, nullptr);
+        vkDestroyImage(device, pair.second.image, nullptr);
+        vkFreeMemory(device, pair.second.memory, nullptr);
     }
 }
 
-SDL_GPUTexture* CTextureManager::LoadTexture(const std::string& filename) {
+VulkanTexture CTextureManager::LoadTexture(const std::string& filename) {
     auto it = mLoadedTextures.find(filename);
     if (it != mLoadedTextures.end()) {
         return it->second;
@@ -50,14 +36,14 @@ SDL_GPUTexture* CTextureManager::LoadTexture(const std::string& filename) {
     std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
         mFileHandler.LoadTextureFileBMP(filename), kGPUSurfaceDeleter};
     if (!surface) {
-        return nullptr;
+        return VulkanTexture{};
     }
     auto texture = LoadTextureFromSurface(filename, surface.get());
 
     return texture;
 }
 
-SDL_GPUTexture*
+VulkanTexture
 CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                         SDL_Surface* surface) {
 
@@ -128,12 +114,12 @@ CTextureManager::LoadTextureFromSurface(const std::string& filename,
     return mLoadedTextures[filename];
 }
 
-SDL_GPUTexture* CTextureManager::GetTexture(const std::string& filename) {
+VulkanTexture CTextureManager::GetTexture(const std::string& filename) {
     auto it = mLoadedTextures.find(filename);
     if (it != mLoadedTextures.end()) {
         return it->second;
     }
-    return nullptr;
+    return VulkanTexture{};
 }
 
 } // namespace Renderer

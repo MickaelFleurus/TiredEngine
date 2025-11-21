@@ -82,4 +82,7 @@ std::vector<VkFramebuffer> CreateFramebuffers(VkDevice device,
                                               VkRenderPass renderPass,
                                               const VulkanSwapchain& swapchain);
 
+void CreateDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool,
+                          uint32_t poolSize);
+
 } // namespace Utils

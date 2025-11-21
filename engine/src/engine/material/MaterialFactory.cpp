@@ -13,16 +13,17 @@ CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
                                    const Renderer::CWindow& window)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mPipelineFactory(window) {
+    , mDescriptorLayoutStorage(window)
+    , mPipelineFactory(window, mDescriptorLayoutStorage) {
 }
 
 std::unique_ptr<AbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
-    // Get or create pipeline
-    VkPipeline pipeline = mPipelineFactory.CreateGraphicsPipeline(info);
-    return std::make_unique<CMaterial>(type, pipeline);
+    auto pipeline = mPipelineFactory.CreateGraphicsPipeline(info);
+    return std::make_unique<CMaterial>(mDescriptorLayoutStorage, type,
+                                       info.vertexLayout, pipeline);
 }
 
 std::unique_ptr<AbstractMaterial>
@@ -32,9 +33,6 @@ CMaterialFactory::CreateTextMaterial(std::string fontAtlasName) {
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
     config.vertexLayout = Renderer::EVertexLayout::Instanced;
     config.enableBlending = true;
-
-    config.vertexResources.numUniformBuffers = 1;
-    config.fragmentResources.numSamplers = 1;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
     material->SetTexture(mTextureManager.GetTexture(fontAtlasName));

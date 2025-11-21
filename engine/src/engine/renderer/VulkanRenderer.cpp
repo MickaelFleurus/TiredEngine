@@ -67,7 +67,9 @@ bool VulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
 
     Utils::CreateCommandBuffers(mVulkanDevice.device, mCommandPool,
                                 mCommandBuffers, mImagesCount);
-
+    Utils::CreateDescriptorPool(mVulkanDevice.device, &mDescriptorPool,
+                                mSwapchain.imageViews.size() *
+                                    1000); // Arbitrary large size, to fix later
     return true;
 }
 void VulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
@@ -144,6 +146,10 @@ VkDevice VulkanRenderer::GetDevice() const {
 
 const Utils::VulkanSwapchain& VulkanRenderer::GetSwapchain() const {
     return mSwapchain;
+}
+
+VkDescriptorPool VulkanRenderer::GetDescriptorPool() const {
+    return mDescriptorPool;
 }
 
 } // namespace Renderer

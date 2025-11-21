@@ -16,6 +16,7 @@
 #include "engine/debug/Overlord.h"
 #include "engine/font/Police.h"
 #include "engine/material/AbstractMaterial.h"
+#include "engine/renderer/DescriptorLayoutStorage.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/SamplerCache.h"
 #include "engine/renderer/TextRenderer.h"
@@ -193,6 +194,7 @@ public:
     CTextRenderer& GetTextRenderer() {
         return *mTextRenderer;
     }
+
     const VulkanRenderer& GetVulkanRenderer() const {
         return mRenderer;
     }

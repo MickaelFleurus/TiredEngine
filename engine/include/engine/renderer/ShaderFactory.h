@@ -3,27 +3,24 @@
 #include <memory>
 #include <string>
 
+#include "engine/renderer/MaterialStructures.h"
 #include <vulkan/vulkan.h>
 
 namespace Renderer {
 class CWindow;
-
-struct SShaderResources {
-    uint32_t numSamplers = 0;
-    uint32_t numStorageTextures = 0;
-    uint32_t numStorageBuffers = 0;
-    uint32_t numUniformBuffers = 0;
-};
+class CDescriptorLayoutStorage;
 
 class CShaderFactory {
 public:
     CShaderFactory(const CWindow& window);
     ~CShaderFactory();
 
-    VkShaderModule CreateFragmentShader(std::string name, std::string path,
-                                        const SShaderResources& resources = {});
-    VkShaderModule CreateVertexShader(std::string name, std::string path,
-                                      const SShaderResources& resources = {});
+    SShaderDescriptors
+    CreateFragmentShader(std::string name, std::string path,
+                         CDescriptorLayoutStorage& descriptorLayoutStorage);
+    SShaderDescriptors
+    CreateVertexShader(std::string name, std::string path,
+                       CDescriptorLayoutStorage& descriptorLayoutStorage);
 
 private:
     class CImpl;

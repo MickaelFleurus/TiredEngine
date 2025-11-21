@@ -1,8 +1,14 @@
 #pragma once
 #include "engine/material/MaterialTypes.h"
+#include "engine/renderer/MaterialStructures.h"
+#include "engine/renderer/PipelineTypes.h"
 
 #include <glm/vec4.hpp>
 #include <vulkan/vulkan.h>
+
+namespace Renderer {
+class CDescriptorLayoutStorage;
+} // namespace Renderer
 
 struct SDL_GPUTexture;
 
@@ -21,17 +27,24 @@ public:
     const glm::vec4& GetColor() const;
     SDL_GPUTexture* GetTexture() const;
 
-    virtual void Bind(VkRenderPass renderPass);
+    virtual void Bind(VkDevice device, VkCommandBuffer commandBuffer,
+                      SMaterialBindingInfo& bindingInfo,
+                      VkDescriptorPool descriptorPool);
 
 protected:
-    explicit AbstractMaterial(EMaterialType type, VkPipeline pipeline);
+    explicit AbstractMaterial(
+        const Renderer::CDescriptorLayoutStorage& descriptorLayoutStorage,
+        EMaterialType type, Renderer::EVertexLayout vertexLayout,
+        Renderer::SPipelineDescriptors& pipeline);
     AbstractMaterial(const AbstractMaterial& other);
-    AbstractMaterial& operator=(const AbstractMaterial& other);
+    AbstractMaterial& operator=(const AbstractMaterial& other) = delete;
     AbstractMaterial(AbstractMaterial&& other) noexcept;
-    AbstractMaterial& operator=(AbstractMaterial&& other) noexcept;
+    AbstractMaterial& operator=(AbstractMaterial&& other) noexcept = delete;
 
+    const Renderer::CDescriptorLayoutStorage& mDescriptorLayoutStorage;
+    Renderer::EVertexLayout mVertexLayout;
     EMaterialType mType = EMaterialType::Unlit;
-    VkPipeline mPipeline = VK_NULL_HANDLE;
+    Renderer::SPipelineDescriptors mPipeline;
     glm::vec4 mColor = glm::vec4(1.0f);
     SDL_GPUTexture* mTexture = nullptr;
 };

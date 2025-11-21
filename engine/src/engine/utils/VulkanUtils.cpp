@@ -533,4 +533,22 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
     return framebuffers;
 }
 
+void CreateDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool,
+                          uint32_t poolSize) {
+    VkDescriptorPoolSize poolSizeInfo{};
+    poolSizeInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizeInfo.descriptorCount = poolSize;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSizeInfo;
+    poolInfo.maxSets = poolSize;
+
+    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, descriptorPool) !=
+        VK_SUCCESS) {
+        LOG_FATAL("Failed to create descriptor pool!");
+    }
+}
+
 } // namespace Utils

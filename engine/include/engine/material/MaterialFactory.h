@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/material/MaterialTypes.h"
+#include "engine/renderer/DescriptorLayoutStorage.h"
 #include "engine/renderer/PipelineFactory.h"
 
 #include <memory>
@@ -41,6 +42,7 @@ private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
     Renderer::CPipelineFactory mPipelineFactory;
+    Renderer::CDescriptorLayoutStorage mDescriptorLayoutStorage;
 };
 
 } // namespace Material

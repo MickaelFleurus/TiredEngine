@@ -1,5 +1,6 @@
 #include "engine/renderer/ShaderFactory.h"
 
+#include "engine/renderer/DescriptorLayoutStorage.h"
 #include "engine/renderer/VulkanRenderer.h"
 #include "engine/renderer/Window.h"
 #include "engine/utils/Logger.h"
@@ -27,17 +28,24 @@ public:
         }
     }
 
-    VkShaderModule CreateShader(std::string name, std::string path,
-                                const SShaderResources& resources) {
+    SShaderDescriptors
+    CreateShader(std::string name, std::string path,
+                 CDescriptorLayoutStorage& descriptorLayoutStorage) {
         path += name + ".spv";
+        std::vector<size_t> descriptorSetLayouts;
         if (!mShaderCache.contains(name)) {
             size_t codeSize = 0;
             std::unique_ptr<void, decltype(&SDL_free)> rawCode =
                 std::unique_ptr<void, decltype(&SDL_free)>(
                     SDL_LoadFile(path.c_str(), &codeSize), SDL_free);
             if (rawCode == nullptr) {
-                return nullptr;
+                LOG_ERROR("Failed to load shader file: {}", path);
+                return {};
             }
+
+            descriptorSetLayouts = descriptorLayoutStorage.ReflectOnShader(
+                static_cast<uint32_t>(codeSize), rawCode.get(), path);
+
             VkShaderModuleCreateInfo shaderModuleCreateInfo{};
             shaderModuleCreateInfo.sType =
                 VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -53,10 +61,10 @@ public:
             } else {
                 LOG_ERROR("Failed to create shader module for shader: {}",
                           name);
-                return VK_NULL_HANDLE;
+                return {};
             }
         }
-        return mShaderCache[name];
+        return {mShaderCache[name], descriptorSetLayouts};
     }
 
 private:
@@ -70,16 +78,16 @@ CShaderFactory::CShaderFactory(const CWindow& window)
 
 CShaderFactory::~CShaderFactory() = default;
 
-VkShaderModule
-CShaderFactory::CreateFragmentShader(std::string name, std::string path,
-                                     const SShaderResources& resources) {
-    return mImpl->CreateShader(name + ".frag", path, resources);
+SShaderDescriptors CShaderFactory::CreateFragmentShader(
+    std::string name, std::string path,
+    CDescriptorLayoutStorage& descriptorLayoutStorage) {
+    return mImpl->CreateShader(name + ".frag", path, descriptorLayoutStorage);
 }
 
-VkShaderModule
-CShaderFactory::CreateVertexShader(std::string name, std::string path,
-                                   const SShaderResources& resources) {
-    return mImpl->CreateShader(name + ".vert", path, resources);
+SShaderDescriptors CShaderFactory::CreateVertexShader(
+    std::string name, std::string path,
+    CDescriptorLayoutStorage& descriptorLayoutStorage) {
+    return mImpl->CreateShader(name + ".vert", path, descriptorLayoutStorage);
 }
 
 } // namespace Renderer

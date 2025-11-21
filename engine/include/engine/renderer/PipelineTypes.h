@@ -50,9 +50,6 @@ struct SPipelineConfig {
 
     EVertexLayout vertexLayout = EVertexLayout::Simple;
 
-    SShaderResources vertexResources;
-    SShaderResources fragmentResources;
-
     bool operator==(const SPipelineConfig& other) const noexcept {
         return std::tie(primitiveType, fillMode, cullMode, frontFace,
                         shaderName, enableBlending, vertexLayout) ==

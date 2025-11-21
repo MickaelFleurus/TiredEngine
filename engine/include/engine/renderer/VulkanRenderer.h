@@ -28,6 +28,7 @@ public:
     VkPhysicalDevice GetPhysicalDevice() const;
     VkDevice GetDevice() const;
     const Utils::VulkanSwapchain& GetSwapchain() const;
+    VkDescriptorPool GetDescriptorPool() const;
 
     void BeginRenderPass(uint32_t index, VkViewport viewport, VkRect2D scissor);
 
@@ -45,6 +46,7 @@ private:
     CVulkanQueue mQueue;
 
     VkCommandPool mCommandPool;
+    VkDescriptorPool mDescriptorPool;
     int mImagesCount = 0;
     std::vector<VkCommandBuffer> mCommandBuffers;
     std::vector<VkFramebuffer> mFramebuffers;

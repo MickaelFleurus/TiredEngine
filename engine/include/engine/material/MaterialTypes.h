@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <vulkan/vulkan.h>
 
 namespace Material {
 enum class EMaterialType {
@@ -9,4 +11,11 @@ enum class EMaterialType {
     Particle, // Particle systems
     UI        // UI elements
 };
+
+struct SMaterialBindingInfo {
+    std::vector<VkBuffer> bufferBindings;
+    std::vector<VkDescriptorBufferInfo> uniformBuffers;
+    std::vector<VkDescriptorImageInfo> imageViews;
+};
+
 } // namespace Material

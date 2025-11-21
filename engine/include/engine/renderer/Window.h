@@ -22,6 +22,7 @@ namespace Renderer {
 
 class CTextRenderer;
 class VulkanRenderer;
+class CDescriptorLayoutStorage;
 
 class CWindow {
 public:

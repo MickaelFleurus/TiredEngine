@@ -2,16 +2,20 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
+#include "engine/renderer/MaterialStructures.h"
+
 namespace Renderer {
 struct SPipelineConfig;
+class CDescriptorLayoutStorage;
 class CWindow;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(const CWindow& window);
+    CPipelineFactory(const CWindow& window,
+                     CDescriptorLayoutStorage& descriptorLayoutStorage);
     ~CPipelineFactory();
 
-    VkPipeline CreateGraphicsPipeline(const SPipelineConfig& config);
+    SPipelineDescriptors CreateGraphicsPipeline(const SPipelineConfig& config);
 
 private:
     class CImpl;

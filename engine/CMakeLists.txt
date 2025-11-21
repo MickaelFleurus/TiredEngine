@@ -12,6 +12,7 @@ target_link_libraries(Angine_LIB PUBLIC
     msdf-atlas-gen::msdf-atlas-gen 
     freetype
     Vulkan::Vulkan
+    spirv-reflect-static
 )
 
 # On macOS, link required frameworks for MoltenVK
