@@ -1,16 +1,15 @@
 #pragma once
 
+#include "engine/vulkan/IVulkanContext.h"
 #include <optional>
 #include <vulkan/vulkan.h>
 
-namespace Renderer {
-class CVulkanQueue {
+namespace Vulkan {
+class CVulkanRendering {
 public:
-    CVulkanQueue() = default;
-    ~CVulkanQueue();
+    CVulkanRendering(IVulkanContextGetter& vulkanContext);
+    ~CVulkanRendering();
 
-    void Init(VkDevice device, VkSwapchainKHR swapchain, uint32_t familyIndex,
-              uint32_t queueIndex);
     void Destroy();
     std::optional<uint32_t> AcquireNextImage();
     void SubmitSync(VkCommandBuffer commandBuffer) const;
@@ -21,12 +20,16 @@ public:
     VkQueue GetHandle() const;
     uint32_t GetFamilyIndex() const;
 
+    void BeginRenderPass(uint32_t index, VkViewport viewport, VkRect2D scissor);
+    void EndRenderPass(uint32_t index);
+
+    VkCommandPool GetSingleTimeCommandPool() const;
+
 private:
-    uint32_t mFamilyIndex = 0;
-    VkDevice mDevice = VK_NULL_HANDLE;
-    VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;
+    IVulkanContextGetter& mVulkanContext;
+    VkCommandPool mSingleTimeCommandPool = VK_NULL_HANDLE;
     VkQueue mQueue = VK_NULL_HANDLE;
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
     VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
 };
-} // namespace Renderer
+} // namespace Vulkan

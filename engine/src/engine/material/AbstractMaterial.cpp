@@ -19,7 +19,7 @@ AbstractMaterial::AbstractMaterial(const AbstractMaterial& other)
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTexture(other.mTexture) {
+    , mTextureIndex(other.mTextureIndex) {
 }
 
 AbstractMaterial::AbstractMaterial(AbstractMaterial&& other) noexcept
@@ -28,9 +28,9 @@ AbstractMaterial::AbstractMaterial(AbstractMaterial&& other) noexcept
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTexture(other.mTexture) {
+    , mTextureIndex(other.mTextureIndex) {
     other.mPipeline = {};
-    other.mTexture = nullptr;
+    other.mTextureIndex = -1;
 }
 
 EMaterialType AbstractMaterial::GetType() const {
@@ -45,16 +45,20 @@ void AbstractMaterial::SetColor(const glm::vec4& color) {
     mColor = color;
 }
 
-void AbstractMaterial::SetTexture(SDL_GPUTexture* texture) {
-    mTexture = texture;
+void AbstractMaterial::SetTextureIndex(int textureIndex) {
+    mTextureIndex = textureIndex;
 }
 
 const glm::vec4& AbstractMaterial::GetColor() const {
     return mColor;
 }
 
-SDL_GPUTexture* AbstractMaterial::GetTexture() const {
-    return mTexture;
+int AbstractMaterial::GetTextureIndex() const {
+    return mTextureIndex;
+}
+
+VkPipelineLayout AbstractMaterial::GetPipelineLayout() const {
+    return mPipeline.pipelineLayout;
 }
 
 void AbstractMaterial::Bind(VkDevice device, VkCommandBuffer commandBuffer,

@@ -8,70 +8,12 @@ namespace Renderer {
 CVulkanRenderer::CVulkanRenderer() = default;
 
 CVulkanRenderer::~CVulkanRenderer() {
-    mQueue.Destroy();
-    vkDestroyCommandPool(mVulkanDevice.device, mCommandPool, nullptr);
-    for (auto framebuffer : mFramebuffers) {
-        vkDestroyFramebuffer(mVulkanDevice.device, framebuffer, nullptr);
-    }
-    vkDestroyRenderPass(mVulkanDevice.device, mRenderPass, nullptr);
-    for (auto imageView : mSwapchain.imageViews) {
-        vkDestroyImageView(mVulkanDevice.device, imageView, nullptr);
-    }
-    vkDestroySwapchainKHR(mVulkanDevice.device, mSwapchain.swapchain, nullptr);
-    vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
-
-    if (mDebugMessenger != VK_NULL_HANDLE) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-            mInstance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func)
-            func(mInstance, mDebugMessenger, nullptr);
-    }
-    vkDestroyDevice(mVulkanDevice.device, nullptr);
-    vkDestroyInstance(mInstance, nullptr);
 }
 
 bool CVulkanRenderer::Init(SDL_Window* window, const System::CSystem& system) {
-    // Create Vulkan instance
-    mInstance = Utils::CreateVulkanInstance(system.GetGameName());
-
-    mDebugMessenger = Utils::CreateVulkanCallback(mInstance);
-
-    // Create surface
-    mSurface = Utils::CreateVulkanSurface(window, mInstance);
-
-    // Pick physical device
-    mPhysicalDevice = Utils::PickPhysicalDevice(mInstance, mSurface);
-
-    // Create logical device
-    mVulkanDevice = Utils::CreateLogicalDevice(mPhysicalDevice, mSurface);
-
-    mSwapChainSupport =
-        Utils::QuerySwapChainSupport(mPhysicalDevice.device, mSurface);
-    // Create swapchain
-
-    mSwapchain = Utils::CreateSwapchain(
-        mPhysicalDevice.device, mVulkanDevice.device, mSurface, window,
-        mVulkanDevice.graphicsFamily, mVulkanDevice.presentFamily);
-
-    mImagesCount = static_cast<int>(mSwapchain.images.size());
-    mCommandBuffers.resize(mImagesCount);
-    mRenderPass =
-        Utils::CreateRenderPass(mVulkanDevice.device, mSwapchain.imageFormat);
-    Utils::CreateCommandBufferPool(
-        mVulkanDevice.device, &mCommandPool,
-        mPhysicalDevice.queueFamilies.graphicsFamily.value());
-    mQueue.Init(mVulkanDevice.device, mSwapchain.swapchain,
-                mVulkanDevice.graphicsFamily, 0);
-    mFramebuffers = Utils::CreateFramebuffers(mVulkanDevice.device, mRenderPass,
-                                              mSwapchain);
-
-    Utils::CreateCommandBuffers(mVulkanDevice.device, mCommandPool,
-                                mCommandBuffers, mImagesCount);
-    Utils::CreateDescriptorPool(mVulkanDevice.device, &mDescriptorPool,
-                                mSwapchain.imageViews.size() *
-                                    1000); // Arbitrary large size, to fix later
-    return true;
+    return false;
 }
+
 void CVulkanRenderer::BeginRenderPass(uint32_t index, VkViewport viewport,
                                       VkRect2D scissor) {
     VkClearColorValue red{0.0f, 0.0f, 0.0f, 0.0f};
@@ -112,11 +54,11 @@ VkCommandBuffer CVulkanRenderer::GetCommandBuffer(uint32_t imageIndex) {
     return mCommandBuffers[imageIndex];
 }
 
-CVulkanQueue& CVulkanRenderer::GetQueue() {
+CVulkanRendering& CVulkanRenderer::GetQueue() {
     return mQueue;
 }
 
-const CVulkanQueue& CVulkanRenderer::GetQueue() const {
+const CVulkanRendering& CVulkanRenderer::GetQueue() const {
     return mQueue;
 }
 

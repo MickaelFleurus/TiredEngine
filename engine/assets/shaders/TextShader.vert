@@ -7,8 +7,8 @@ layout(location = 2) in vec2 instancePosition;
 layout(location = 3) in vec2 instanceSize;
 layout(location = 4) in vec4 instanceUVRect;
 layout(location = 5) in vec4 instanceColor;
+layout(location = 6) in uint instanceTextureIndex;
 
-// Change from push_constant to uniform buffer (set 1, binding 0 for vertex stage)
 layout(binding = 0) uniform Matrices {
     mat4 projection;
     mat4 view;
@@ -18,6 +18,7 @@ layout(binding = 0) uniform Matrices {
 
 layout(location = 0) out vec2 fragTexCoord;
 layout(location = 1) out vec4 fragColor;
+layout(location = 2) out flat uint fragTextureIndex;
 
 void main() {
     vec2 scaledPosition = inPosition.xy * instanceSize;
@@ -27,4 +28,5 @@ void main() {
     gl_Position = ubo.projection * ubo.view * ubo.model * vec4(localPosition, 0.0, 1.0);
     fragTexCoord = instanceUVRect.xy + inTexCoord * instanceUVRect.zw;
     fragColor = instanceColor;
+    fragTextureIndex = instanceTextureIndex;
 }

@@ -5,13 +5,15 @@
 
 #include <engine/core/EngineLoop.h>
 
+namespace Vulkan {
+class CVulkanContext;
+} // namespace Vulkan
+
 namespace Core {
 class CGameLoop : public CEngineLoop {
 public:
-    CGameLoop(System::CSystem& system);
-
-    std::expected<void, const char*> Initialize();
-
+    CGameLoop(System::CSystem& system, SDL_Window* window,
+              Vulkan::CVulkanContext& vulkanContext);
     void GameLoop(float deltaTime) override;
 
 private:

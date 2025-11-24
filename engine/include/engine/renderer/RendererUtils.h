@@ -12,12 +12,18 @@
 
 struct SDL_GPUBuffer;
 
+namespace Vulkan {
+class IVulkanContextGetter;
+class CVulkanRendering;
+} // namespace Vulkan
+
 namespace Material {
 class AbstractMaterial;
 }
 
 namespace Renderer {
-class CVulkanRenderer;
+class CMemoryAllocator;
+
 enum class ERenderLayer : uint8_t {
     Background = 0,
     World = 1,
@@ -44,7 +50,7 @@ struct SRenderable {
         sortKey = (static_cast<uint64_t>(layer) << 56) |
                   (reinterpret_cast<uint64_t>(material->GetPipeline()) & 0xFFFF)
                       << 40 |
-                  (reinterpret_cast<uint64_t>(material->GetTexture()) & 0xFFFF)
+                  (static_cast<uint64_t>(material->GetTextureIndex()) & 0xFFFF)
                       << 24 |
                   (static_cast<uint64_t>(depth * 1000.0f) & 0xFFFFFF);
     }
@@ -52,50 +58,6 @@ struct SRenderable {
     bool operator<(const SRenderable& other) const {
         return sortKey < other.sortKey;
     }
-};
-
-struct VulkanBuffer {
-    VulkanBuffer() = default;
-    VulkanBuffer(const VulkanBuffer&) = delete;
-    VulkanBuffer& operator=(const VulkanBuffer&) = delete;
-    VulkanBuffer(VulkanBuffer&& other) noexcept
-        : device(other.device), buffer(other.buffer), memory(other.memory) {
-        other.buffer = VK_NULL_HANDLE;
-        other.memory = VK_NULL_HANDLE;
-    }
-    VulkanBuffer& operator=(VulkanBuffer&& other) noexcept {
-        if (this != &other) {
-            if (buffer != VK_NULL_HANDLE) {
-                vkDestroyBuffer(device, buffer, nullptr);
-            }
-            if (memory != VK_NULL_HANDLE) {
-                vkFreeMemory(device, memory, nullptr);
-            }
-            device = other.device;
-            buffer = other.buffer;
-            memory = other.memory;
-            other.buffer = VK_NULL_HANDLE;
-            other.memory = VK_NULL_HANDLE;
-        }
-        return *this;
-    }
-
-    VulkanBuffer(VkDevice device, VkBuffer buffer, VkDeviceMemory memory)
-        : device(device), buffer(buffer), memory(memory) {
-    }
-    ~VulkanBuffer() {
-        if (buffer != VK_NULL_HANDLE) {
-            vkDestroyBuffer(device, buffer, nullptr);
-        }
-        if (memory != VK_NULL_HANDLE) {
-            vkFreeMemory(device, memory, nullptr);
-        }
-    }
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
-private:
-    VkDevice device = VK_NULL_HANDLE;
 };
 
 struct VulkanImage {
@@ -108,62 +70,41 @@ struct VertexLayoutInfo {
     std::vector<VkVertexInputBindingDescription> bufferDescriptions;
 };
 
-template <typename T>
-concept ContiguousRange = std::ranges::range<T> &&
-                          std::contiguous_iterator<std::ranges::iterator_t<T>>;
-
-VulkanBuffer CreateBuffer(VkDevice device, uint32_t size,
-                          VkBufferUsageFlags bufferType,
-                          VkPhysicalDeviceMemoryProperties memProperties);
-
-void FillBuffer(VkDevice device, VulkanBuffer& buffer, const void* data,
-                uint32_t size);
-
-VulkanBuffer
-CreateAndFillBuffer(VkDevice device, const void* content, uint32_t size,
-                    VkBufferUsageFlags bufferType,
-                    VkPhysicalDeviceMemoryProperties memProperties);
-
-template <ContiguousRange R>
-VulkanBuffer
-CreateAndFillVertexBuffer(VkDevice device, R& vertices,
-                          VkPhysicalDeviceMemoryProperties memProperties) {
-    uint32_t memSize = static_cast<uint32_t>(
-        sizeof(std::ranges::range_value_t<R>) * std::ranges::size(vertices));
-    return CreateAndFillBuffer(device, std::ranges::data(vertices), memSize,
-                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                               memProperties);
-}
-
-template <ContiguousRange R>
-VulkanBuffer
-CreateAndFillIndexBuffer(VkDevice device, R& indices,
-                         VkPhysicalDeviceMemoryProperties memProperties) {
-
-    uint32_t memSize = static_cast<uint32_t>(
-        sizeof(std::ranges::range_value_t<R>) * std::ranges::size(indices));
-    return CreateAndFillBuffer(device, std::ranges::data(indices), memSize,
-                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT, memProperties);
-}
+VkCommandBuffer
+BeginSingleTimeCommands(const Vulkan::IVulkanContextGetter& context);
+void EndSingleTimeCommands(VkCommandBuffer commandBuffer,
+                           const Vulkan::IVulkanContextGetter& context);
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);
 
-VulkanImage CreateImage(VkDevice device, uint32_t width, uint32_t height,
-                        VkFormat format, VkImageTiling tiling,
+VulkanImage CreateImage(const Vulkan::IVulkanContextGetter& context,
+                        Renderer::CMemoryAllocator& allocator, uint32_t width,
+                        uint32_t height, VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
-                        VkPhysicalDeviceMemoryProperties memProperties,
                         VkMemoryPropertyFlags properties);
 
 void TransitionImageLayout(VkImage image, VkFormat format,
                            VkImageLayout oldLayout, VkImageLayout newLayout,
-                           const CVulkanRenderer& renderer);
+                           const Vulkan::CVulkanRendering& renderer);
 
 void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height, const CVulkanRenderer& renderer);
+                       uint32_t height,
+                       const Vulkan::IVulkanContextGetter& context,
+                       const Vulkan::CVulkanRendering& renderer);
 
 void CreateImageView(VkDevice device, VkImage image, VkFormat format,
                      VkImageAspectFlags aspectFlags, VkImageView& imageView);
 
 VkSampler CreateSampler(VkDevice device);
 
+void CreateDescriptorPool(VkDevice device, VkDescriptorPool& descriptorPool,
+                          std::size_t maxTextures);
+
+void CreateTextureDescriptorSetLayout(
+    VkDevice device, VkDescriptorSetLayout& descriptorSetLayout,
+    std::size_t maxTextures);
+
+VkDescriptorSet AllocateTextureDescriptorSet(VkDevice device,
+                                             VkDescriptorPool pool,
+                                             VkDescriptorSetLayout layout);
 } // namespace Renderer

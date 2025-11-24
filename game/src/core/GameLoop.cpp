@@ -3,7 +3,8 @@
 #include "engine/utils/Asserts.h"
 
 namespace Core {
-CGameLoop::CGameLoop(System::CSystem& system)
+CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
+                     Vulkan::CVulkanContext& vulkanContext)
     : CEngineLoop(system)
     , mSceneHandler(*this, mComponentManager, mFontHandler, system)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,

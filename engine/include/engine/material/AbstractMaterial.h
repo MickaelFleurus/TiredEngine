@@ -22,10 +22,11 @@ public:
     VkPipeline GetPipeline() const;
 
     void SetColor(const glm::vec4& color);
-    void SetTexture(SDL_GPUTexture* texture);
+    void SetTextureIndex(int textureIndex);
 
     const glm::vec4& GetColor() const;
-    SDL_GPUTexture* GetTexture() const;
+    int GetTextureIndex() const;
+    VkPipelineLayout GetPipelineLayout() const;
 
     virtual void Bind(VkDevice device, VkCommandBuffer commandBuffer,
                       SMaterialBindingInfo& bindingInfo,
@@ -46,7 +47,7 @@ protected:
     EMaterialType mType = EMaterialType::Unlit;
     Renderer::SPipelineDescriptors mPipeline;
     glm::vec4 mColor = glm::vec4(1.0f);
-    SDL_GPUTexture* mTexture = nullptr;
+    int mTextureIndex = -1;
 };
 
 } // namespace Material

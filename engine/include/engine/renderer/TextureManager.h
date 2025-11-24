@@ -1,13 +1,22 @@
 #pragma once
+
+#include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
 struct SDL_Surface;
+
 namespace Utils {
 class CFileHandler;
 }
+
+namespace Vulkan {
+class IVulkanContextGetter;
+class CVulkanRendering;
+} // namespace Vulkan
 
 namespace Renderer {
 
@@ -20,21 +29,34 @@ struct VulkanTexture {
     uint32_t height = 0;
 };
 
-class CWindow;
+class CBufferHandler;
 class CTextureManager {
 public:
-    CTextureManager(const CWindow& window, Utils::CFileHandler& fileHandler);
+    CTextureManager(const Vulkan::IVulkanContextGetter& context,
+                    Vulkan::CVulkanRendering& renderer,
+                    CBufferHandler& bufferHandler,
+                    Utils::CFileHandler& fileHandler);
     ~CTextureManager();
 
-    VulkanTexture LoadTexture(const std::string& filename);
-    VulkanTexture LoadTextureFromSurface(const std::string& filename,
-                                         SDL_Surface* surface);
-    VulkanTexture GetTexture(const std::string& filename);
+    int LoadTexture(const std::string& filename);
+    int LoadTextureFromSurface(const std::string& filename,
+                               SDL_Surface* surface);
+    std::optional<VulkanTexture> GetTexture(const std::string& filename);
+    std::optional<int> GetTextureIndex(const std::string& filename) const;
 
 private:
-    const CWindow& mWindow;
+    void UpdateDescriptor(int index);
+
+    const Vulkan::IVulkanContextGetter& mContext;
+    Vulkan::CVulkanRendering& mRenderer;
+
+    CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;
 
-    std::unordered_map<std::string, VulkanTexture> mLoadedTextures;
+    std::vector<VulkanTexture> mLoadedTextures;
+    std::unordered_map<std::string, int> mLoadedTexturesIndices;
+
+    VkDescriptorPool mTextureDescriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout mTexturesSetLayout = VK_NULL_HANDLE;
 };
 } // namespace Renderer

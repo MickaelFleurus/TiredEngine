@@ -3,7 +3,9 @@
 #include "engine/core/Inputs.h"
 #include "engine/debug/OverlordManager.h"
 #include "engine/input/InputHandler.h"
-#include "engine/renderer/ShaderFactory.h"
+
+#include "engine/renderer/BufferHandler.h"
+#include "engine/renderer/MemoryAllocator.h"
 #include "engine/renderer/Window.h"
 
 #include "engine/component/ComponentManager.h"
@@ -13,9 +15,15 @@
 #include "engine/utils/FileHandler.h"
 
 #include "engine/renderer/TextureManager.h"
+#include "engine/vulkan/VulkanRendering.h"
 
 #include <chrono>
-#include <expected>
+
+struct SDL_Window;
+
+namespace Vulkan {
+class CVulkanContext;
+} // namespace Vulkan
 
 namespace Scene {
 class CAbstractScene;
@@ -29,10 +37,9 @@ class CSystem;
 namespace Core {
 class CEngineLoop {
 public:
-    CEngineLoop(System::CSystem& system);
+    CEngineLoop(System::CSystem& system, SDL_Window* window,
+                Vulkan::CVulkanContext& vulkanContext);
     virtual ~CEngineLoop();
-
-    std::expected<void, const char*> Initialize();
 
     void SetPendingScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
     Scene::CAbstractScene* GetCurrentScene() const;
@@ -42,17 +49,22 @@ public:
     virtual void GameLoop(float deltaTime) = 0;
 
 protected:
-    Renderer::CWindow mWindow;
-    Debug::COverlordManager mOverlordManager;
-    CInputs mInputs;
-    Input::CInputHandler mInputHandler;
-    Component::CComponentManager mComponentManager;
-    std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
-    std::unique_ptr<Scene::CAbstractScene> mPendingScene;
-    std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
+    Vulkan::CVulkanContext& mVulkanContext;
+    Vulkan::CVulkanRendering mVulkanRendering;
 
+    Renderer::CWindow mWindow;
+    Renderer::CMemoryAllocator mMemoryAllocator;
+    Renderer::CBufferHandler mBufferHandler;
     Renderer::CTextureManager mTextureManager;
     Material::CMaterialFactory mMaterialFactory;
     Font::CFontHandler mFontHandler;
+    Component::CComponentManager mComponentManager;
+
+    Debug::COverlordManager mOverlordManager;
+    CInputs mInputs;
+    Input::CInputHandler mInputHandler;
+    std::unique_ptr<Scene::CAbstractScene> mCurrentScene;
+    std::unique_ptr<Scene::CAbstractScene> mPendingScene;
+    std::chrono::time_point<std::chrono::high_resolution_clock> mLastFrameTime;
 };
 } // namespace Core

@@ -12,6 +12,7 @@ struct SShaderDescriptors {
 
 struct SPipelineDescriptors {
     VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     std::vector<size_t> descriptorSetLayoutsHashes;
 };
 } // namespace Renderer

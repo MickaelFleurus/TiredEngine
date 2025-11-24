@@ -36,6 +36,7 @@ public:
     const Font::GlyphInfo& GetGlyphInfo(char c) const;
 
     Material::AbstractMaterial& GetMaterial();
+    int GetTextureIndex() const;
 
     const std::string& GetName() const;
 

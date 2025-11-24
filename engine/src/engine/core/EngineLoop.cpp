@@ -9,28 +9,24 @@
 
 namespace Core {
 
-CEngineLoop::CEngineLoop(System::CSystem& system)
-    : mWindow(system)
-    , mOverlordManager(mWindow)
+CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
+                         Vulkan::CVulkanContext& vulkanContext)
+    : mVulkanContext(vulkanContext)
+    , mVulkanRendering(vulkanContext)
+    , mWindow(system, window, vulkanContext, mVulkanRendering)
+    , mMemoryAllocator(mVulkanContext)
+    , mBufferHandler(mVulkanContext, mMemoryAllocator)
+    , mTextureManager(mWindow, system.GetFileHandler())
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory,
+                   mBufferHandler)
+    , mComponentManager(mFontHandler, mWindow)
+    , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mTextureManager(mWindow, system.GetFileHandler())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
-    , mComponentManager(mFontHandler, mWindow) {
+    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
-
-std::expected<void, const char*> CEngineLoop::Initialize() {
-    if (!mWindow.Initialize()) {
-        const char* error = SDL_GetError();
-        if (error && *error) {
-            return std::unexpected(error);
-        }
-    }
-    return {};
-}
 
 void CEngineLoop::SetPendingScene(
     std::unique_ptr<Scene::CAbstractScene>&& scene) {

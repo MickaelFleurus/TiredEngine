@@ -207,6 +207,14 @@ public:
             pipelineLayoutInfo.setLayoutCount =
                 static_cast<uint32_t>(descriptorSetLayouts.size());
             pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags =
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = sizeof(glm::mat4);
+
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
             auto& vulkanRenderer = mWindow.GetVulkanRenderer();
             // Create the pipeline layout first
@@ -255,7 +263,8 @@ public:
                 return {};
             }
 
-            mPipelineCache.try_emplace(config, graphicsPipeline, hashes);
+            mPipelineCache.try_emplace(config, graphicsPipeline, pipelineLayout,
+                                       hashes);
         }
 
         return mPipelineCache[config];

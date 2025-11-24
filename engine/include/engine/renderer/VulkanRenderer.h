@@ -19,8 +19,8 @@ public:
     bool Init(SDL_Window* window, const System::CSystem& system);
 
     VkCommandBuffer GetCommandBuffer(uint32_t imageIndex);
-    CVulkanQueue& GetQueue();
-    const CVulkanQueue& GetQueue() const;
+    CVulkanRendering& GetQueue();
+    const CVulkanRendering& GetQueue() const;
     const Utils::VulkanDevice& GetVulkanDevice() const;
     const Utils::VulkanPhysicalDevice& GetVulkanPhysicalDevice() const;
     VkRenderPass GetRenderPass() const;
@@ -45,7 +45,7 @@ private:
     Utils::SwapChainSupportDetails mSwapChainSupport;
     Utils::VulkanSwapchain mSwapchain;
     VkRenderPass mRenderPass;
-    CVulkanQueue mQueue;
+    CVulkanRendering mQueue;
 
     VkCommandPool mCommandPool;
     VkDescriptorPool mDescriptorPool;

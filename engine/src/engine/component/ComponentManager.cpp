@@ -7,12 +7,11 @@
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextComponent.h"
 #include "engine/core/GameObject.h"
-#include "engine/renderer/Window.h"
 
 namespace Component {
 CComponentManager::CComponentManager(Font::CFontHandler& fontHandler,
-                                     Renderer::CWindow& window)
-    : mFontHandler(fontHandler), mWindow(window) {
+                                     Renderer::CTextRenderer& textRenderer)
+    : mFontHandler(fontHandler), mTextRenderer(textRenderer) {
 }
 
 CInputComponent& CComponentManager::addInputComponent(
@@ -46,8 +45,7 @@ CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
 }
 
 CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
-    return createComponent<CTextComponent>(owner, owner.getId(),
-                                           mWindow.GetTextRenderer());
+    return createComponent<CTextComponent>(owner, owner.getId(), mTextRenderer);
 }
 
 CTransformComponent&

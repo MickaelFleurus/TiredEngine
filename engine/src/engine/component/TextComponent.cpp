@@ -78,6 +78,7 @@ void CTextComponent::GenerateInstances() {
         instance.size = glm::vec2(glyph.size.x, glyph.size.y) * fontSize;
         instance.uvRect = glyph.uv;
         instance.color = mPolice->GetColor();
+        instance.textureIndex = mPolice->GetTextureIndex();
 
         mInstances.push_back(instance);
 

@@ -1,10 +1,5 @@
 #pragma once
-#include <memory>
-#include <vulkan/vulkan.h>
-
-struct SDL_GPUDevice;
 struct SDL_Window;
-struct SDL_GPURenderPass;
 
 namespace Scene {
 class CAbstractScene;
@@ -18,41 +13,34 @@ namespace System {
 class CSystem;
 } // namespace System
 
-namespace Renderer {
+namespace Vulkan {
+class IVulkanContextGetter;
+class CVulkanRendering;
+} // namespace Vulkan
 
-class CTextRenderer;
-class CVulkanRenderer;
-class CDescriptorLayoutStorage;
+namespace Renderer {
 
 class CWindow {
 public:
-    CWindow(System::CSystem& system);
+    CWindow(System::CSystem& system, SDL_Window* window,
+            Vulkan::IVulkanContextGetter& vulkanContext,
+            Vulkan::CVulkanRendering& renderer);
     ~CWindow();
-
-    bool Initialize();
 
     bool BeginRender();
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager);
     void EndRender();
 
-    SDL_GPUDevice* GetDevice() const {
-        return nullptr;
-    }
-    SDL_Window* GetSDLWindow() const;
-
-    SDL_GPURenderPass* GetRenderPass() const {
-        return nullptr;
-    }
-
-    const CVulkanRenderer& GetVulkanRenderer() const;
-
-    CTextRenderer& GetTextRenderer();
-    VkCommandBuffer GetCommandBuffer();
-
 private:
-    class CImpl;
-    std::unique_ptr<CImpl> mImpl;
     const System::CSystem& mSystem;
+    SDL_Window* mSDLWindow;
+    Vulkan::IVulkanContextGetter& mVulkanContext;
+    Vulkan::CVulkanRendering& mRenderer;
+
+    std::optional<uint32_t> mImageIndex = std::nullopt;
+
+    VkViewport mViewport;
+    VkRect2D mScissor;
 };
 } // namespace Renderer

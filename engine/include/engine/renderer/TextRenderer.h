@@ -14,6 +14,7 @@ struct SCharacterInstance {
     glm::vec2 size{1.0f};
     glm::vec4 uvRect{0.0f};
     glm::vec4 color{1.0f};
+    uint32_t textureIndex{0};
 };
 
 class CTextRenderer {

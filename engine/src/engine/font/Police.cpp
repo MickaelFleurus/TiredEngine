@@ -45,6 +45,10 @@ Material::AbstractMaterial& CPolice::GetMaterial() {
     return *mMaterial;
 }
 
+int CPolice::GetTextureIndex() const {
+    return mMaterial->GetTextureIndex();
+}
+
 const std::string& CPolice::GetName() const {
     return mName;
 }
