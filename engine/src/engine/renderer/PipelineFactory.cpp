@@ -1,11 +1,10 @@
 #include "engine/renderer/PipelineFactory.h"
-#include "engine/renderer/DescriptorLayoutStorage.h"
+#include "engine/renderer/DescriptorStorage.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/ShaderFactory.h"
-#include "engine/renderer/VulkanRenderer.h"
-#include "engine/renderer/Window.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/VulkanContext.h"
 #include <array>
 #include <functional>
 #include <vulkan/vulkan.h>
@@ -83,29 +82,30 @@ namespace Renderer {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const CWindow& window,
-          CDescriptorLayoutStorage& descriptorLayoutStorage)
-        : mWindow(window)
-        , mShaderFactory(window)
-        , mDescriptorLayoutStorage(descriptorLayoutStorage) {
+    CImpl(const Vulkan::CVulkanContext& contextGetter)
+        : mContextGetter(contextGetter), mShaderFactory(contextGetter) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            vkDestroyPipeline(mWindow.GetVulkanRenderer().GetDevice(),
-                              pipeline.pipeline, nullptr);
+            vkDestroyPipelineLayout(mContextGetter.GetDevice(),
+                                    pipeline.pipelineLayout, nullptr);
+            vkDestroyPipeline(mContextGetter.GetDevice(), pipeline.pipeline,
+                              nullptr);
         }
     }
 
-    SPipelineDescriptors CreateGraphicsPipeline(SPipelineConfig config) {
+    SPipelineDescriptors
+    CreateGraphicsPipeline(SPipelineConfig config,
+                           CDescriptorStorage& layoutStorage) {
         if (!mPipelineCache.contains(config)) {
             auto vertexShader = mShaderFactory.CreateVertexShader(
-                config.shaderName, config.shaderPath, mDescriptorLayoutStorage);
+                config.shaderName, config.shaderPath);
             auto fragmentShader = mShaderFactory.CreateFragmentShader(
-                config.shaderName, config.shaderPath, mDescriptorLayoutStorage);
+                config.shaderName, config.shaderPath);
 
-            if (vertexShader.shaderModule == VK_NULL_HANDLE ||
-                fragmentShader.shaderModule == VK_NULL_HANDLE) {
+            if (vertexShader == VK_NULL_HANDLE ||
+                fragmentShader == VK_NULL_HANDLE) {
                 LOG_ERROR("Failed to create shaders for pipeline: {}",
                           config.shaderName);
                 return {};
@@ -193,32 +193,24 @@ public:
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
             pipelineLayoutInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-            std::vector<std::size_t> hashes =
-                vertexShader.descriptorSetLayoutsHashes;
-            hashes.insert(hashes.end(),
-                          fragmentShader.descriptorSetLayoutsHashes.begin(),
-                          fragmentShader.descriptorSetLayoutsHashes.end());
-            for (const auto& hash : hashes) {
-                descriptorSetLayouts.push_back(
-                    mDescriptorLayoutStorage.GetLayout(hash));
-            }
+            std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+                layoutStorage.GetLayout()};
 
             pipelineLayoutInfo.setLayoutCount =
                 static_cast<uint32_t>(descriptorSetLayouts.size());
             pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+
             VkPushConstantRange pushConstantRange{};
             pushConstantRange.stageFlags =
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             pushConstantRange.offset = 0;
-            pushConstantRange.size = sizeof(glm::mat4);
+            pushConstantRange.size = sizeof(Renderer::SPushConstantData);
 
             pipelineLayoutInfo.pushConstantRangeCount = 1;
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-            auto& vulkanRenderer = mWindow.GetVulkanRenderer();
             // Create the pipeline layout first
-            if (vkCreatePipelineLayout(vulkanRenderer.GetDevice(),
+            if (vkCreatePipelineLayout(mContextGetter.GetDevice(),
                                        &pipelineLayoutInfo, nullptr,
                                        &pipelineLayout) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create pipeline layout!");
@@ -229,12 +221,12 @@ public:
             VkPipelineShaderStageCreateInfo vertexShaderStageInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                .module = vertexShader.shaderModule,
+                .module = vertexShader,
                 .pName = "main"};
             VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .module = fragmentShader.shaderModule,
+                .module = fragmentShader,
                 .pName = "main"};
             std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
                 vertexShaderStageInfo, fragmentShaderStageInfo};
@@ -252,43 +244,42 @@ public:
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
             pipelineInfo.layout = pipelineLayout;
-            pipelineInfo.renderPass = vulkanRenderer.GetRenderPass();
+            pipelineInfo.renderPass = mContextGetter.GetRenderPass();
             pipelineInfo.subpass = 0;
 
             VkPipeline graphicsPipeline;
             if (vkCreateGraphicsPipelines(
-                    vulkanRenderer.GetDevice(), VK_NULL_HANDLE, 1,
+                    mContextGetter.GetDevice(), VK_NULL_HANDLE, 1,
                     &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create graphics pipeline!");
                 return {};
             }
 
-            mPipelineCache.try_emplace(config, graphicsPipeline, pipelineLayout,
-                                       hashes);
+            mPipelineCache.try_emplace(config, graphicsPipeline,
+                                       pipelineLayout);
         }
 
         return mPipelineCache[config];
     }
 
 private:
-    const CWindow& mWindow;
-    CDescriptorLayoutStorage& mDescriptorLayoutStorage;
+    const Vulkan::CVulkanContext& mContextGetter;
     CShaderFactory mShaderFactory;
     std::unordered_map<SPipelineConfig, SPipelineDescriptors,
                        SPipelineConfigHash>
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(
-    const CWindow& window, CDescriptorLayoutStorage& descriptorLayoutStorage)
-    : mImpl(std::make_unique<CImpl>(window, descriptorLayoutStorage)) {
+CPipelineFactory::CPipelineFactory(const Vulkan::CVulkanContext& contextGetter)
+    : mImpl(std::make_unique<CImpl>(contextGetter)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;
 
 SPipelineDescriptors
-CPipelineFactory::CreateGraphicsPipeline(const SPipelineConfig& config) {
-    return mImpl->CreateGraphicsPipeline(config);
+CPipelineFactory::CreateGraphicsPipeline(const SPipelineConfig& config,
+                                         CDescriptorStorage& layoutStorage) {
+    return mImpl->CreateGraphicsPipeline(config, layoutStorage);
 }
 
 } // namespace Renderer

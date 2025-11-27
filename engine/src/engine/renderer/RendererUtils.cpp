@@ -1,7 +1,7 @@
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/IVulkanContext.h"
+#include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
 
 namespace {
@@ -36,44 +36,71 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     Renderer::VertexLayoutInfo info;
 
     // Buffer 0: Position + TexCoord (per-vertex)
-    VkVertexInputAttributeDescription attr0{};
-    attr0.binding = 0;
-    attr0.format = VK_FORMAT_R32G32B32_SFLOAT;
-    attr0.location = 0;
-    attr0.offset = 0;
+    VkVertexInputAttributeDescription vertexPosition{};
+    vertexPosition.binding = 0;
+    vertexPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertexPosition.location = 0;
+    vertexPosition.offset = 0;
 
-    VkVertexInputAttributeDescription attr1{};
-    attr1.binding = 0;
-    attr1.format = VK_FORMAT_R32G32_SFLOAT;
-    attr1.location = 1;
-    attr1.offset = sizeof(float) * 3;
+    VkVertexInputAttributeDescription vertexUV{};
+    vertexUV.binding = 0;
+    vertexUV.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexUV.location = 1;
+    vertexUV.offset = sizeof(float) * 3;
 
     // Buffer 1: Instance data
-    VkVertexInputAttributeDescription attr2{}; // instancePosition
-    attr2.location = 2;
-    attr2.binding = 1;
-    attr2.format = VK_FORMAT_R32G32_SFLOAT;
-    attr2.offset = 0;
+    // Model matrix (4 vec4)
+    VkVertexInputAttributeDescription modelMatrixPart0{};
+    modelMatrixPart0.location = 2;
+    modelMatrixPart0.binding = 1;
+    modelMatrixPart0.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart0.offset = 0;
 
-    VkVertexInputAttributeDescription attr3{}; // instanceSize
-    attr3.location = 3;
-    attr3.binding = 1;
-    attr3.format = VK_FORMAT_R32G32_SFLOAT;
-    attr3.offset = sizeof(float) * 2;
+    VkVertexInputAttributeDescription modelMatrixPart1{};
+    modelMatrixPart1.location = 3;
+    modelMatrixPart1.binding = 1;
+    modelMatrixPart1.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart1.offset = sizeof(float) * 4;
 
-    VkVertexInputAttributeDescription attr4{}; // instanceUVRect
-    attr4.location = 4;
-    attr4.binding = 1;
-    attr4.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attr4.offset = sizeof(float) * 4;
+    VkVertexInputAttributeDescription modelMatrixPart2{};
+    modelMatrixPart2.location = 4;
+    modelMatrixPart2.binding = 1;
+    modelMatrixPart2.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart2.offset = sizeof(float) * 8;
 
-    VkVertexInputAttributeDescription attr5{}; // instanceColor
-    attr5.location = 5;
-    attr5.binding = 1;
-    attr5.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attr5.offset = sizeof(float) * 8;
+    VkVertexInputAttributeDescription modelMatrixPart3{};
+    modelMatrixPart3.location = 5;
+    modelMatrixPart3.binding = 1;
+    modelMatrixPart3.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart3.offset = sizeof(float) * 12;
 
-    info.attributes = {attr0, attr1, attr2, attr3, attr4, attr5};
+    VkVertexInputAttributeDescription color{};
+    color.location = 6;
+    color.binding = 1;
+    color.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    color.offset = sizeof(float) * 16;
+
+    VkVertexInputAttributeDescription texId{};
+    texId.location = 7;
+    texId.binding = 1;
+    texId.format = VK_FORMAT_R16_UINT;
+    texId.offset = sizeof(float) * 20;
+
+    VkVertexInputAttributeDescription materialId{};
+    materialId.location = 8;
+    materialId.binding = 1;
+    materialId.format = VK_FORMAT_R16_UINT;
+    materialId.offset = sizeof(float) * 20 + sizeof(uint16_t);
+
+    info.attributes = {vertexPosition,
+                       vertexUV,
+                       modelMatrixPart0,
+                       modelMatrixPart1,
+                       modelMatrixPart2,
+                       modelMatrixPart3,
+                       color,
+                       texId,
+                       materialId};
 
     VkVertexInputBindingDescription vertexBufferDesc{};
     vertexBufferDesc.binding = 0;
@@ -82,7 +109,8 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
 
     VkVertexInputBindingDescription instanceBufferDesc{};
     instanceBufferDesc.binding = 1;
-    instanceBufferDesc.stride = sizeof(float) * 12; // vec2 + vec2 + vec4 + vec4
+    instanceBufferDesc.stride =
+        sizeof(float) * 20 + sizeof(uint16_t) * 2; // 4x vec4 + vec4 + 2 ushorts
     instanceBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     info.bufferDescriptions = {vertexBufferDesc, instanceBufferDesc};
@@ -139,8 +167,7 @@ VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType) {
     }
 }
 
-VkCommandBuffer
-BeginSingleTimeCommands(const Vulkan::IVulkanContextGetter& context) {
+VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -159,7 +186,7 @@ BeginSingleTimeCommands(const Vulkan::IVulkanContextGetter& context) {
     return commandBuffer;
 }
 
-void EndSingleTimeCommands(const Vulkan::IVulkanContextGetter& context,
+void EndSingleTimeCommands(const Vulkan::CVulkanContext& context,
                            const Vulkan::CVulkanRendering& renderer,
                            VkCommandBuffer commandBuffer) {
 
@@ -171,7 +198,7 @@ void EndSingleTimeCommands(const Vulkan::IVulkanContextGetter& context,
                          &commandBuffer);
 }
 
-VulkanImage CreateImage(const Vulkan::IVulkanContextGetter& context,
+VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
                         Renderer::CMemoryAllocator& allocator, uint32_t width,
                         uint32_t height, VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
@@ -207,7 +234,7 @@ VulkanImage CreateImage(const Vulkan::IVulkanContextGetter& context,
 
 void TransitionImageLayout(VkImage image, VkFormat format,
                            VkImageLayout oldLayout, VkImageLayout newLayout,
-                           const Vulkan::IVulkanContextGetter& context,
+                           const Vulkan::CVulkanContext& context,
                            Vulkan::CVulkanRendering& renderer) {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
     VkImageMemoryBarrier barrier{};
@@ -252,8 +279,7 @@ void TransitionImageLayout(VkImage image, VkFormat format,
 }
 
 void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height,
-                       const Vulkan::IVulkanContextGetter& context,
+                       uint32_t height, const Vulkan::CVulkanContext& context,
                        Vulkan::CVulkanRendering& renderer) {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
     VkBufferImageCopy region{};
@@ -299,7 +325,7 @@ VkSampler CreateSampler(VkDevice device) {
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.anisotropyEnable = VK_FALSE;
     samplerInfo.maxAnisotropy = 16;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -312,75 +338,6 @@ VkSampler CreateSampler(VkDevice device) {
         LOG_FATAL("Failed to create texture sampler!");
     }
     return sampler;
-}
-
-void CreateDescriptorPool(VkDevice device, VkDescriptorPool& descriptorPool,
-                          std::size_t maxTextures) {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = static_cast<uint32_t>(maxTextures);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(maxTextures);
-
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) !=
-        VK_SUCCESS) {
-        LOG_FATAL("Failed to create texture descriptor pool!");
-    }
-}
-
-void CreateTextureDescriptorSetLayout(
-    VkDevice device, VkDescriptorSetLayout& descriptorSetLayout,
-    std::size_t maxTextures) {
-    VkDescriptorSetLayoutBinding textureBinding{};
-    textureBinding.binding = 0;
-    textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    textureBinding.descriptorCount =
-        static_cast<uint32_t>(maxTextures); // Maximum number of textures
-    textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    textureBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorBindingFlagsEXT bindingFlags =
-        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
-        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsInfo{};
-    bindingFlagsInfo.sType =
-        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-    bindingFlagsInfo.bindingCount = 1;
-    bindingFlagsInfo.pBindingFlags = &bindingFlags;
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &textureBinding;
-    layoutInfo.pNext = &bindingFlagsInfo;
-    layoutInfo.flags =
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr,
-                                    &descriptorSetLayout) != VK_SUCCESS) {
-        LOG_FATAL("Failed to create texture descriptor set layout!");
-    }
-}
-
-VkDescriptorSet AllocateTextureDescriptorSet(VkDevice device,
-                                             VkDescriptorPool pool,
-                                             VkDescriptorSetLayout layout) {
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout;
-
-    VkDescriptorSet set;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &set) != VK_SUCCESS) {
-        LOG_FATAL("Failed to allocate texture descriptor set!");
-    }
-    return set;
 }
 
 } // namespace Renderer

@@ -4,7 +4,7 @@
 
 namespace Vulkan {
 
-CVulkanRendering::CVulkanRendering(IVulkanContextGetter& vulkanContext)
+CVulkanRendering::CVulkanRendering(CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext) {
     VkDevice device = mVulkanContext.GetDevice();
     vkGetDeviceQueue(device, mVulkanContext.GetGraphicsQueueFamilyIndex(),
@@ -34,12 +34,19 @@ void CVulkanRendering::Destroy() {
 
 std::optional<uint32_t> CVulkanRendering::AcquireNextImage() {
     uint32_t imageIndex;
-    if (vkAcquireNextImageKHR(mVulkanContext.GetDevice(),
-                              mVulkanContext.GetSwapchain(), UINT64_MAX,
-                              mImageAvailableSemaphore, VK_NULL_HANDLE,
-                              &imageIndex) != VK_SUCCESS) {
-        LOG_ERROR("Failed to acquire next image!");
-        return std::nullopt;
+    if (auto result = vkAcquireNextImageKHR(
+            mVulkanContext.GetDevice(), mVulkanContext.GetSwapchain(),
+            UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        result != VK_SUCCESS) {
+        mVulkanContext.RecreateSwapchainResources();
+        if (auto result = vkAcquireNextImageKHR(
+                mVulkanContext.GetDevice(), mVulkanContext.GetSwapchain(),
+                UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE,
+                &imageIndex);
+            result != VK_SUCCESS) {
+            LOG_ERROR("Failed to acquire swapchain image after recreation!");
+            return std::nullopt;
+        }
     }
     return imageIndex;
 }
@@ -72,7 +79,6 @@ void CVulkanRendering::SubmitAsync(VkCommandBuffer commandBuffer) const {
     submitInfo.pWaitSemaphores = &mImageAvailableSemaphore;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.waitSemaphoreCount = 1;
-
     if (vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         LOG_ERROR("Failed to submit command buffer!");
     }
@@ -140,10 +146,6 @@ void CVulkanRendering::EndRenderPass(uint32_t index) {
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         LOG_ERROR("Failed to record command buffer number {}!", index);
     }
-}
-
-VkCommandPool CVulkanRendering::GetSingleTimeCommandPool() const {
-    return mSingleTimeCommandPool;
 }
 
 } // namespace Vulkan

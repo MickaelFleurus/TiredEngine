@@ -1,74 +1,124 @@
 #include "engine/renderer/TextRenderer.h"
-#include "engine/renderer/Vertex.h"
+#include "engine/renderer/DataTypes.h"
+
+#include "engine/component/TextComponent.h"
+#include "engine/font/Font.h"
+#include "engine/font/Police.h"
 
 #include <array>
 #include <cstring>
 
 namespace {
-constexpr int kQuadVertexCount = 4;
+constexpr size_t kMaxCharacters = 500;
 
-constexpr std::array<Renderer::SVertex, kQuadVertexCount> kQuadVertices = {{
-    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-}};
-constexpr uint32_t kQuadVerticesMemSize =
-    static_cast<uint32_t>(kQuadVertexCount * sizeof(Renderer::SVertex));
-
-constexpr int kQuadIndicesCount = 6;
-constexpr std::array<uint16_t, kQuadIndicesCount> kQuadIndices = {{
-    0,
-    1,
-    2,
-    2,
-    3,
-    0,
-}};
-constexpr uint32_t kQuadIndicesMemSize =
-    static_cast<uint32_t>(kQuadIndicesCount * sizeof(uint16_t));
 } // namespace
 
 namespace Renderer {
 
-CTextRenderer::CTextRenderer(VkDevice device,
-                             VkPhysicalDeviceMemoryProperties memProperties)
-    : mDevice(device), mMemProperties(memProperties) {
-    Initialize();
+CTextRenderer::CTextRenderer(CBufferHandle& instanceBuffer,
+                             CBufferHandle& instanceInfoBuffer)
+    : mInstanceBuffer(instanceBuffer)
+    , mTextInstanceBufferRange(
+          instanceBuffer
+              .Reserve(static_cast<int>(kMaxCharacters * sizeof(SInstanceData)))
+              .value())
+    , mInstanceInfoBuffer(instanceInfoBuffer) {
 }
 
-void CTextRenderer::Initialize() {
-    mQuadVertexBuffer = std::move(Renderer::CreateAndFillVertexBuffer(
-        mDevice, kQuadVertices, mMemProperties));
-    mQuadIndexBuffer = std::move(Renderer::CreateAndFillIndexBuffer(mDevice, kQuadIndices,
-                                                          mMemProperties));
+void CTextRenderer::Update() {
+    if (mNeedUpdate) {
+        GenerateInstanceData();
+        mNeedUpdate = false;
+    }
 }
 
-VkBuffer CTextRenderer::GetQuadVertexBuffer() const {
-    return mQuadVertexBuffer.buffer;
+void CTextRenderer::DrawTexts(VkCommandBuffer commandBuffer) {
+    int offset = 0;
+    for (const auto& r : mInstanceInfos) {
+        vkCmdDrawIndexedIndirect(commandBuffer, mInstanceInfoBuffer.GetBuffer(),
+                                 ++offset *
+                                     sizeof(VkDrawIndexedIndirectCommand),
+                                 1, sizeof(VkDrawIndexedIndirectCommand));
+    }
 }
 
-VkBuffer CTextRenderer::GetQuadIndexBuffer() const {
-    return mQuadIndexBuffer.buffer;
+void CTextRenderer::GenerateInstanceData() {
+    std::unordered_map<Font::SFont, std::vector<Renderer::SInstanceData>,
+                       Font::SFontHash>
+        instancesMap;
+    std::unordered_map<Font::SFont, Font::CPolice*, Font::SFontHash> polices;
+    for (auto* textComponent : mRegisteredTextComponents) {
+        const auto& instances = textComponent->GetInstances();
+        if (instances.empty()) {
+            continue;
+        }
+        for (char c : textComponent->getText()) {
+            Font::SFont fontKey{textComponent->getPolice()->GetName(), c};
+            instancesMap[fontKey].insert(instancesMap[fontKey].end(),
+                                         instances.begin(), instances.end());
+            polices[fontKey] = textComponent->getPolice();
+        }
+    }
+
+    std::vector<SInstanceData> allInstances;
+    for (const auto& [font, instances] : instancesMap) {
+
+        SInstanceInfo info{};
+        info.firstIndex = polices[font]->GetIndexOffset(font.character);
+        info.vertexOffset = polices[font]->GetVertexOffset(font.character);
+        info.firstInstance = static_cast<uint32_t>(mInstanceInfos.size());
+        info.instanceCount = static_cast<uint32_t>(instances.size());
+        mInstanceInfos.push_back(info);
+        allInstances.insert(allInstances.end(), instances.begin(),
+                            instances.end());
+    }
+
+    mInstanceBuffer.Fill(
+        allInstances.data(),
+        static_cast<int>(allInstances.size() * sizeof(SInstanceData)), 0,
+        mTextInstanceBufferRange);
+
+    std::vector<VkDrawIndexedIndirectCommand> indirectCommands;
+    for (const auto& r : mInstanceInfos) {
+        VkDrawIndexedIndirectCommand cmd{};
+        cmd.indexCount = 6;
+        cmd.instanceCount = r.instanceCount;
+        cmd.firstIndex = r.firstIndex;
+        cmd.vertexOffset = r.vertexOffset;
+        cmd.firstInstance = r.firstInstance;
+        indirectCommands.push_back(cmd);
+    }
+
+    mInstanceInfoBufferRange =
+        mInstanceInfoBuffer
+            .Reserve(static_cast<int>(indirectCommands.size() *
+                                      sizeof(VkDrawIndexedIndirectCommand)))
+            .value();
+    mInstanceInfoBuffer.Fill(
+        indirectCommands.data(),
+        static_cast<int>(indirectCommands.size() *
+                         sizeof(VkDrawIndexedIndirectCommand)),
+        0, mInstanceInfoBufferRange);
 }
 
-VulkanBuffer CTextRenderer::CreateInstanceBuffer(size_t maxCharacters) {
-    return Renderer::CreateBuffer(
-        mDevice,
-        static_cast<uint32_t>(maxCharacters * sizeof(SCharacterInstance)),
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mMemProperties);
+void CTextRenderer::SetNeedUpdate() {
+    mNeedUpdate = true;
 }
 
-void CTextRenderer::UpdateInstanceBuffer(
-    VulkanBuffer& buffer, const std::vector<SCharacterInstance>& instances) {
+void CTextRenderer::RegisterTextComponent(
+    Component::CTextComponent* textComponent) {
+    mRegisteredTextComponents.push_back(textComponent);
+    mNeedUpdate = true;
+}
 
-    if (instances.empty())
-        return;
-
-    size_t dataSize = instances.size() * sizeof(SCharacterInstance);
-
-    Renderer::FillBuffer(mDevice, buffer, instances.data(),
-                         static_cast<uint32_t>(dataSize));
+void CTextRenderer::UnregisterTextComponent(
+    Component::CTextComponent* textComponent) {
+    auto it = std::find(mRegisteredTextComponents.begin(),
+                        mRegisteredTextComponents.end(), textComponent);
+    if (it != mRegisteredTextComponents.end()) {
+        mRegisteredTextComponents.erase(it);
+        mNeedUpdate = true;
+    }
 }
 
 } // namespace Renderer

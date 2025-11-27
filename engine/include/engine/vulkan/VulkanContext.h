@@ -1,68 +1,64 @@
 #pragma once
 
-#include "engine/vulkan/IVulkanContext.h"
+#include <vector>
+#include <vulkan/vulkan.h>
+
+struct SDL_Window;
 
 namespace Vulkan {
-class CVulkanContext : public IVulkanContextGetter,
-                       public IVulkanContextSetter {
+class CVulkanContext {
 public:
-    CVulkanContext() = default;
+    CVulkanContext(SDL_Window* window);
     ~CVulkanContext();
 
-    VkInstance GetInstance() const override;
-    VkPhysicalDevice GetPhysicalDevice() const override;
-    VkDevice GetDevice() const override;
-    VkQueue GetGraphicsQueue() const override;
-    VkQueue GetPresentQueue() const override;
-    uint32_t GetGraphicsQueueFamilyIndex() const override;
-    uint32_t GetPresentQueueFamilyIndex() const override;
-    VkSurfaceKHR GetSurface() const override;
-    VkCommandBuffer GetCommandBuffer(uint32_t imageIndex) override;
-    VkSwapchainKHR GetSwapchain() const override;
-    VkFramebuffer GetFramebuffer(uint32_t imageIndex) override;
-    VkRenderPass GetRenderPass() const override;
-    VkPhysicalDeviceMemoryProperties
-    GetPhysicalDeviceMemoryProperties() const override;
-    VkCommandPool GetCommandPool() const override;
+    VkInstance GetInstance() const;
+    VkPhysicalDevice GetPhysicalDevice() const;
+    VkDevice GetDevice() const;
+    VkQueue GetGraphicsQueue() const;
+    VkQueue GetPresentQueue() const;
+    uint32_t GetGraphicsQueueFamilyIndex() const;
+    uint32_t GetPresentQueueFamilyIndex() const;
+    VkSurfaceKHR GetSurface() const;
+    VkCommandBuffer GetCommandBuffer(uint32_t imageIndex);
+    VkSwapchainKHR GetSwapchain() const;
+    VkFramebuffer GetFramebuffer(uint32_t imageIndex);
+    VkRenderPass GetRenderPass() const;
+    VkPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties() const;
+    VkCommandPool GetCommandPool() const;
+    int GetImageCount() const;
+    VkExtent2D GetSwapchainExtent() const;
+    VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
-    void SetMemoryAllocator(CMemoryAllocator* allocator) override;
-    void SetBufferHandler(CBufferHandler* bufferHandler) override;
-    void SetDebugMessenger(VkDebugUtilsMessengerEXT debugMessenger) override;
+    void RecreateSwapchainResources();
 
-    void SetInstance(VkInstance instance) override;
-    void SetPhysicalDevice(VkPhysicalDevice physicalDevice) override;
-    void
-    SetPhysicalDeviceProperties(VkPhysicalDeviceProperties properties) override;
-    void SetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures features) override;
+    void SetDebugMessenger(VkDebugUtilsMessengerEXT debugMessenger);
+
+    void SetInstance(VkInstance instance);
+    void SetPhysicalDevice(VkPhysicalDevice physicalDevice);
+    void SetPhysicalDeviceProperties(VkPhysicalDeviceProperties properties);
+    void SetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures features);
     void SetPhysicalDeviceMemoryProperties(
-        VkPhysicalDeviceMemoryProperties memoryProperties) override;
-    void SetDevice(VkDevice device) override;
-    void SetGraphicsQueue(VkQueue graphicsQueue) override;
-    void SetPresentQueue(VkQueue presentQueue) override;
-    void
-    SetGraphicsQueueFamilyIndex(uint32_t graphicsQueueFamilyIndex) override;
-    void SetPresentQueueFamilyIndex(uint32_t presentQueueFamilyIndex) override;
-    void SetSurface(VkSurfaceKHR surface) override;
-    void SetSwapchain(VkSwapchainKHR swapchain) override;
-    void SetSwapchainImageFormat(VkFormat imageFormat) override;
-    void SetSwapchainExtent(VkExtent2D extent) override;
-    void SetSwapchainImages(std::vector<VkImage> images) override;
-    void SetSwapchainImageViews(std::vector<VkImageView> imageViews) override;
-    void SetRenderPass(VkRenderPass renderPass) override;
-    void SetCommandPool(VkCommandPool commandPool) override;
-    void
-    SetCommandBuffers(std::vector<VkCommandBuffer> commandBuffers) override;
-    void SetFramebuffers(std::vector<VkFramebuffer> framebuffers) override;
+        VkPhysicalDeviceMemoryProperties memoryProperties);
+    void SetDevice(VkDevice device);
+    void SetGraphicsQueue(VkQueue graphicsQueue);
+    void SetPresentQueue(VkQueue presentQueue);
+    void SetGraphicsQueueFamilyIndex(uint32_t graphicsQueueFamilyIndex);
+    void SetPresentQueueFamilyIndex(uint32_t presentQueueFamilyIndex);
+    void SetSurface(VkSurfaceKHR surface);
+
+    void SetCommandPool(VkCommandPool commandPool);
 
 private:
+    SDL_Window* mWindow;
+
     VkInstance mInstance;
     VkSurfaceKHR mSurface;
     VkDebugUtilsMessengerEXT mDebugMessenger;
 
     // Logical device
-    VkDevice mDevice;
-    VkQueue mGraphicsQueue;
-    VkQueue mPresentQueue;
+    VkDevice mDevice = VK_NULL_HANDLE;
+    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+    VkQueue mPresentQueue = VK_NULL_HANDLE;
     uint32_t mGraphicsQueueFamilyIndex;
     uint32_t mPresentQueueFamilyIndex;
 
@@ -80,9 +76,9 @@ private:
     std::vector<VkImageView> mImageViews;
 
     // Rendering
-    VkRenderPass mRenderPass;
+    VkRenderPass mRenderPass = VK_NULL_HANDLE;
     int mImagesCount = 0;
-    VkCommandPool mCommandPool;
+    VkCommandPool mCommandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> mCommandBuffers;
     std::vector<VkFramebuffer> mFramebuffers;
 };

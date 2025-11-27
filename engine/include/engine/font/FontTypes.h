@@ -10,6 +10,7 @@ struct GlyphInfo {
     float advance;
     glm::vec2 offset{};
     glm::vec2 size{};
+    int index;
 };
 
 struct alignas(32) GlyphVertex {

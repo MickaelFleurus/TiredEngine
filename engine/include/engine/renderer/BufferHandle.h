@@ -1,9 +1,10 @@
 #pragma once
 
+#include "engine/utils/BufferMemoryBlocks.h"
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
-class IVulkanContextGetter;
+class CVulkanContext;
 }
 
 namespace Renderer {
@@ -12,18 +13,27 @@ class CBufferHandler;
 class CMemoryAllocator;
 class CBufferHandle {
 public:
-    explicit CBufferHandle(const Vulkan::IVulkanContextGetter& vulkanContext,
+    explicit CBufferHandle(const Vulkan::CVulkanContext& vulkanContext,
                            Renderer::CMemoryAllocator& memoryAllocator,
-                           CBufferHandler& handler, int id);
+                           CBufferHandler& handler);
+
+    CBufferHandle(const CBufferHandle&) = delete;
+    CBufferHandle& operator=(const CBufferHandle&) = delete;
+    CBufferHandle(CBufferHandle&&) noexcept;
+    CBufferHandle& operator=(CBufferHandle&&) noexcept;
+
     ~CBufferHandle();
 
     bool Init(int dataSize, int bufferSize, VkBufferUsageFlags usage);
-    bool Fill(const void* data, int size, int offset);
-    bool Append(const void* data, int size);
 
-    VkBuffer GetBuffer() const {
-        return mBuffer;
-    }
+    std::optional<Utils::SBufferRange> Reserve(int size);
+    bool Fill(const void* data, int size, int offset,
+              const Utils::SBufferRange& range);
+    void FreeRange(const Utils::SBufferRange& range);
+
+    VkBuffer GetBuffer() const;
+
+    int GetSize() const;
 
 private:
     void Free();
@@ -31,13 +41,11 @@ private:
     VkDevice mDevice;
     Renderer::CMemoryAllocator& mMemoryAllocator;
     CBufferHandler& mHandler;
-    const int mId;
 
     int mDataSize = 0;
-    int mBufferSize = 0;
-    int mUsedSize = 0;
+    Utils::CBufferMemoryBlocks mMemoryBlocks;
 
-    VkBuffer mBuffer;
-    VkDeviceMemory mMemory;
+    VkBuffer mBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory mMemory = VK_NULL_HANDLE;
 };
 } // namespace Renderer

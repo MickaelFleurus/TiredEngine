@@ -110,5 +110,6 @@
         "__config": "cpp",
         "resumable": "cpp",
         "ranges": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

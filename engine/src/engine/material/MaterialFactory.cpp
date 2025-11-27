@@ -8,26 +8,26 @@
 
 namespace Material {
 
-CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
-                                   Utils::CFileHandler& fileHandler,
-                                   const Renderer::CWindow& window)
+CMaterialFactory::CMaterialFactory(
+    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
+    const Vulkan::CVulkanContext& contextGetter,
+    Renderer::CDescriptorStorage& descriptorStorage)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mDescriptorLayoutStorage(window)
-    , mPipelineFactory(window, mDescriptorLayoutStorage) {
+    , mPipelineFactory(contextGetter)
+    , mDescriptorStorage(descriptorStorage) {
 }
 
 std::unique_ptr<AbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
-    auto pipeline = mPipelineFactory.CreateGraphicsPipeline(info);
-    return std::make_unique<CMaterial>(mDescriptorLayoutStorage, type,
-                                       info.vertexLayout, pipeline);
+    auto pipeline =
+        mPipelineFactory.CreateGraphicsPipeline(info, mDescriptorStorage);
+    return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
 }
 
-std::unique_ptr<AbstractMaterial>
-CMaterialFactory::CreateTextMaterial(std::string fontAtlasName) {
+std::unique_ptr<AbstractMaterial> CMaterialFactory::GetOrCreateTextMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "TextShader";
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
@@ -35,7 +35,6 @@ CMaterialFactory::CreateTextMaterial(std::string fontAtlasName) {
     config.enableBlending = true;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
-   // material->SetTexture(mTextureManager.GetTexture(fontAtlasName));
     return material;
 }
 

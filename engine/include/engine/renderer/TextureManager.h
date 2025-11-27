@@ -14,7 +14,7 @@ class CFileHandler;
 }
 
 namespace Vulkan {
-class IVulkanContextGetter;
+class CVulkanContext;
 class CVulkanRendering;
 } // namespace Vulkan
 
@@ -30,12 +30,17 @@ struct VulkanTexture {
 };
 
 class CBufferHandler;
+class CMemoryAllocator;
+class CDescriptorStorage;
+
 class CTextureManager {
 public:
-    CTextureManager(const Vulkan::IVulkanContextGetter& context,
+    CTextureManager(const Vulkan::CVulkanContext& context,
                     Vulkan::CVulkanRendering& renderer,
+                    Renderer::CMemoryAllocator& memoryAllocator,
                     CBufferHandler& bufferHandler,
-                    Utils::CFileHandler& fileHandler);
+                    Utils::CFileHandler& fileHandler,
+                    Renderer::CDescriptorStorage& descriptorStorage);
     ~CTextureManager();
 
     int LoadTexture(const std::string& filename);
@@ -47,16 +52,15 @@ public:
 private:
     void UpdateDescriptor(int index);
 
-    const Vulkan::IVulkanContextGetter& mContext;
+    const Vulkan::CVulkanContext& mContext;
     Vulkan::CVulkanRendering& mRenderer;
+    Renderer::CMemoryAllocator& mMemoryAllocator;
 
     CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;
+    Renderer::CDescriptorStorage& mDescriptorStorage;
 
     std::vector<VulkanTexture> mLoadedTextures;
     std::unordered_map<std::string, int> mLoadedTexturesIndices;
-
-    VkDescriptorPool mTextureDescriptorPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout mTexturesSetLayout = VK_NULL_HANDLE;
 };
 } // namespace Renderer

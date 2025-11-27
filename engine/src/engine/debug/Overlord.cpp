@@ -1,9 +1,8 @@
 #include "engine/debug/Overlord.h"
 #include "engine/debug/IOverlordItem.h"
 
-#include "engine/renderer/VulkanRenderer.h"
-#include "engine/renderer/Window.h"
-
+#include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanRendering.h"
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
@@ -16,15 +15,16 @@ namespace Debug {
 CGuardedContainer<IOverlordItem> COverlord::mWidgets;
 CGuardedContainer<IOverlordItem> COverlord::mMenus;
 
-COverlord::COverlord(const Renderer::CWindow& window) : mWindow(window) {
+COverlord::COverlord(const Vulkan::CVulkanContext& context,
+                     const Vulkan::CVulkanRendering& rendering)
+    : mContext(context), mRendering(rendering) {
 }
 
-void COverlord::Initialize() {
+void COverlord::Initialize(SDL_Window* window) {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     [[maybe_unused]] ImGuiIO& io = ImGui::GetIO();
-    auto& renderer = mWindow.GetVulkanRenderer();
 
     VkDescriptorPoolSize pool_sizes[] = {
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
@@ -36,7 +36,7 @@ void COverlord::Initialize() {
     pool_info.poolSizeCount = std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    vkCreateDescriptorPool(renderer.GetDevice(), &pool_info, nullptr,
+    vkCreateDescriptorPool(mContext.GetDevice(), &pool_info, nullptr,
                            &mImguiPool);
 
     io.ConfigFlags |=
@@ -46,19 +46,18 @@ void COverlord::Initialize() {
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL3_InitForVulkan(mWindow.GetSDLWindow());
+    ImGui_ImplSDL3_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo info{};
-    info.Device = renderer.GetDevice();
-    info.Instance = renderer.GetInstance();
-    info.PhysicalDevice = renderer.GetPhysicalDevice();
-    info.Queue = renderer.GetQueue().GetHandle();
-    info.QueueFamily = renderer.GetQueue().GetFamilyIndex();
+    info.Device = mContext.GetDevice();
+    info.Instance = mContext.GetInstance();
+    info.PhysicalDevice = mContext.GetPhysicalDevice();
+    info.Queue = mContext.GetGraphicsQueue();
+    info.QueueFamily = mContext.GetGraphicsQueueFamilyIndex();
     info.DescriptorPool = mImguiPool;
     info.MinImageCount = 2;
-    info.ImageCount =
-        static_cast<uint32_t>(renderer.GetSwapchain().images.size());
+    info.ImageCount = static_cast<uint32_t>(mContext.GetImageCount());
     info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    info.RenderPass = renderer.GetRenderPass();
+    info.RenderPass = mContext.GetRenderPass();
     info.Allocator = nullptr;
     info.CheckVkResultFn = nullptr;
     info.PipelineCache = VK_NULL_HANDLE;
@@ -72,14 +71,13 @@ COverlord::~COverlord() {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
-    vkDestroyDescriptorPool(mWindow.GetVulkanRenderer().GetDevice(), mImguiPool,
-                            nullptr);
+    vkDestroyDescriptorPool(mContext.GetDevice(), mImguiPool, nullptr);
 }
 
-bool COverlord::PrepareRender() {
+bool COverlord::PrepareRender(SDL_Window* window) {
     ImGuiIO& io = ImGui::GetIO();
     int width, height;
-    SDL_GetWindowSize(mWindow.GetSDLWindow(), &width, &height);
+    SDL_GetWindowSize(window, &width, &height);
     if (width <= 0 || height <= 0) {
         return false;
     }

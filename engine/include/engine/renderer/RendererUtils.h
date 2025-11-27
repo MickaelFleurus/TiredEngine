@@ -1,8 +1,8 @@
 #pragma once
 
 #include "engine/material/AbstractMaterial.h"
+#include "engine/renderer/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
-#include "engine/renderer/Vertex.h"
 #include <concepts>
 #include <cstdint>
 #include <glm/mat4x4.hpp>
@@ -13,7 +13,7 @@
 struct SDL_GPUBuffer;
 
 namespace Vulkan {
-class IVulkanContextGetter;
+class CVulkanContext;
 class CVulkanRendering;
 } // namespace Vulkan
 
@@ -36,13 +36,6 @@ struct SRenderable {
     Material::AbstractMaterial* material;
     ERenderLayer layer;
     float depth;
-
-    VkBuffer vertexBuffer = VK_NULL_HANDLE;
-    VkBuffer indexBuffer = VK_NULL_HANDLE;
-    uint32_t indexCount = 0;
-
-    VkBuffer instanceBuffer = VK_NULL_HANDLE;
-    uint32_t instanceCount = 0;
 
     uint64_t sortKey;
 
@@ -70,14 +63,13 @@ struct VertexLayoutInfo {
     std::vector<VkVertexInputBindingDescription> bufferDescriptions;
 };
 
-VkCommandBuffer
-BeginSingleTimeCommands(const Vulkan::IVulkanContextGetter& context);
+VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context);
 void EndSingleTimeCommands(VkCommandBuffer commandBuffer,
-                           const Vulkan::IVulkanContextGetter& context);
+                           const Vulkan::CVulkanContext& context);
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);
 
-VulkanImage CreateImage(const Vulkan::IVulkanContextGetter& context,
+VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
                         Renderer::CMemoryAllocator& allocator, uint32_t width,
                         uint32_t height, VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
@@ -85,26 +77,16 @@ VulkanImage CreateImage(const Vulkan::IVulkanContextGetter& context,
 
 void TransitionImageLayout(VkImage image, VkFormat format,
                            VkImageLayout oldLayout, VkImageLayout newLayout,
-                           const Vulkan::CVulkanRendering& renderer);
+                           const Vulkan::CVulkanContext& context,
+                           Vulkan::CVulkanRendering& renderer);
 
 void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height,
-                       const Vulkan::IVulkanContextGetter& context,
-                       const Vulkan::CVulkanRendering& renderer);
+                       uint32_t height, const Vulkan::CVulkanContext& context,
+                       Vulkan::CVulkanRendering& renderer);
 
 void CreateImageView(VkDevice device, VkImage image, VkFormat format,
                      VkImageAspectFlags aspectFlags, VkImageView& imageView);
 
 VkSampler CreateSampler(VkDevice device);
 
-void CreateDescriptorPool(VkDevice device, VkDescriptorPool& descriptorPool,
-                          std::size_t maxTextures);
-
-void CreateTextureDescriptorSetLayout(
-    VkDevice device, VkDescriptorSetLayout& descriptorSetLayout,
-    std::size_t maxTextures);
-
-VkDescriptorSet AllocateTextureDescriptorSet(VkDevice device,
-                                             VkDescriptorPool pool,
-                                             VkDescriptorSetLayout layout);
 } // namespace Renderer

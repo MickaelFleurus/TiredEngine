@@ -5,21 +5,13 @@
 namespace Core {
 CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                      Vulkan::CVulkanContext& vulkanContext)
-    : CEngineLoop(system)
+    : CEngineLoop(system, window, vulkanContext)
     , mSceneHandler(*this, mComponentManager, mFontHandler, system)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
                    mFontHandler) {
-}
 
-std::expected<void, const char*> CGameLoop::Initialize() {
-    if (auto initExpected = CEngineLoop::Initialize(); !initExpected) {
-        return initExpected;
-    }
-
-    mOverlordManager.CreateOverlord();
+    mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();
-
-    return {};
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

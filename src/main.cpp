@@ -33,8 +33,9 @@ int main(int argc, char** argv) {
     }
 
     SDL_InitSubSystem(SDL_INIT_VIDEO);
-    Vulkan::CVulkanContext vulkanContext;
+    Vulkan::CVulkanContext vulkanContext{window};
     Vulkan::InitializeVulkan(vulkanContext, window, system);
+    vulkanContext.RecreateSwapchainResources();
 
     Core::CGameLoop game(system, window, vulkanContext);
 

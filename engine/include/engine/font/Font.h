@@ -6,16 +6,16 @@
 namespace Font {
 
 struct SFont {
-    std::string fontPath;
-    unsigned int fontSize;
+    std::string fontName;
+    char character;
 
     auto operator<=>(const SFont&) const = default;
 };
 
 struct SFontHash {
     std::size_t operator()(const SFont& key) const {
-        return std::hash<std::string>{}(key.fontPath) ^
-               (std::hash<unsigned int>{}(key.fontSize) << 1);
+        return std::hash<std::string>{}(key.fontName) ^
+               (std::hash<unsigned char>{}(key.character) << 1);
     }
 };
 

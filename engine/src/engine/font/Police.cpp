@@ -1,36 +1,23 @@
 #include "engine/font/Police.h"
 #include "engine/material/AbstractMaterial.h"
+#include "engine/renderer/DataTypes.h"
 
 namespace Font {
 CPolice::CPolice(const char* name,
                  std::unique_ptr<Material::AbstractMaterial> material,
-                 unsigned int size,
                  std::unordered_map<std::string, Font::GlyphInfo> glyphs,
+                 Utils::SBufferRange indexBufferRange,
+                 Utils::SBufferRange vertexBufferRange,
                  CPolice::SMetrics fontMetrics)
     : mName(name)
     , mMaterial(std::move(material))
-    , mSize(size)
     , mGlyphs(std::move(glyphs))
+    , mIndexBufferRange(indexBufferRange)
+    , mVertexBufferRange(vertexBufferRange)
     , mFontMetrics(fontMetrics) {
 }
 
 CPolice::~CPolice() = default;
-
-unsigned int CPolice::GetSize() const {
-    return mSize;
-}
-
-void CPolice::SetSize(unsigned int size) {
-    mSize = size;
-}
-
-glm::vec4 CPolice::GetColor() const {
-    return mMaterial->GetColor();
-}
-
-void CPolice::SetColor(const glm::vec4& color) {
-    mMaterial->SetColor(color);
-}
 
 const Font::GlyphInfo& CPolice::GetGlyphInfo(char c) const {
     if (mGlyphs.contains(std::string(1, c))) {
@@ -39,6 +26,32 @@ const Font::GlyphInfo& CPolice::GetGlyphInfo(char c) const {
         static Font::GlyphInfo emptyGlyph = {};
         return emptyGlyph;
     }
+}
+
+uint32_t CPolice::GetIndexOffset(char c) const {
+    auto it = mGlyphs.find(std::string(1, c));
+    if (it == mGlyphs.end()) {
+        return 0; // FIXME this is bad but good enough for now
+    }
+
+    const int quadIndex = it->second.index;
+    const int startIndex =
+        mIndexBufferRange.offset / sizeof(uint32_t) + quadIndex * 6;
+
+    return startIndex;
+}
+
+uint32_t CPolice::GetVertexOffset(char c) const {
+    auto it = mGlyphs.find(std::string(1, c));
+    if (it == mGlyphs.end()) {
+        return 0;
+    }
+
+    const int quadIndex = it->second.index;
+    const int startVertex =
+        mVertexBufferRange.offset / sizeof(Renderer::SVertex) + quadIndex * 4;
+
+    return startVertex;
 }
 
 Material::AbstractMaterial& CPolice::GetMaterial() {

@@ -1,9 +1,9 @@
 #include "engine/renderer/ShaderFactory.h"
 
-#include "engine/renderer/DescriptorLayoutStorage.h"
-#include "engine/renderer/VulkanRenderer.h"
-#include "engine/renderer/Window.h"
+#include "engine/renderer/DescriptorStorage.h"
+
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/VulkanContext.h"
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_iostream.h>
@@ -18,19 +18,17 @@ namespace Renderer {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(const CWindow& window) : mWindow(window) {
+    CImpl(const Vulkan::CVulkanContext& contextGetter)
+        : mContextGetter(contextGetter) {
     }
 
     ~CImpl() {
         for (auto& [path, shader] : mShaderCache) {
-            vkDestroyShaderModule(mWindow.GetVulkanRenderer().GetDevice(),
-                                  shader, nullptr);
+            vkDestroyShaderModule(mContextGetter.GetDevice(), shader, nullptr);
         }
     }
 
-    SShaderDescriptors
-    CreateShader(std::string name, std::string path,
-                 CDescriptorLayoutStorage& descriptorLayoutStorage) {
+    VkShaderModule CreateShader(std::string name, std::string path) {
         path += name + ".spv";
         std::vector<size_t> descriptorSetLayouts;
         if (!mShaderCache.contains(name)) {
@@ -43,9 +41,6 @@ public:
                 return {};
             }
 
-            descriptorSetLayouts = descriptorLayoutStorage.ReflectOnShader(
-                static_cast<uint32_t>(codeSize), rawCode.get(), path);
-
             VkShaderModuleCreateInfo shaderModuleCreateInfo{};
             shaderModuleCreateInfo.sType =
                 VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -53,7 +48,7 @@ public:
             shaderModuleCreateInfo.pCode =
                 reinterpret_cast<const uint32_t*>(rawCode.get());
 
-            auto device = mWindow.GetVulkanRenderer().GetDevice();
+            auto device = mContextGetter.GetDevice();
             VkShaderModule shaderModule;
             if (vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr,
                                      &shaderModule) == VK_SUCCESS) {
@@ -64,30 +59,28 @@ public:
                 return {};
             }
         }
-        return {mShaderCache[name], descriptorSetLayouts};
+        return mShaderCache[name];
     }
 
 private:
-    const CWindow& mWindow;
+    const Vulkan::CVulkanContext& mContextGetter;
     std::unordered_map<std::string, VkShaderModule> mShaderCache;
 };
 
-CShaderFactory::CShaderFactory(const CWindow& window)
-    : mImpl(std::make_unique<CImpl>(window)) {
+CShaderFactory::CShaderFactory(const Vulkan::CVulkanContext& contextGetter)
+    : mImpl(std::make_unique<CImpl>(contextGetter)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;
 
-SShaderDescriptors CShaderFactory::CreateFragmentShader(
-    std::string name, std::string path,
-    CDescriptorLayoutStorage& descriptorLayoutStorage) {
-    return mImpl->CreateShader(name + ".frag", path, descriptorLayoutStorage);
+VkShaderModule CShaderFactory::CreateFragmentShader(std::string name,
+                                                    std::string path) {
+    return mImpl->CreateShader(name + ".frag", path);
 }
 
-SShaderDescriptors CShaderFactory::CreateVertexShader(
-    std::string name, std::string path,
-    CDescriptorLayoutStorage& descriptorLayoutStorage) {
-    return mImpl->CreateShader(name + ".vert", path, descriptorLayoutStorage);
+VkShaderModule CShaderFactory::CreateVertexShader(std::string name,
+                                                  std::string path) {
+    return mImpl->CreateShader(name + ".vert", path);
 }
 
 } // namespace Renderer

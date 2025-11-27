@@ -3,7 +3,10 @@
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialFactory.h"
 #include "engine/renderer/BufferHandler.h"
+#include "engine/renderer/DataTypes.h"
+#include "engine/renderer/IndexesBufferHandleWrapper.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/VertexBufferHandleWrapper.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
 #include <SDL3/SDL_surface.h>
@@ -204,6 +207,7 @@ SFontData CreateFontData(const std::string& fontPath) {
         info.size.x = static_cast<float>(r - l);
         info.size.y = static_cast<float>(t - b);
 
+        info.index = static_cast<int>(fontData.glyphInfos.size());
         std::string charKey(1,
                             static_cast<unsigned char>(glyph.getCodepoint()));
         fontData.glyphInfos.emplace(charKey, info);
@@ -216,25 +220,86 @@ SFontData CreateFontData(const std::string& fontPath) {
     return fontData;
 }
 
+std::optional<Utils::SBufferRange> CreateAndUploadVertices(
+    Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
+    const std::unordered_map<std::string, Font::GlyphInfo>& glyphInfos) {
+    std::vector<Renderer::SVertex> vertices;
+    for (const auto& [charKey, glyphInfo] : glyphInfos) {
+        float x = 0.0f;
+        float y = 0.0f;
+        float w = glyphInfo.size.x;
+        float h = glyphInfo.size.y;
+
+        float u = glyphInfo.uv.x;
+        float v = glyphInfo.uv.y;
+        float uw = glyphInfo.uv.z;
+        float vh = glyphInfo.uv.w;
+
+        // Define the 4 corners of the quad
+        Renderer::SVertex topLeft{.position{0.0f, 0.0f, 0.0f},
+                                  .texCoord{u, v + vh},
+                                  .normal{0.0f, 0.0f, 1.0f}};
+        Renderer::SVertex topRight{.position{1.0f, 0.0f, 0.0f},
+                                   .texCoord{u + uw, v + vh},
+                                   .normal{0.0f, 0.0f, 1.0f}};
+        Renderer::SVertex bottomRight{.position{1.0f, 1.0f, 0.0f},
+                                      .texCoord{u + uw, v},
+                                      .normal{0.0f, 0.0f, 1.0f}};
+        Renderer::SVertex bottomLeft{.position{0.0f, 1.0f, 0.0f},
+                                     .texCoord{u, v},
+                                     .normal{0.0f, 0.0f, 1.0f}};
+        // Two triangles per quad
+        vertices.push_back(topLeft);
+        vertices.push_back(topRight);
+        vertices.push_back(bottomLeft);
+        vertices.push_back(bottomRight);
+    }
+
+    return vertexBufferHandle.AddVertices(vertices);
+}
+
+std::optional<Utils::SBufferRange> CreateAndUploadIndexes(
+    Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle,
+    Utils::SBufferRange vertexBufferRange) {
+    const int vertexCount = vertexBufferRange.size / sizeof(Renderer::SVertex);
+    const int offset = vertexBufferRange.offset / sizeof(Renderer::SVertex);
+    std::vector<uint32_t> indexes;
+    indexes.reserve((vertexCount / 4) * 6);
+    for (int i = 0; i < vertexCount; i += 4) {
+        int index = offset + i;
+        // Two triangles per quad
+        indexes.push_back(index + 0);
+        indexes.push_back(index + 1);
+        indexes.push_back(index + 2); // First triangle
+        indexes.push_back(index + 2);
+        indexes.push_back(index + 1);
+        indexes.push_back(index + 3); // Second triangle
+    }
+
+    return indexesBufferHandle.AddIndexes(indexes);
+}
+
 } // namespace
 
 namespace Font {
-CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
-                           Utils::CFileHandler& fileHandler,
-                           Material::CMaterialFactory& materialFactory,
-                           Renderer::CBufferHandler& bufferHandler)
+CFontHandler::CFontHandler(
+    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
+    Material::CMaterialFactory& materialFactory,
+    Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
+    Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
     , mMaterialFactory(materialFactory)
-    , mBufferHandler(bufferHandler) {
+    , mVertexBufferHandle(vertexBufferHandle)
+    , mIndexesBufferHandle(indexesBufferHandle) {
 }
 
 CFontHandler::~CFontHandler() {
 }
 
-CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
-    SFont key{name, size};
-    auto it = mPolices.find(key);
+CPolice& CFontHandler::GetPolice(std::string name) {
+
+    auto it = mPolices.find(name);
     if (it != mPolices.end()) {
         return it->second;
     }
@@ -244,7 +309,7 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
 
     SFontData fontData;
     if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
-        LoadExistingFontData(glyphTexFilePath, fontData);
+        LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
     } else {
         fontData = CreateFontData(std::format(
             "{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name));
@@ -254,17 +319,24 @@ CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
             glyphTexFilePath,
             GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
     }
-    if (!mBufferHandle) {
-        const int dataSize = sizeof(Font::GlyphVertex) * 4;
-        mBufferHandle = mBufferHandler.CreateBuffer(
-            dataSize * 2048, dataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    auto vertexBufferRange =
+        CreateAndUploadVertices(mVertexBufferHandle, fontData.glyphInfos);
+    if (!vertexBufferRange.has_value()) {
+        LOG_FATAL("Failed to create vertices for font {}", name);
+    }
+    auto indexesBufferRange =
+        CreateAndUploadIndexes(mIndexesBufferHandle, vertexBufferRange.value());
+    if (!indexesBufferRange.has_value()) {
+        LOG_FATAL("Failed to create indexes for font {}", name);
     }
 
     mTextureManager.LoadTextureFromSurface(name, fontData.surface);
     SDL_DestroySurface(fontData.surface);
     auto [emplaced_it, inserted] = mPolices.try_emplace(
-        key, name, std::move(mMaterialFactory.CreateTextMaterial(name)), size,
-        fontData.glyphInfos,
+        name, name.c_str(),
+        std::move(mMaterialFactory.GetOrCreateTextMaterial()),
+        fontData.glyphInfos, vertexBufferRange.value(),
+        indexesBufferRange.value(),
         CPolice::SMetrics{
             fontData.fontMetrics.ascenderY, fontData.fontMetrics.descenderY,
             fontData.fontMetrics.lineHeight, fontData.fontMetrics.underlineY,

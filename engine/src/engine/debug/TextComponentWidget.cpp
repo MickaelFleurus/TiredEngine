@@ -30,8 +30,8 @@ CTextComponentWidget::CTextComponentWidget(
     , mFontHandler(fontHandler)
     , mAvailableFonts(fileHandler.GetFileNames(kFontExtension))
     , mCurrentText(textComponent.getText())
-    , mFontSize(mTextComponent.getPolice()->GetSize())
-    , mFontColor(textComponent.getPolice()->GetColor())
+    , mFontSize(mTextComponent.GetFontSize())
+    , mFontColor(textComponent.GetColor())
     , mFontChoiceIndex(GetFontIndexByName(
           mAvailableFonts, mTextComponent.getPolice()->GetName())) {
     SetVisible(true);
@@ -48,7 +48,7 @@ void CTextComponentWidget::Render() {
             if (ImGui::Selectable(mAvailableFonts[n].c_str(), isSelected)) {
                 mFontChoiceIndex = n;
                 mTextComponent.setPolice(
-                    &mFontHandler.GetPolice(mAvailableFonts[n].c_str(), 20));
+                    &mFontHandler.GetPolice(mAvailableFonts[n].c_str()));
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();
@@ -57,19 +57,11 @@ void CTextComponentWidget::Render() {
         ImGui::EndCombo();
     }
     if (ImGui::SliderInt("Font Size", &mFontSize, 8, 72)) {
-        Font::CPolice* police = mTextComponent.getPolice();
-        if (police) {
-            police->SetSize(static_cast<unsigned int>(mFontSize));
-            mTextComponent.setDirty(true);
-        }
+        mTextComponent.SetFontSize(static_cast<unsigned int>(mFontSize));
     }
 
     if (ImGui::ColorEdit4("Font Color", &mFontColor.r)) {
-        Font::CPolice* police = mTextComponent.getPolice();
-        if (police) {
-            police->SetColor(mFontColor);
-            mTextComponent.setDirty(true);
-        }
+        mTextComponent.SetColor(mFontColor);
     }
 }
 

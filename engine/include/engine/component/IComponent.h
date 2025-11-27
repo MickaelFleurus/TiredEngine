@@ -21,7 +21,7 @@ public:
         return mIsDirty;
     }
 
-    void setDirty(bool dirty) {
+    virtual void setDirty(bool dirty) {
         mIsDirty = dirty;
     }
 

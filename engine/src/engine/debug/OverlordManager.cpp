@@ -3,15 +3,16 @@
 #include "engine/debug/Overlord.h"
 
 namespace Debug {
-COverlordManager::COverlordManager(const Renderer::CWindow& window)
-    : mWindow(window) {
+COverlordManager::COverlordManager(const Vulkan::CVulkanContext& context,
+                                   const Vulkan::CVulkanRendering& rendering)
+    : mContext(context), mRendering(rendering) {
 }
 
 COverlordManager::~COverlordManager() = default;
 
-bool COverlordManager::PrepareRender() {
+bool COverlordManager::PrepareRender(SDL_Window* window) {
     if (mOverlordImpl) {
-        return mOverlordImpl->PrepareRender();
+        return mOverlordImpl->PrepareRender(window);
     }
     return false;
 }
@@ -28,9 +29,9 @@ void COverlordManager::HandleEvent(const SDL_Event* e) {
     }
 }
 
-void COverlordManager::CreateOverlord() {
-    mOverlordImpl = std::make_unique<COverlord>(mWindow);
-    mOverlordImpl->Initialize();
+void COverlordManager::CreateOverlord(SDL_Window* window) {
+    mOverlordImpl = std::make_unique<COverlord>(mContext, mRendering);
+    mOverlordImpl->Initialize(window);
 }
 
 } // namespace Debug

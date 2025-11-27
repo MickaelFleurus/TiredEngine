@@ -1,7 +1,7 @@
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/utils/Logger.h"
 
-#include "engine/vulkan/IVulkanContext.h"
+#include "engine/vulkan/VulkanContext.h"
 
 namespace {
 uint32_t FindMemoryType(uint32_t typeFilter,
@@ -23,7 +23,7 @@ uint32_t FindMemoryType(uint32_t typeFilter,
 
 namespace Renderer {
 
-CMemoryAllocator::CMemoryAllocator(Vulkan::IVulkanContextGetter& vulkanContext)
+CMemoryAllocator::CMemoryAllocator(Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext) {
 }
 
@@ -40,10 +40,8 @@ CMemoryAllocator::AllocateMemory(VkImage image,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        FindMemoryType(memRequirements.memoryTypeBits, memProperties,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits,
+                                               memProperties, properties);
     VkDeviceMemory memory;
     if (vkAllocateMemory(device, &allocInfo, nullptr, &memory) != VK_SUCCESS) {
         LOG_ERROR("Failed to allocate image memory!");
@@ -65,15 +63,19 @@ CMemoryAllocator::AllocateMemory(VkBuffer buffer,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        FindMemoryType(memRequirements.memoryTypeBits, memProperties,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits,
+                                               memProperties, properties);
     VkDeviceMemory memory;
     if (vkAllocateMemory(device, &allocInfo, nullptr, &memory) != VK_SUCCESS) {
         LOG_ERROR("Failed to allocate buffer memory!");
         return VK_NULL_HANDLE;
     }
     return memory;
+}
+
+VkDeviceSize CMemoryAllocator::GetBufferMemoryAlignment() const {
+    VkPhysicalDeviceProperties deviceProperties =
+        mVulkanContext.GetPhysicalDeviceProperties();
+    return deviceProperties.limits.nonCoherentAtomSize;
 }
 } // namespace Renderer

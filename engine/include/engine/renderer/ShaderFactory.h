@@ -6,21 +6,19 @@
 #include "engine/renderer/MaterialStructures.h"
 #include <vulkan/vulkan.h>
 
+namespace Vulkan {
+class CVulkanContext;
+} // namespace Vulkan
+
 namespace Renderer {
-class CWindow;
-class CDescriptorLayoutStorage;
 
 class CShaderFactory {
 public:
-    CShaderFactory(const CWindow& window);
+    CShaderFactory(const Vulkan::CVulkanContext& contextGetter);
     ~CShaderFactory();
 
-    SShaderDescriptors
-    CreateFragmentShader(std::string name, std::string path,
-                         CDescriptorLayoutStorage& descriptorLayoutStorage);
-    SShaderDescriptors
-    CreateVertexShader(std::string name, std::string path,
-                       CDescriptorLayoutStorage& descriptorLayoutStorage);
+    VkShaderModule CreateFragmentShader(std::string name, std::string path);
+    VkShaderModule CreateVertexShader(std::string name, std::string path);
 
 private:
     class CImpl;

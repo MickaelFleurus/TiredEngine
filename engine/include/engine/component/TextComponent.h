@@ -1,11 +1,10 @@
 #pragma once
 #include "engine/component/IDisplayComponent.h"
+#include "engine/renderer/DataTypes.h"
 #include "engine/renderer/RendererUtils.h"
 
 #include <string>
 #include <vector>
-
-struct SDL_GPUBuffer;
 
 namespace Font {
 class CPolice;
@@ -13,7 +12,6 @@ class CPolice;
 
 namespace Renderer {
 class CTextRenderer;
-struct SCharacterInstance;
 } // namespace Renderer
 
 namespace Component {
@@ -28,22 +26,29 @@ public:
     void setPolice(Font::CPolice* police);
 
     Font::CPolice* getPolice() const;
+    int GetFontSize() const;
+    void SetFontSize(int size);
+    const glm::vec4& GetColor() const;
+    void SetColor(const glm::vec4& color);
     const std::string& getText() const;
 
-    VkBuffer GetInstanceBuffer();
-    uint32_t GetInstanceCount() const;
-
     glm::vec2 getSize() override;
+
+    const std::vector<Renderer::SInstanceData>& GetInstances();
+
+protected:
+    virtual void setDirty(bool dirty) override;
 
 private:
     void GenerateInstances();
 
     Renderer::CTextRenderer& mTextRenderer;
-    Renderer::VulkanBuffer mInstanceBuffer{};
-    std::vector<Renderer::SCharacterInstance> mInstances;
+    std::vector<Renderer::SInstanceData> mInstances;
 
     std::string mText;
     Font::CPolice* mPolice = nullptr;
+    int mFontSize = 24;
     glm::vec2 mSize{0.0f, 0.0f};
+    glm::vec4 mColor{1.0f, 1.0f, 1.0f, 1.0f};
 };
 } // namespace Component

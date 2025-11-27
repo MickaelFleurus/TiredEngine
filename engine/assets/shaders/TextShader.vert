@@ -1,32 +1,29 @@
 #version 450
 
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec2 inTexCoord;
-layout(location = 2) in vec2 instancePosition;
-layout(location = 3) in vec2 instanceSize;
-layout(location = 4) in vec4 instanceUVRect;
-layout(location = 5) in vec4 instanceColor;
-layout(location = 6) in uint instanceTextureIndex;
+layout(location = 0) in vec3 vertexPosition;
+layout(location = 1) in vec2 vertexUV;
 
-layout(binding = 0) uniform Matrices {
+
+layout(location = 2) in mat4 modelMatrix;
+layout(location = 6) in vec4 instanceColor;
+layout(location = 7) in uint instanceTextureIndex;
+layout(location = 8) in uint instanceMaterialIndex;
+
+layout(push_constant) uniform PushConstants {
     mat4 projection;
     mat4 view;
-    mat4 model;
-} ubo;
-
+} pc;
 
 layout(location = 0) out vec2 fragTexCoord;
 layout(location = 1) out vec4 fragColor;
 layout(location = 2) out flat uint fragTextureIndex;
+layout(location = 3) out flat uint fragMaterialIndex;
 
 void main() {
-    vec2 scaledPosition = inPosition.xy * instanceSize;
-
-    vec2 localPosition = scaledPosition + instancePosition;
-
-    gl_Position = ubo.projection * ubo.view * ubo.model * vec4(localPosition, 0.0, 1.0);
-    fragTexCoord = instanceUVRect.xy + inTexCoord * instanceUVRect.zw;
+    gl_Position = pc.projection * pc.view * modelMatrix * vec4(vertexPosition, 1.0);
+    fragTexCoord =  vertexUV;
     fragColor = instanceColor;
     fragTextureIndex = instanceTextureIndex;
+    fragMaterialIndex = instanceMaterialIndex;
 }

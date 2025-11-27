@@ -2,8 +2,10 @@
 #include "engine/renderer/RendererUtils.h"
 
 #include "engine/renderer/BufferHandler.h"
+#include "engine/renderer/Constants.h"
+#include "engine/renderer/DescriptorStorage.h"
 #include "engine/utils/FileHandler.h"
-#include "engine/vulkan/IVulkanContext.h"
+#include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
 #include <SDL3/SDL_surface.h>
 
@@ -14,18 +16,20 @@ constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
     }
 };
 
-constexpr size_t kMaxTextures = 256;
 } // namespace
 
 namespace Renderer {
-CTextureManager::CTextureManager(const Vulkan::IVulkanContextGetter& context,
-                                 Vulkan::CVulkanRendering& renderer,
-                                 CBufferHandler& bufferHandler,
-                                 Utils::CFileHandler& fileHandler)
+CTextureManager::CTextureManager(
+    const Vulkan::CVulkanContext& context, Vulkan::CVulkanRendering& renderer,
+    Renderer::CMemoryAllocator& memoryAllocator, CBufferHandler& bufferHandler,
+    Utils::CFileHandler& fileHandler,
+    Renderer::CDescriptorStorage& descriptorStorage)
     : mContext(context)
     , mRenderer(renderer)
+    , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
-    , mFileHandler(fileHandler) {
+    , mFileHandler(fileHandler)
+    , mDescriptorStorage(descriptorStorage) {
     mLoadedTextures.reserve(kMaxTextures);
 }
 
@@ -40,13 +44,6 @@ CTextureManager::~CTextureManager() {
 }
 
 int CTextureManager::LoadTexture(const std::string& filename) {
-    if (mTexturesSetLayout == VK_NULL_HANDLE) {
-        VkDevice device = mContext.GetDevice();
-        Renderer::CreateDescriptorPool(device, mTextureDescriptorPool,
-                                       kMaxTextures);
-        Renderer::CreateTextureDescriptorSetLayout(device, mTexturesSetLayout,
-                                                   kMaxTextures);
-    }
     auto it = mLoadedTexturesIndices.find(filename);
     if (it != mLoadedTexturesIndices.end()) {
         return it->second;
@@ -69,25 +66,26 @@ int CTextureManager::LoadTextureFromSurface(const std::string& filename,
     int width = surface->w;
     int height = surface->h;
     void* pixels = surface->pixels;
-    size_t imageSize = width * height * 4; // Assuming SDL_PIXELFORMAT_RGBA32
+    int imageSize =
+        width * height * sizeof(float); // Assuming SDL_PIXELFORMAT_RGBA32
 
     auto bufferHandle = mBufferHandler.CreateBuffer(
-        imageSize, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        sizeof(float), imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    bufferHandle->Fill(pixels, static_cast<int>(imageSize), 0);
+    auto range = bufferHandle->Reserve(static_cast<int>(imageSize));
+    bufferHandle->Fill(pixels, static_cast<int>(imageSize), 0, range.value());
 
     // 2. Create Vulkan image
     VulkanImage image = CreateImage(
-        device, width, height, VK_FORMAT_R8G8B8A8_UNORM,
+        mContext, mMemoryAllocator, width, height, VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        mContext.GetPhysicalDeviceMemoryProperties(),
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // 3. Transition image layout and copy buffer to image
-    TransitionImageLayout(image.image, VK_FORMAT_R8G8B8A8_UNORM,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext);
+    TransitionImageLayout(
+        image.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext, mRenderer);
     CopyBufferToImage(bufferHandle->GetBuffer(), image.image, width, height,
                       mContext, mRenderer);
     TransitionImageLayout(image.image, VK_FORMAT_R8G8B8A8_UNORM,
@@ -131,9 +129,7 @@ CTextureManager::GetTextureIndex(const std::string& filename) const {
 
 void CTextureManager::UpdateDescriptor(int index) {
 
-    VkDescriptorSet descriptorSet = Renderer::AllocateTextureDescriptorSet(
-        mWindow.GetVulkanRenderer().GetDevice(), mTextureDescriptorPool,
-        mTexturesSetLayout);
+    VkDescriptorSet descriptorSet = mDescriptorStorage.GetDescriptorSet();
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -143,14 +139,13 @@ void CTextureManager::UpdateDescriptor(int index) {
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = descriptorSet;
-    write.dstBinding = 0;
+    write.dstBinding = Renderer::kTextureBinding;
     write.dstArrayElement = static_cast<uint32_t>(index);
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write.descriptorCount = 1;
     write.pImageInfo = &imageInfo;
 
-    vkUpdateDescriptorSets(mWindow.GetVulkanRenderer().GetDevice(), 1, &write,
-                           0, nullptr);
+    vkUpdateDescriptorSets(mContext.GetDevice(), 1, &write, 0, nullptr);
 }
 
 } // namespace Renderer

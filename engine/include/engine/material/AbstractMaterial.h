@@ -6,12 +6,6 @@
 #include <glm/vec4.hpp>
 #include <vulkan/vulkan.h>
 
-namespace Renderer {
-class CDescriptorLayoutStorage;
-} // namespace Renderer
-
-struct SDL_GPUTexture;
-
 namespace Material {
 
 class AbstractMaterial {
@@ -33,16 +27,14 @@ public:
                       VkDescriptorPool descriptorPool);
 
 protected:
-    explicit AbstractMaterial(
-        const Renderer::CDescriptorLayoutStorage& descriptorLayoutStorage,
-        EMaterialType type, Renderer::EVertexLayout vertexLayout,
-        Renderer::SPipelineDescriptors& pipeline);
+    explicit AbstractMaterial(EMaterialType type,
+                              Renderer::EVertexLayout vertexLayout,
+                              Renderer::SPipelineDescriptors& pipeline);
     AbstractMaterial(const AbstractMaterial& other);
     AbstractMaterial& operator=(const AbstractMaterial& other) = delete;
     AbstractMaterial(AbstractMaterial&& other) noexcept;
     AbstractMaterial& operator=(AbstractMaterial&& other) noexcept = delete;
 
-    const Renderer::CDescriptorLayoutStorage& mDescriptorLayoutStorage;
     Renderer::EVertexLayout mVertexLayout;
     EMaterialType mType = EMaterialType::Unlit;
     Renderer::SPipelineDescriptors mPipeline;

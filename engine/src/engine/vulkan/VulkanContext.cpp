@@ -1,13 +1,20 @@
 #include "engine/vulkan/VulkanContext.h"
 
+#include "engine/vulkan/VulkanInitializer.h"
+
 namespace Vulkan {
+
+CVulkanContext::CVulkanContext(SDL_Window* window) : mWindow(window) {
+}
 
 CVulkanContext::~CVulkanContext() {
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
     for (auto framebuffer : mFramebuffers) {
         vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
     }
-    vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+    if (mRenderPass != VK_NULL_HANDLE) {
+        vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+    }
     for (auto imageView : mImageViews) {
         vkDestroyImageView(mDevice, imageView, nullptr);
     }
@@ -22,6 +29,46 @@ CVulkanContext::~CVulkanContext() {
     }
     vkDestroyDevice(mDevice, nullptr);
     vkDestroyInstance(mInstance, nullptr);
+}
+
+void CVulkanContext::RecreateSwapchainResources() {
+    vkDeviceWaitIdle(mDevice);
+
+    for (auto framebuffer : mFramebuffers) {
+        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+    }
+    mFramebuffers.clear();
+
+    if (mRenderPass != VK_NULL_HANDLE) {
+        vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+    }
+
+    for (auto imageView : mImageViews) {
+        vkDestroyImageView(mDevice, imageView, nullptr);
+    }
+    mImageViews.clear();
+
+    if (mSwapchain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
+    }
+
+    auto [swapchain, imageFormat, extent, images, imageViews] =
+        CreateSwapchain(mPhysicalDevice, mDevice, mSurface, mWindow,
+                        mGraphicsQueueFamilyIndex, mPresentQueueFamilyIndex);
+
+    mSwapchain = swapchain;
+    mImageFormat = imageFormat;
+    mExtent = extent;
+    mImages = std::move(images);
+    mImageViews = std::move(imageViews);
+
+    mRenderPass = CreateRenderPass(mDevice, mImageFormat);
+
+    mCommandBuffers = std::move(
+        CreateCommandBuffers(mDevice, mCommandPool, mImageViews.size()));
+
+    mFramebuffers = std::move(
+        CreateFramebuffers(mDevice, mRenderPass, mImageViews, mExtent));
 }
 
 VkInstance CVulkanContext::GetInstance() const {
@@ -81,6 +128,18 @@ VkCommandPool CVulkanContext::GetCommandPool() const {
     return mCommandPool;
 }
 
+int CVulkanContext::GetImageCount() const {
+    return static_cast<int>(mImages.size());
+}
+
+VkExtent2D CVulkanContext::GetSwapchainExtent() const {
+    return mExtent;
+}
+
+VkPhysicalDeviceProperties CVulkanContext::GetPhysicalDeviceProperties() const {
+    return mPhysicalDeviceProperties;
+}
+
 void CVulkanContext::SetSurface(VkSurfaceKHR surface) {
     mSurface = surface;
 }
@@ -135,42 +194,8 @@ void CVulkanContext::SetPhysicalDeviceMemoryProperties(
     mPhysicalDeviceMemoryProperties = memoryProperties;
 }
 
-void CVulkanContext::SetSwapchain(VkSwapchainKHR swapchain) {
-    mSwapchain = swapchain;
-}
-
-void CVulkanContext::SetSwapchainImageFormat(VkFormat imageFormat) {
-    mImageFormat = imageFormat;
-}
-
-void CVulkanContext::SetSwapchainExtent(VkExtent2D extent) {
-    mExtent = extent;
-}
-
-void CVulkanContext::SetSwapchainImages(const std::vector<VkImage>& images) {
-    mImages = images;
-}
-
-void CVulkanContext::SetSwapchainImageViews(
-    std::vector<VkImageView> imageViews) {
-    mImageViews = std::move(imageViews);
-}
-
-void CVulkanContext::SetRenderPass(VkRenderPass renderPass) {
-    mRenderPass = renderPass;
-}
-
 void CVulkanContext::SetCommandPool(VkCommandPool commandPool) {
     mCommandPool = commandPool;
-}
-
-void CVulkanContext::SetCommandBuffers(
-    std::vector<VkCommandBuffer> commandBuffers) {
-    mCommandBuffers = std::move(commandBuffers);
-}
-
-void CVulkanContext::SetFramebuffers(std::vector<VkFramebuffer> framebuffers) {
-    mFramebuffers = std::move(framebuffers);
 }
 
 } // namespace Vulkan

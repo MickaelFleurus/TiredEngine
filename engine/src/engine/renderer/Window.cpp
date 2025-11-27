@@ -16,7 +16,9 @@
 #include "engine/debug/Overlord.h"
 #include "engine/font/Police.h"
 #include "engine/material/AbstractMaterial.h"
-#include "engine/renderer/DescriptorLayoutStorage.h"
+#include "engine/material/MaterialFactory.h"
+#include "engine/renderer/BufferHandler.h"
+#include "engine/renderer/DescriptorStorage.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/SamplerCache.h"
 #include "engine/renderer/TextRenderer.h"
@@ -24,13 +26,17 @@
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
-#include "engine/vulkan/VulkanInitializer.h"
 #include "engine/vulkan/VulkanRendering.h"
 
 #include <functional>
 #include <vector>
 
 namespace {
+
+struct SPushConstantData {
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+};
 
 VkViewport GetViewport(SDL_Window* window,
                        const System::SDisplayParameter& displayParams) {
@@ -55,16 +61,79 @@ VkRect2D GetScissor(VkViewport viewport) {
                       static_cast<uint32_t>(viewport.height)};
     return scissor;
 }
+
+void ExtractRenderable(Core::CGameObject& root,
+                       Component::CComponentManager& componentManager,
+                       std::vector<Renderer::SRenderable>& renderables,
+                       glm::mat4 transform = glm::mat4(1.0f)) {
+    if (!root.IsVisible()) {
+        return;
+    }
+    auto& transformComponent =
+        *componentManager.getComponent<Component::CTransformComponent>(
+            root.getId());
+
+    if (auto* spriteComponent =
+            componentManager.getComponent<Component::CSpriteComponent>(
+                root.getId())) {
+        transformComponent.UpdateMatrix(transform, spriteComponent->getSize());
+        Renderer::SRenderable renderable{};
+        renderable.transform = transform;
+        renderable.layer = Renderer::ERenderLayer::World;
+        renderable.depth = transform[3][2]; // Z position
+        renderable.GenerateSortKey();
+
+        renderables.push_back(renderable);
+    } else {
+        transformComponent.UpdateMatrix(transform);
+    }
+
+    for (auto& child : root.getChildren()) {
+        ExtractRenderable(*child, componentManager, renderables, transform);
+    }
+}
+
+void RenderPass(const std::vector<Renderer::SRenderable>& renderables,
+                Core::CCamera& camera, VkCommandBuffer commandBuffer) {
+
+    SPushConstantData pushConstants{};
+    pushConstants.viewMatrix = camera.GetViewMatrix();
+    pushConstants.projectionMatrix = camera.GetProjectionMatrix();
+    Material::AbstractMaterial* currentMaterial = nullptr;
+    for (const auto& renderable : renderables) {
+        if (!renderable.material) {
+            continue;
+        }
+
+        if (renderable.material != currentMaterial) {
+            currentMaterial = renderable.material;
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              currentMaterial->GetPipeline());
+            vkCmdPushConstants(
+                commandBuffer, currentMaterial->GetPipelineLayout(),
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                sizeof(SPushConstantData), &pushConstants);
+        }
+    }
+}
+
 } // namespace
 
 namespace Renderer {
 
 CWindow::CWindow(System::CSystem& system, SDL_Window* window,
-                 Vulkan::IVulkanContextGetter& vulkanContext,
-                 Vulkan::CVulkanRendering& renderer)
+                 Vulkan::CVulkanContext& vulkanContext,
+                 Vulkan::CVulkanRendering& renderer,
+                 CBufferHandler& bufferHandler, CTextRenderer& textRenderer,
+                 Material::CMaterialFactory& materialFactory,
+                 CDescriptorStorage& descriptorStorage)
     : mSystem(system)
     , mVulkanContext(vulkanContext)
     , mRenderer(renderer)
+    , mBufferHandler(bufferHandler)
+    , mTextRenderer(textRenderer)
+    , mMaterialFactory(materialFactory)
+    , mDescriptorStorage(descriptorStorage)
     , mSDLWindow(window)
     , mViewport(GetViewport(window, mSystem.GetDisplayParameters()))
     , mScissor(GetScissor(mViewport))
@@ -77,60 +146,9 @@ CWindow::~CWindow() {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-void CWindow::ExtractRenderable(Core::CGameObject& root,
-                                Component::CComponentManager& componentManager,
-                                std::vector<SRenderable>& renderables,
-                                glm::mat4 transform = glm::mat4(1.0f)) {
-    if (!root.IsVisible()) {
-        return;
-    }
-    auto& transformComponent =
-        *componentManager.getComponent<Component::CTransformComponent>(
-            root.getId());
-
-    if (auto* spriteComponent =
-            componentManager.getComponent<Component::CSpriteComponent>(
-                root.getId())) {
-        transformComponent.UpdateMatrix(transform, spriteComponent->getSize());
-        SRenderable renderable{};
-        renderable.transform = transform;
-        renderable.layer = ERenderLayer::World;
-        renderable.depth = transform[3][2]; // Z position
-        renderable.GenerateSortKey();
-
-        renderables.push_back(renderable);
-    } else if (auto* textComponent =
-                   componentManager.getComponent<Component::CTextComponent>(
-                       root.getId())) {
-
-        transformComponent.UpdateMatrix(transform, textComponent->getSize());
-        SRenderable renderable{};
-        renderable.material = &textComponent->getPolice()->GetMaterial();
-        renderable.transform = transform;
-        renderable.layer = ERenderLayer::UI;
-        renderable.depth = transform[3][2];
-
-        renderable.vertexBuffer = mTextRenderer->GetQuadVertexBuffer();
-        renderable.indexBuffer = mTextRenderer->GetQuadIndexBuffer();
-        renderable.instanceBuffer = textComponent->GetInstanceBuffer();
-
-        renderable.instanceCount = textComponent->GetInstanceCount();
-        renderable.indexCount = 6;
-
-        renderable.GenerateSortKey();
-        renderables.push_back(renderable);
-    } else {
-        transformComponent.UpdateMatrix(transform);
-    }
-
-    for (auto& child : root.getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables, transform);
-    }
-}
-
 void CWindow::Render(Scene::CAbstractScene& scene,
                      Component::CComponentManager& componentManager) {
-    auto& camera = scene.GetActiveCamera();
+    auto& camera = scene.GetUICamera();
 
     std::vector<SRenderable> renderables;
     for (auto& child : scene.GetRoot().getChildren()) {
@@ -150,15 +168,30 @@ void CWindow::Render(Scene::CAbstractScene& scene,
         }
     }
 
-    // === WORLD PASS ===
-    RenderPass(worldRenderables, scene.GetActiveCamera());
+    VkCommandBuffer commandBuffer =
+        mVulkanContext.GetCommandBuffer(mImageIndex.value());
+    mBufferHandler.BindBuffers(commandBuffer);
+    SPushConstantData pushConstantData{};
+    pushConstantData.viewMatrix = camera.GetViewMatrix();
+    pushConstantData.projectionMatrix = camera.GetProjectionMatrix();
 
-    // === UI PASS ===
-    RenderPass(uiRenderables, scene.GetUICamera());
+    auto textMaterial = mMaterialFactory.GetOrCreateTextMaterial();
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      textMaterial->GetPipeline());
+    VkPipelineLayout pipelineLayout = textMaterial->GetPipelineLayout();
+    VkDescriptorSet descriptorSet = mDescriptorStorage.GetDescriptorSet();
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    vkCmdPushConstants(
+        commandBuffer, textMaterial->GetPipelineLayout(),
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+        sizeof(Renderer::SPushConstantData), &pushConstantData);
+    mTextRenderer.Update();
+    mBufferHandler.BindBuffers(commandBuffer);
+    mTextRenderer.DrawTexts(commandBuffer);
 }
 
 bool CWindow::BeginRender() {
-    mRenderer.WaitIdle();
     mImageIndex = mRenderer.AcquireNextImage();
     if (!mImageIndex.has_value()) {
         LOG_ERROR("Failed to acquire next swapchain image!");
@@ -175,21 +208,8 @@ void CWindow::EndRender() {
         mRenderer.SubmitAsync(
             mVulkanContext.GetCommandBuffer(mImageIndex.value()));
         mRenderer.Present(mImageIndex.value());
+        mRenderer.WaitIdle();
         mImageIndex = std::nullopt;
-    }
-}
-
-void CWindow::RenderPass(const std::vector<SRenderable>& renderables,
-                         Core::CCamera& camera) {
-    VkCommandBuffer commandBuffer = GetCommandBuffer();
-    if (commandBuffer == VK_NULL_HANDLE) {
-        return;
-    }
-    for (const auto& renderable : renderables) {
-        vkCmdPushConstants(commandBuffer,
-                           renderable.material->GetPipelineLayout(),
-                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
-                           &renderable.transform);
     }
 }
 

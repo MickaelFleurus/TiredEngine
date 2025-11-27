@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/GameObjectId.h"
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 #include <memory>
@@ -20,6 +21,7 @@ public:
 
     glm::vec3 getLocalPosition() const;
     glm::vec3 getWorldPosition() const;
+    glm::mat4 getModelMatrix() const;
 
     void removeChild(GameObjectId id);
     void removeChildren();

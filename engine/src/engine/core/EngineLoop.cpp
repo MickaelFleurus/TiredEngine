@@ -3,6 +3,7 @@
 #include "engine/system/System.h"
 
 #include "engine/renderer/Window.h"
+#include "engine/vulkan/VulkanContext.h"
 
 #include "engine/utils/Logger.h"
 #include <SDL3/SDL.h>
@@ -13,17 +14,25 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                          Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext)
     , mVulkanRendering(vulkanContext)
-    , mWindow(system, window, vulkanContext, mVulkanRendering)
+    , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
-    , mTextureManager(mWindow, system.GetFileHandler())
+    , mTextRenderer(mBufferHandler.GetInstanceBufferHandle(),
+                    mBufferHandler.GetInstancesInfoBufferHandle())
+    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mVulkanContext,
+                       mDescriptorStorage)
+    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
+              mTextRenderer, mMaterialFactory, mDescriptorStorage)
+    , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
+                      mBufferHandler, system.GetFileHandler(),
+                      mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory,
-                   mBufferHandler)
-    , mComponentManager(mFontHandler, mWindow)
+                   mBufferHandler.GetVerticesBufferHandle(),
+                   mBufferHandler.GetIndexesBufferHandle())
+    , mComponentManager(mFontHandler, mTextRenderer)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
-    , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow) {
+    , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -47,13 +56,14 @@ bool CEngineLoop::Run() {
 
         mInputHandler.Update();
 
-        mOverlordManager.PrepareRender();
+        mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);
             }
-            mOverlordManager.Render(mWindow.GetCommandBuffer());
+            mOverlordManager.Render(mVulkanContext.GetCommandBuffer(
+                mWindow.GetImageIndex().value()));
 
             mWindow.EndRender();
         }

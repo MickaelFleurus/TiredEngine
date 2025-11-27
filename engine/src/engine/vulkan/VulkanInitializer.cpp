@@ -3,13 +3,37 @@
 #include "engine/renderer/RendererUtils.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/IVulkanContext.h"
+#include "engine/vulkan/VulkanContext.h"
 
 #include <SDL3/SDL_vulkan.h>
+#include <set>
 #include <string>
-#include <vulkan/vulkan.h>
 
 namespace {
+static VKAPI_ATTR VkBool32 VKAPI_CALL
+VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                    VkDebugUtilsMessageTypeFlagsEXT messageType,
+                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                    void* pUserData) {
+
+    // Map Vulkan severity to Logger severity
+    switch (messageSeverity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        LOG_INFO("Vulkan: {}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        LOG_WARNING("Vulkan: {}", pCallbackData->pMessage);
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        LOG_ERROR("Vulkan: {}", pCallbackData->pMessage);
+        break;
+    default:
+    }
+
+    return VK_FALSE;
+}
+
 VkInstance CreateVulkanInstance(std::string appName) {
     uint32_t extensionCount = 0;
     if (!SDL_Vulkan_GetInstanceExtensions(&extensionCount)) {
@@ -94,7 +118,7 @@ VkInstance CreateVulkanInstance(std::string appName) {
     extensionsVec.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
-    extensionsVec.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    // extensionsVec.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     createInfo.enabledExtensionCount =
         static_cast<uint32_t>(extensionsVec.size());
@@ -156,18 +180,8 @@ VkSurfaceKHR CreateVulkanSurface(SDL_Window* window, VkInstance instance) {
     return surface;
 }
 
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete() const {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device,
-                                     VkSurfaceKHR surface) {
-    QueueFamilyIndices indices;
+std::tuple<int, int> FindQueueFamilies(VkPhysicalDevice device,
+                                       VkSurfaceKHR surface) {
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
@@ -177,22 +191,26 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device,
                                              queueFamilies.data());
 
     for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        // Graphics queue
-        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            indices.graphicsFamily = i;
+        int graphicsIndex = -1;
+        int presentIndex = -1;
+        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            graphicsIndex = i;
+        }
 
         // Presentation support
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
                                              &presentSupport);
-        if (presentSupport)
-            indices.presentFamily = i;
+        if (presentSupport) {
+            presentIndex = i;
+        }
 
-        if (indices.isComplete())
-            break;
+        if (graphicsIndex != -1 && presentIndex != -1) {
+            return {graphicsIndex, presentIndex};
+        }
     }
 
-    return indices;
+    return {-1, -1};
 }
 
 std::tuple<VkPhysicalDevice, VkPhysicalDeviceProperties,
@@ -210,24 +228,22 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
     for (const auto& device : devices) {
-        QueueFamilyIndices indices = FindQueueFamilies(device, surface);
-        if (indices.isComplete()) {
-            VkPhysicalDeviceProperties properties;
-            vkGetPhysicalDeviceProperties(device, &properties);
-
-            VkPhysicalDeviceFeatures features;
-            vkGetPhysicalDeviceFeatures(device, &features);
-
-            VkPhysicalDeviceMemoryProperties memProperties;
-            vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
-
-            return {device,
-                    properties,
-                    features,
-                    memProperties,
-                    indices.graphicsFamily.value(),
-                    indices.presentFamily.value()};
+        auto [graphicsFamily, presentFamily] =
+            FindQueueFamilies(device, surface);
+        if (graphicsFamily == -1 && presentFamily == -1) {
+            LOG_FATAL("Selected GPU does not support required queue families!");
         }
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(device, &properties);
+
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceFeatures(device, &features);
+
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+
+        return {device,        properties,     features,
+                memProperties, graphicsFamily, presentFamily};
     }
 
     LOG_FATAL("Failed to find a suitable GPU!");
@@ -239,7 +255,8 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
                     VkPhysicalDevice physicalDevice) {
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    auto uniqueQueueFamilies = {graphicsFamily, presentFamily};
+    // Use a set to avoid duplicate queue families
+    std::set<uint32_t> uniqueQueueFamilies = {graphicsFamily, presentFamily};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -279,6 +296,15 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
         LOG_INFO("Enabling VK_KHR_portability_subset extension");
     }
 #endif
+    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+    indexingFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+
+    // deviceFeatures.multiDrawIndirect = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -289,6 +315,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     createInfo.enabledExtensionCount =
         static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    createInfo.pNext = &indexingFeatures;
 
     VkDevice device;
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) !=
@@ -326,7 +353,7 @@ QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
     vkGetPhysicalDeviceSurfacePresentModesKHR(
         device, surface, &presentModeCount, presentModes.data());
 
-    return {};
+    return {capabilities, formats, presentModes};
 }
 
 VkSurfaceFormatKHR
@@ -362,6 +389,53 @@ VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,
         std::clamp(actualExtent.height, caps.minImageExtent.height,
                    caps.maxImageExtent.height);
     return actualExtent;
+}
+
+VkCommandPool CreateCommandBufferPool(VkDevice device,
+                                      uint32_t queueFamilyIndex) {
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndex;
+
+    VkCommandPool commandPool;
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
+        VK_SUCCESS) {
+        LOG_FATAL("Failed to create command pool!");
+    }
+    return commandPool;
+}
+
+} // namespace
+
+namespace Vulkan {
+void InitializeVulkan(CVulkanContext& context, SDL_Window* window,
+                      const System::CSystem& system) {
+    VkInstance instance = CreateVulkanInstance(system.GetGameName());
+
+    context.SetInstance(instance);
+    context.SetDebugMessenger(CreateDebugUtilsMessenger(instance));
+
+    VkSurfaceKHR surface = CreateVulkanSurface(window, instance);
+    context.SetSurface(surface);
+
+    auto [physicalDevice, properties, features, memoryProperties,
+          graphicsFamily, presentFamily] =
+        PickPhysicalDevice(instance, surface);
+    context.SetPhysicalDevice(physicalDevice);
+    context.SetPhysicalDeviceProperties(properties);
+    context.SetPhysicalDeviceFeatures(features);
+    context.SetPhysicalDeviceMemoryProperties(memoryProperties);
+    context.SetGraphicsQueueFamilyIndex(graphicsFamily);
+    context.SetPresentQueueFamilyIndex(presentFamily);
+
+    auto [device, graphicsQueue, presentQueue] =
+        CreateLogicalDevice(graphicsFamily, presentFamily, physicalDevice);
+    context.SetDevice(device);
+    context.SetGraphicsQueue(graphicsQueue);
+    context.SetPresentQueue(presentQueue);
+    VkCommandPool commandPool = CreateCommandBufferPool(device, graphicsFamily);
+    context.SetCommandPool(commandPool);
 }
 
 std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,
@@ -408,7 +482,6 @@ CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat imageFormat;
-    VkExtent2D extent;
     std::vector<VkImage> images;
     std::vector<VkImageView> imageViews;
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) !=
@@ -420,7 +493,6 @@ CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
     images.resize(imageCount);
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
     imageFormat = surfaceFormat.format;
-    extent = extent;
 
     // Create image views
     imageViews.resize(images.size());
@@ -465,21 +537,6 @@ VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
     return renderPass;
 }
 
-VkCommandPool CreateCommandBufferPool(VkDevice device,
-                                      uint32_t queueFamilyIndex) {
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndex;
-
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
-        VK_SUCCESS) {
-        LOG_FATAL("Failed to create command pool!");
-    }
-    return commandPool;
-}
-
 std::vector<VkCommandBuffer> CreateCommandBuffers(VkDevice device,
                                                   VkCommandPool& commandPool,
                                                   int bufferCount) {
@@ -521,58 +578,5 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
         }
     }
     return framebuffers;
-}
-
-} // namespace
-
-namespace Vulkan {
-void InitializeVulkan(IVulkanContextSetter& context, SDL_Window* window,
-                      const System::CSystem& system) {
-    VkInstance instance = CreateVulkanInstance(system.GetGameName());
-
-    context.SetInstance(instance);
-    context.SetDebugMessenger(CreateDebugUtilsMessenger(instance));
-
-    VkSurfaceKHR surface = CreateVulkanSurface(window, instance);
-    context.SetSurface(surface);
-
-    auto [physicalDevice, properties, features, memoryProperties,
-          graphicsFamily, presentFamily] =
-        PickPhysicalDevice(instance, surface);
-    context.SetPhysicalDevice(physicalDevice);
-    context.SetPhysicalDeviceProperties(properties);
-    context.SetPhysicalDeviceFeatures(features);
-    context.SetPhysicalDeviceMemoryProperties(memoryProperties);
-    context.SetGraphicsQueueFamilyIndex(graphicsFamily);
-    context.SetPresentQueueFamilyIndex(presentFamily);
-
-    auto [device, graphicsQueue, presentQueue] =
-        CreateLogicalDevice(graphicsFamily, presentFamily, physicalDevice);
-    context.SetDevice(device);
-    context.SetGraphicsQueue(graphicsQueue);
-    context.SetPresentQueue(presentQueue);
-
-    auto [swapchain, imageFormat, extent, images, imageViews] = CreateSwapchain(
-        physicalDevice, device, surface, window, graphicsFamily, presentFamily);
-
-    const int imageCount = static_cast<int>(images.size());
-
-    context.SetSwapchain(swapchain);
-    context.SetSwapchainImageFormat(imageFormat);
-    context.SetSwapchainExtent(extent);
-    context.SetSwapchainImages(images);
-
-    VkRenderPass renderPass = CreateRenderPass(device, imageFormat);
-    context.SetRenderPass(renderPass);
-
-    VkCommandPool commandPool = CreateCommandBufferPool(device, graphicsFamily);
-    auto commandBuffers = CreateCommandBuffers(device, commandPool, imageCount);
-    context.SetCommandPool(commandPool);
-    context.SetCommandBuffers(commandBuffers);
-
-    auto framebuffers =
-        CreateFramebuffers(device, renderPass, imageViews, extent);
-    context.SetFramebuffers(framebuffers);
-    context.SetSwapchainImageViews(imageViews);
 }
 } // namespace Vulkan

@@ -47,7 +47,8 @@ CGameObjectBuilder::CBuilder::addText(const std::string& text,
     auto& component{mComponentManager.addTextComponent(*mGameObject)};
 
     component.setText(text);
-    component.setPolice(&mFontHandler.GetPolice(fontName.c_str(), size));
+    component.SetFontSize(size);
+    component.setPolice(&mFontHandler.GetPolice(fontName));
     return *this;
 }
 

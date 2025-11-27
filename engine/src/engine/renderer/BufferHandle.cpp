@@ -1,5 +1,5 @@
 #include "engine/renderer/BufferHandle.h"
-#include "engine/vulkan/IVulkanContext.h"
+#include "engine/vulkan/VulkanContext.h"
 
 #include "engine/renderer/MemoryAllocator.h"
 
@@ -7,13 +7,38 @@
 
 namespace Renderer {
 
-CBufferHandle::CBufferHandle(const Vulkan::IVulkanContextGetter& vulkanContext,
+CBufferHandle::CBufferHandle(const Vulkan::CVulkanContext& vulkanContext,
                              Renderer::CMemoryAllocator& memoryAllocator,
-                             CBufferHandler& handler, int id)
+                             CBufferHandler& handler)
     : mDevice(vulkanContext.GetDevice())
     , mMemoryAllocator(memoryAllocator)
-    , mHandler(handler)
-    , mId(id) {
+    , mHandler(handler) {
+}
+
+CBufferHandle::CBufferHandle(CBufferHandle&& other) noexcept
+    : mDevice(other.mDevice)
+    , mMemoryAllocator(other.mMemoryAllocator)
+    , mHandler(other.mHandler)
+    , mDataSize(other.mDataSize)
+    , mMemoryBlocks(std::move(other.mMemoryBlocks))
+    , mBuffer(other.mBuffer)
+    , mMemory(other.mMemory) {
+    other.mBuffer = VK_NULL_HANDLE;
+    other.mMemory = VK_NULL_HANDLE;
+}
+
+CBufferHandle& CBufferHandle::operator=(CBufferHandle&& other) noexcept {
+    if (this != &other) {
+        Free();
+        mDataSize = other.mDataSize;
+        mMemoryBlocks = std::move(other.mMemoryBlocks);
+        mBuffer = other.mBuffer;
+        mMemory = other.mMemory;
+
+        other.mBuffer = VK_NULL_HANDLE;
+        other.mMemory = VK_NULL_HANDLE;
+    }
+    return *this;
 }
 
 CBufferHandle::~CBufferHandle() {
@@ -28,7 +53,7 @@ bool CBufferHandle::Init(int dataSize, int bufferSize,
         Free();
     }
     mDataSize = dataSize;
-    mBufferSize = bufferSize;
+    mMemoryBlocks.Init(bufferSize);
 
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -47,32 +72,38 @@ bool CBufferHandle::Init(int dataSize, int bufferSize,
     vkBindBufferMemory(mDevice, mBuffer, mMemory, 0);
     return true;
 }
-
-bool CBufferHandle::Fill(const void* data, int size, int offset) {
-    if (size + offset > mBufferSize) {
-        LOG_ERROR("Buffer overflow on fill!");
-        return false;
-    }
-    void* mappedData;
-    vkMapMemory(mDevice, mMemory, 0, size, 0, &mappedData);
-    memcpy(mappedData, data, size);
-    VkMappedMemoryRange range{};
-    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    range.memory = mMemory;
-    range.offset = offset;
-    range.size = size;
-    vkFlushMappedMemoryRanges(mDevice, 1, &range);
-    vkUnmapMemory(mDevice, mMemory);
-    mUsedSize = offset + size; // FIXME: Probably incorrect but does it matter?
-    return true;
+std::optional<Utils::SBufferRange> CBufferHandle::Reserve(int size) {
+    return mMemoryBlocks.Allocate(size);
 }
 
-bool CBufferHandle::Append(const void* data, int size) {
-    if (mUsedSize + size > mBufferSize) {
-        LOG_ERROR("Buffer overflow on append!");
+bool CBufferHandle::Fill(const void* data, int size, int offset,
+                         const Utils::SBufferRange& range) {
+
+    if (offset + size > range.size) {
+        LOG_ERROR("Trying to fill more data than reserved!");
         return false;
     }
-    Fill(data, size, mUsedSize);
+
+    if (!mMemoryBlocks.Contains(range)) {
+        LOG_ERROR("Trying to fill data to an unreserved range!");
+        return false;
+    }
+    VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
+    VkDeviceSize alignedOffset = (offset / atomSize) * atomSize;
+    VkDeviceSize end = offset + size;
+    VkDeviceSize alignedEnd = ((end + atomSize - 1) / atomSize) * atomSize;
+    VkDeviceSize alignedSize = alignedEnd - alignedOffset;
+
+    void* mappedData;
+    vkMapMemory(mDevice, mMemory, alignedOffset, alignedSize, 0, &mappedData);
+    memcpy(mappedData, data, size);
+    VkMappedMemoryRange mappedRange{};
+    mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    mappedRange.memory = mMemory;
+    mappedRange.offset = alignedOffset;
+    mappedRange.size = alignedSize;
+    vkFlushMappedMemoryRanges(mDevice, 1, &mappedRange);
+    vkUnmapMemory(mDevice, mMemory);
     return true;
 }
 
@@ -85,6 +116,24 @@ void CBufferHandle::Free() {
         vkFreeMemory(mDevice, mMemory, nullptr);
         mMemory = VK_NULL_HANDLE;
     }
+    mDataSize = 0;
+    mMemoryBlocks = {};
+}
+
+VkBuffer CBufferHandle::GetBuffer() const {
+    return mBuffer;
+}
+
+int CBufferHandle::GetSize() const {
+    return mMemoryBlocks.GetTotalSize();
+}
+
+void CBufferHandle::FreeRange(const Utils::SBufferRange& range) {
+    if (!mMemoryBlocks.Contains(range)) {
+        LOG_WARNING("Trying to free a non-existing range!");
+        return;
+    }
+    mMemoryBlocks.Free(range);
 }
 
 } // namespace Renderer

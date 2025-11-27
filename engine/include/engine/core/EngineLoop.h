@@ -5,6 +5,7 @@
 #include "engine/input/InputHandler.h"
 
 #include "engine/renderer/BufferHandler.h"
+#include "engine/renderer/DescriptorStorage.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/renderer/Window.h"
 
@@ -14,6 +15,7 @@
 #include "engine/font/FontHandler.h"
 #include "engine/utils/FileHandler.h"
 
+#include "engine/renderer/TextRenderer.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/vulkan/VulkanRendering.h"
 
@@ -52,11 +54,13 @@ protected:
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
 
-    Renderer::CWindow mWindow;
+    Renderer::CDescriptorStorage mDescriptorStorage;
     Renderer::CMemoryAllocator mMemoryAllocator;
     Renderer::CBufferHandler mBufferHandler;
-    Renderer::CTextureManager mTextureManager;
+    Renderer::CTextRenderer mTextRenderer;
     Material::CMaterialFactory mMaterialFactory;
+    Renderer::CWindow mWindow;
+    Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;
     Component::CComponentManager mComponentManager;
 

@@ -1,42 +1,54 @@
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
-#include <vulkan/vulkan.h>
+#include "engine/renderer/BufferHandle.h"
+#include "engine/renderer/DataTypes.h"
+#include "engine/utils/BufferMemoryBlocks.h"
 
-#include "engine/renderer/RendererUtils.h"
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+namespace Component {
+class CTextComponent;
+}
 
 namespace Renderer {
 
-// Per-character instance data
-struct SCharacterInstance {
-    glm::vec2 position{0.0f};
-    glm::vec2 size{1.0f};
-    glm::vec4 uvRect{0.0f};
-    glm::vec4 color{1.0f};
-    uint32_t textureIndex{0};
-};
-
 class CTextRenderer {
 public:
-    explicit CTextRenderer(VkDevice device,
-                           VkPhysicalDeviceMemoryProperties memProperties);
+    struct SInstanceInfo {
+        uint32_t firstInstance;
+        uint32_t instanceCount;
+        uint32_t firstIndex;
+        uint32_t vertexOffset;
+    };
+    explicit CTextRenderer(CBufferHandle& instanceBuffer,
+                           CBufferHandle& instanceInfoBuffer);
 
-    void Initialize();
+    void Update();
+    void DrawTexts(VkCommandBuffer commandBuffer);
 
-    VkBuffer GetQuadVertexBuffer() const;
-    VkBuffer GetQuadIndexBuffer() const;
+    void SetNeedUpdate();
 
-    VulkanBuffer CreateInstanceBuffer(size_t maxCharacters);
+    void RegisterTextComponent(Component::CTextComponent* textComponent);
+    void UnregisterTextComponent(Component::CTextComponent* textComponent);
 
-    void UpdateInstanceBuffer(VulkanBuffer& buffer,
-                              const std::vector<SCharacterInstance>& instances);
+    // SBufferRange ReserveBufferRange(size_t maxCharacters);
+
+    // void UpdateInstanceBuffer(SBufferRange range,
+    //                           const std::vector<SInstanceData>& instances);
 
 private:
-    VkDevice mDevice = VK_NULL_HANDLE;
-    VkPhysicalDeviceMemoryProperties mMemProperties{};
-    Renderer::VulkanBuffer mQuadVertexBuffer{};
-    Renderer::VulkanBuffer mQuadIndexBuffer{};
+    void GenerateInstanceData();
+    CBufferHandle& mInstanceBuffer;
+    Utils::SBufferRange mTextInstanceBufferRange;
+
+    CBufferHandle& mInstanceInfoBuffer;
+    Utils::SBufferRange mInstanceInfoBufferRange;
+    bool mNeedUpdate = true;
+
+    std::vector<SInstanceInfo> mInstanceInfos;
+    std::vector<Component::CTextComponent*> mRegisteredTextComponents;
 };
 
 } // namespace Renderer

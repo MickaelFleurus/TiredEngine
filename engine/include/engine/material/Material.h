@@ -5,11 +5,9 @@
 namespace Material {
 class CMaterial : public AbstractMaterial {
 public:
-    CMaterial(const Renderer::CDescriptorLayoutStorage& descriptorLayoutStorage,
-              EMaterialType type, Renderer::EVertexLayout vertexLayout,
+    CMaterial(EMaterialType type, Renderer::EVertexLayout vertexLayout,
               Renderer::SPipelineDescriptors& pipeline)
-        : AbstractMaterial(descriptorLayoutStorage, type, vertexLayout,
-                           pipeline) {
+        : AbstractMaterial(type, vertexLayout, pipeline) {
     }
 
 private:

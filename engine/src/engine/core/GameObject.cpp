@@ -98,6 +98,15 @@ glm::vec3 CGameObject::getWorldPosition() const {
     return getLocalPosition();
 }
 
+glm::mat4 CGameObject::getModelMatrix() const {
+    if (mParent) {
+        glm::mat4 parentModel = mParent->getModelMatrix();
+        mTransformComponent.UpdateMatrix(parentModel);
+        return parentModel;
+    }
+    return glm::mat4(1.0f);
+}
+
 const std::vector<std::unique_ptr<CGameObject>>&
 CGameObject::getChildren() const {
     return mChildren;
