@@ -17,8 +17,8 @@ public:
     ~CPipelineFactory();
 
     Renderer::SPipelineDescriptors
-    CreateGraphicsPipeline(const Renderer::SPipelineConfig& config,
-                           Vulkan::CDescriptorStorage& layoutStorage);
+    GetOrCreateGraphicsPipeline(const Renderer::SPipelineConfig& config,
+                                Vulkan::CDescriptorStorage& layoutStorage);
 
 private:
     class CImpl;

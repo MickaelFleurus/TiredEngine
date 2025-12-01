@@ -11,13 +11,13 @@ CBufferMemoryBlocks::~CBufferMemoryBlocks() {
     mBlocks.clear();
 }
 
-void CBufferMemoryBlocks::Init(int totalSize) {
+void CBufferMemoryBlocks::Init(std::size_t totalSize) {
     mTotalSize = totalSize;
     mBlocks.clear();
     mBlocks.push_back(BufferBlock{0, totalSize, true});
 }
 
-std::optional<SBufferRange> CBufferMemoryBlocks::Allocate(int size) {
+std::optional<SBufferRange> CBufferMemoryBlocks::Allocate(std::size_t size) {
     BufferBlock* bestFit = nullptr;
     for (auto& block : mBlocks) {
         if (block.free && block.size >= size) {
@@ -70,6 +70,7 @@ void CBufferMemoryBlocks::Free(const SBufferRange& block) {
         if (nextIt != mBlocks.end() && nextIt->free) {
             itFreeing->size += nextIt->size;
             mBlocks.erase(nextIt);
+            itFreeing->free = true;
         }
     }
 }
@@ -81,4 +82,14 @@ bool CBufferMemoryBlocks::Contains(const SBufferRange& block) const {
         });
     return it != mBlocks.cend();
 }
+
+void CBufferMemoryBlocks::Reset() {
+    mBlocks.clear();
+    mBlocks.push_back(BufferBlock{0, mTotalSize, true});
+}
+
+int CBufferMemoryBlocks::GetTotalSize() const {
+    return mTotalSize;
+}
+
 } // namespace Utils

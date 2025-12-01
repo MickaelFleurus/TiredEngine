@@ -3,13 +3,13 @@
 #include "engine/vulkan/DescriptorStorage.h"
 
 namespace Material {
-AbstractMaterial::AbstractMaterial(EMaterialType type,
-                                   Renderer::EVertexLayout vertexLayout,
-                                   Renderer::SPipelineDescriptors& pipeline)
+CAbstractMaterial::CAbstractMaterial(EMaterialType type,
+                                     Renderer::EVertexLayout vertexLayout,
+                                     Renderer::SPipelineDescriptors& pipeline)
     : mType(type), mVertexLayout(vertexLayout), mPipeline(pipeline) {
 }
 
-AbstractMaterial::AbstractMaterial(const AbstractMaterial& other)
+CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
     : mType(other.mType)
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
@@ -17,7 +17,7 @@ AbstractMaterial::AbstractMaterial(const AbstractMaterial& other)
     , mTextureIndex(other.mTextureIndex) {
 }
 
-AbstractMaterial::AbstractMaterial(AbstractMaterial&& other) noexcept
+CAbstractMaterial::CAbstractMaterial(CAbstractMaterial&& other) noexcept
     : mType(other.mType)
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
@@ -27,37 +27,37 @@ AbstractMaterial::AbstractMaterial(AbstractMaterial&& other) noexcept
     other.mTextureIndex = -1;
 }
 
-EMaterialType AbstractMaterial::GetType() const {
+EMaterialType CAbstractMaterial::GetType() const {
     return mType;
 }
 
-VkPipeline AbstractMaterial::GetPipeline() const {
+VkPipeline CAbstractMaterial::GetPipeline() const {
     return mPipeline.pipeline;
 }
 
-void AbstractMaterial::SetColor(const glm::vec4& color) {
+void CAbstractMaterial::SetColor(const glm::vec4& color) {
     mColor = color;
 }
 
-void AbstractMaterial::SetTextureIndex(int textureIndex) {
+void CAbstractMaterial::SetTextureIndex(int textureIndex) {
     mTextureIndex = textureIndex;
 }
 
-const glm::vec4& AbstractMaterial::GetColor() const {
+const glm::vec4& CAbstractMaterial::GetColor() const {
     return mColor;
 }
 
-int AbstractMaterial::GetTextureIndex() const {
+int CAbstractMaterial::GetTextureIndex() const {
     return mTextureIndex;
 }
 
-VkPipelineLayout AbstractMaterial::GetPipelineLayout() const {
+VkPipelineLayout CAbstractMaterial::GetPipelineLayout() const {
     return mPipeline.pipelineLayout;
 }
 
-void AbstractMaterial::Bind(VkDevice device, VkCommandBuffer commandBuffer,
-                            SMaterialBindingInfo& bindingInfo,
-                            VkDescriptorPool descriptorPool) {
+void CAbstractMaterial::Bind(VkDevice device, VkCommandBuffer commandBuffer,
+                             SMaterialBindingInfo& bindingInfo,
+                             VkDescriptorPool descriptorPool) {
 }
 
 } // namespace Material

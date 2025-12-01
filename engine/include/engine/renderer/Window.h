@@ -1,5 +1,8 @@
 #pragma once
+#include "engine/renderer/RendererUtils.h"
+
 #include <optional>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 struct SDL_Window;
@@ -24,21 +27,22 @@ class CBufferHandler;
 } // namespace Vulkan
 
 namespace Material {
-class CMaterialFactory;
+class CMaterialManager;
 } // namespace Material
 
 namespace Renderer {
 
-class CTextRenderer;
+class CRendererManager;
 
 class CWindow {
 public:
     CWindow(System::CSystem& system, SDL_Window* window,
             Vulkan::CVulkanContext& vulkanContext,
             Vulkan::CVulkanRendering& renderer,
-            Vulkan::CBufferHandler& bufferHandler, CTextRenderer& textRenderer,
-            Material::CMaterialFactory& materialFactory,
-            Vulkan::CDescriptorStorage& descriptorStorage);
+            Vulkan::CBufferHandler& bufferHandler,
+            Material::CMaterialManager& materialManager,
+            Vulkan::CDescriptorStorage& descriptorStorage,
+            CRendererManager& rendererManager);
     ~CWindow();
 
     bool BeginRender();
@@ -59,11 +63,12 @@ private:
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering& mRenderer;
     Vulkan::CBufferHandler& mBufferHandler;
-    CTextRenderer& mTextRenderer;
     Vulkan::CDescriptorStorage& mDescriptorStorage;
-    Material::CMaterialFactory& mMaterialFactory;
+    Material::CMaterialManager& mMaterialManager;
+    CRendererManager& mRendererManager;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;
+    std::vector<Renderer::SRenderable> mRenderables;
 
     VkViewport mViewport;
     VkRect2D mScissor;

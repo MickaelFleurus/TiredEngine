@@ -6,10 +6,12 @@ namespace Scene {
 CAbstractSceneHandler::CAbstractSceneHandler(
     Core::CEngineLoop& engineLoop,
     Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler, const System::CSystem& system)
+    Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
+    const System::CSystem& system)
     : mEngineLoop(engineLoop)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
+    , mMeshManager(meshManager)
     , mSystem(system) {
 }
 

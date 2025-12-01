@@ -1,61 +1,73 @@
 #pragma once
 
-#include "engine/renderer/DataTypes.h"
+#include "engine/core/DataTypes.h"
+#include "engine/renderer/IRenderer.h"
 #include "engine/utils/BufferMemoryBlocks.h"
-#include <vulkan/vulkan.h>
 
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <vulkan/vulkan.h>
 
 namespace Component {
 class CTextComponent;
 }
 
 namespace Vulkan {
-class CBufferHandle;
-class CVertexBufferHandleWrapper;
-class CIndexesBufferHandleWrapper;
+template <typename T>
+class CBufferHandleWrapper;
 } // namespace Vulkan
 
 namespace Renderer {
 
-class CTextRenderer {
+class CTextRenderer : public IRenderer {
 public:
-    struct SInstanceInfo {
+    struct SIndirectDrawInfo {
         uint32_t firstInstance;
         uint32_t instanceCount;
         uint32_t firstIndex;
         uint32_t vertexOffset;
     };
     explicit CTextRenderer(
-        Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle,
-        Vulkan::CIndexesBufferHandleWrapper& mIndexesBufferHandle,
-        Vulkan::CBufferHandle& instanceBuffer,
-        Vulkan::CBufferHandle& instanceInfoBuffer);
-
-    void Update();
-    void DrawTexts(VkCommandBuffer commandBuffer);
+        Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& instanceBuffer,
+        Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+            indirectDrawBuffer);
+    void Free() override;
+    void Prepare() override;
+    void Update() override;
+    // void DrawTextsIndirect(VkCommandBuffer commandBuffer);
+    //  void DrawTextsDirect(VkCommandBuffer commandBuffer);
 
     void SetNeedUpdate();
+    std::unordered_map<Material::CAbstractMaterial*,
+                       std::vector<Utils::SBufferIndexRange>>
+    RebuildInstances(const std::vector<SRenderable>& renderables) override;
 
     void RegisterTextComponent(Component::CTextComponent* textComponent);
     void UnregisterTextComponent(Component::CTextComponent* textComponent);
 
 private:
     void GenerateInstanceData();
-    Vulkan::CBufferHandle& mTextInstanceBuffer;
-    Utils::SBufferRange mTextInstanceBufferRange;
+    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& mTextInstanceBuffer;
+    std::optional<Utils::SBufferIndexRange> mTextInstanceBufferRange{
+        std::nullopt};
 
-    Vulkan::CBufferHandle& mTextInstanceInfoBuffer;
-    Utils::SBufferRange mTextInstanceInfoBufferRange;
+    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+        mIndirectDrawBuffer;
+    std::optional<Utils::SBufferIndexRange> mIndirectDrawBufferRange{
+        std::nullopt};
+
+    Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBufferHandle;
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBufferHandle;
+    std::optional<Utils::SBufferIndexRange> mVerticesRange{std::nullopt};
+    std::optional<Utils::SBufferIndexRange> mIndexesRange{std::nullopt};
+
     bool mNeedUpdate = true;
 
-    std::vector<SInstanceInfo> mInstanceInfos;
+    std::vector<SIndirectDrawInfo> mIndirectDrawInfos;
     std::vector<Component::CTextComponent*> mRegisteredTextComponents;
-
-    Utils::SBufferRange mVerticesRange;
-    Utils::SBufferRange mIndexesRange;
 };
 
 } // namespace Renderer

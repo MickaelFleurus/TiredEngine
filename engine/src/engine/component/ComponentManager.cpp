@@ -3,9 +3,11 @@
 // #include "engine/component/CollisionComponent.h"
 #include "engine/component/CameraComponent.h"
 #include "engine/component/InputComponent.h"
+#include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextComponent.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
 
 namespace Component {
@@ -40,11 +42,11 @@ CComponentManager::addMovementComponent(Core::CGameObject& owner,
 // }
 
 CSpriteComponent&
-CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
+CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
     return createComponent<CSpriteComponent>(owner, owner.getId());
 }
 
-CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
+CTextComponent& CComponentManager::AddTextComponent(Core::CGameObject& owner) {
     return createComponent<CTextComponent>(owner, owner.getId(), mTextRenderer);
 }
 
@@ -54,8 +56,12 @@ CComponentManager::addTransformComponent(Core::CGameObject& owner) {
 }
 
 CCameraComponent&
-CComponentManager::addCameraComponent(Core::CGameObject& owner) {
+CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
     return createComponent<CCameraComponent>(owner, owner.getId());
+}
+
+CMeshComponent& CComponentManager::addMeshComponent(Core::CGameObject& owner) {
+    return createComponent<CMeshComponent>(owner, owner.getId());
 }
 
 void CComponentManager::removeComponents(Core::GameObjectId id) {

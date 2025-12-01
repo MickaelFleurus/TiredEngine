@@ -1,9 +1,8 @@
 #include "engine/vulkan/BufferHandle.h"
-#include "engine/vulkan/VulkanContext.h"
 
 #include "engine/renderer/MemoryAllocator.h"
-
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
 
@@ -29,7 +28,7 @@ CBufferHandle::CBufferHandle(CBufferHandle&& other) noexcept
 
 CBufferHandle& CBufferHandle::operator=(CBufferHandle&& other) noexcept {
     if (this != &other) {
-        Free();
+        Destroy();
         mDataSize = other.mDataSize;
         mMemoryBlocks = std::move(other.mMemoryBlocks);
         mBuffer = other.mBuffer;
@@ -42,7 +41,7 @@ CBufferHandle& CBufferHandle::operator=(CBufferHandle&& other) noexcept {
 }
 
 CBufferHandle::~CBufferHandle() {
-    Free();
+    Destroy();
 }
 
 bool CBufferHandle::Init(int dataSize, int bufferSize,
@@ -50,8 +49,9 @@ bool CBufferHandle::Init(int dataSize, int bufferSize,
 
     if (mBuffer != VK_NULL_HANDLE || mMemory != VK_NULL_HANDLE) {
         LOG_WARNING("Reinitializing an already initialized buffer!");
-        Free();
+        Destroy();
     }
+    mUsage = usage;
     mDataSize = dataSize;
     mMemoryBlocks.Init(bufferSize);
 
@@ -72,31 +72,58 @@ bool CBufferHandle::Init(int dataSize, int bufferSize,
     vkBindBufferMemory(mDevice, mBuffer, mMemory, 0);
     return true;
 }
+
 std::optional<Utils::SBufferRange> CBufferHandle::Reserve(int size) {
-    return mMemoryBlocks.Allocate(size);
+    VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
+    VkDeviceSize alignedSize = ((size + atomSize - 1) / atomSize) * atomSize;
+    return mMemoryBlocks.Allocate(static_cast<int>(alignedSize));
+}
+
+bool CBufferHandle::Resize(Utils::SBufferRange& range, int size) {
+    if (!mMemoryBlocks.Contains(range)) {
+        LOG_ERROR("Trying to resize an unreserved range!");
+        return false;
+    }
+    if (mMemoryBlocks.GetTotalSize() < range.offset + range.size + size) {
+        LOG_ERROR("Trying to resize beyond buffer size!");
+        return false;
+    }
+
+    mMemoryBlocks.Free(range);
+    VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
+    VkDeviceSize alignedSize = ((size + atomSize - 1) / atomSize) * atomSize;
+    auto newRangeOpt = mMemoryBlocks.Allocate(static_cast<int>(alignedSize));
+    if (!newRangeOpt.has_value()) {
+        LOG_FATAL("Failed to resize range in place!");
+        return false;
+    }
+    range = newRangeOpt.value();
+    return true;
 }
 
 bool CBufferHandle::Fill(const void* data, int size, int offset,
                          const Utils::SBufferRange& range) {
 
-    if (offset + size > range.size) {
-        LOG_ERROR("Trying to fill more data than reserved!");
-        return false;
-    }
-
     if (!mMemoryBlocks.Contains(range)) {
         LOG_ERROR("Trying to fill data to an unreserved range!");
         return false;
     }
+
     VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
     VkDeviceSize alignedOffset = (offset / atomSize) * atomSize;
     VkDeviceSize end = offset + size;
     VkDeviceSize alignedEnd = ((end + atomSize - 1) / atomSize) * atomSize;
     VkDeviceSize alignedSize = alignedEnd - alignedOffset;
 
+    if (alignedOffset + alignedSize > range.size) {
+        LOG_ERROR("Trying to fill more data than reserved!");
+        return false;
+    }
+
     void* mappedData;
     vkMapMemory(mDevice, mMemory, alignedOffset, alignedSize, 0, &mappedData);
-    memcpy(mappedData, data, size);
+    memcpy(static_cast<uint8_t*>(mappedData) + (offset - alignedOffset), data,
+           size);
     VkMappedMemoryRange mappedRange{};
     mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mappedRange.memory = mMemory;
@@ -107,7 +134,7 @@ bool CBufferHandle::Fill(const void* data, int size, int offset,
     return true;
 }
 
-void CBufferHandle::Free() {
+void CBufferHandle::Destroy() {
     if (mBuffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(mDevice, mBuffer, nullptr);
         mBuffer = VK_NULL_HANDLE;
@@ -134,6 +161,18 @@ void CBufferHandle::FreeRange(const Utils::SBufferRange& range) {
         return;
     }
     mMemoryBlocks.Free(range);
+}
+
+void CBufferHandle::FreeRanges() {
+    mMemoryBlocks.Reset();
+}
+
+VkBufferUsageFlags CBufferHandle::GetUsageFlags() const {
+    return mUsage;
+}
+
+const Utils::CBufferMemoryBlocks& CBufferHandle::GetMemoryBlocks() const {
+    return mMemoryBlocks;
 }
 
 } // namespace Vulkan

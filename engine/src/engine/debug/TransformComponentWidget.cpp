@@ -39,7 +39,7 @@ void CTransformComponentWidget::Render() {
         for (int n = 0; n < static_cast<int>(anchorNames.size()); n++) {
             const bool isSelected = (currentAnchor == n);
             if (ImGui::Selectable(anchorNames[n].data(), isSelected)) {
-                mTransformComponent.setAnchor(static_cast<Utils::EAnchors>(n));
+                mTransformComponent.SetAnchor(static_cast<Utils::EAnchors>(n));
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/utils/Hashing.h"
 #include <glm/vec4.hpp>
 
 namespace Renderer {
@@ -58,21 +59,11 @@ struct SPipelineConfig {
 };
 
 struct SPipelineConfigHash {
-    static void hash_combine(std::size_t& seed, std::size_t value) noexcept {
-        // Same as Boost’s hash_combine
-        seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
 
     std::size_t operator()(const SPipelineConfig& d) const noexcept {
-        std::size_t h = 0;
-        hash_combine(h, std::hash<EPrimitiveType>()(d.primitiveType));
-        hash_combine(h, std::hash<EFillMode>()(d.fillMode));
-        hash_combine(h, std::hash<ECullMode>()(d.cullMode));
-        hash_combine(h, std::hash<EFrontFace>()(d.frontFace));
-        hash_combine(h, std::hash<std::string>()(d.shaderPath));
-        hash_combine(h, std::hash<bool>()(d.enableBlending));
-        hash_combine(h, std::hash<EVertexLayout>()(d.vertexLayout));
-        return h;
+        return Utils::CreateHash(d.primitiveType, d.fillMode, d.cullMode,
+                                 d.frontFace, d.shaderPath, d.enableBlending,
+                                 d.vertexLayout);
     }
 };
 

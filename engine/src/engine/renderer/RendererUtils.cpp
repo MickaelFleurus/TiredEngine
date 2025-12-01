@@ -1,4 +1,6 @@
 #include "engine/renderer/RendererUtils.h"
+
+#include "engine/core/DataTypes.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
@@ -80,17 +82,17 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     color.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     color.offset = sizeof(float) * 16;
 
-    VkVertexInputAttributeDescription texId{};
-    texId.location = 7;
-    texId.binding = 1;
-    texId.format = VK_FORMAT_R16_UINT;
-    texId.offset = sizeof(float) * 20;
-
     VkVertexInputAttributeDescription materialId{};
     materialId.location = 8;
     materialId.binding = 1;
-    materialId.format = VK_FORMAT_R16_UINT;
-    materialId.offset = sizeof(float) * 20 + sizeof(uint16_t);
+    materialId.format = VK_FORMAT_R32_SINT; // int, not uint!
+    materialId.offset = sizeof(float) * 20; // = 80
+
+    VkVertexInputAttributeDescription texId{};
+    texId.location = 9;
+    texId.binding = 1;
+    texId.format = VK_FORMAT_R32_SINT;                   // int, not uint!
+    texId.offset = sizeof(float) * 20 + sizeof(int32_t); // = 84
 
     info.attributes = {vertexPosition,
                        vertexUV,
@@ -110,7 +112,7 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     VkVertexInputBindingDescription instanceBufferDesc{};
     instanceBufferDesc.binding = 1;
     instanceBufferDesc.stride =
-        sizeof(float) * 20 + sizeof(uint16_t) * 2; // 4x vec4 + vec4 + 2 ushorts
+        sizeof(float) * 20 + sizeof(uint32_t) * 2; // 4x vec4 + vec4 + 2 ushorts
     instanceBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     info.bufferDescriptions = {vertexBufferDesc, instanceBufferDesc};
@@ -121,32 +123,91 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
 Renderer::VertexLayoutInfo CreateMeshVertexLayout() {
     Renderer::VertexLayoutInfo info;
 
-    // Buffer 0: Position + Normal + TexCoord (for 3D meshes)
-    VkVertexInputAttributeDescription attr0{};
-    attr0.location = 0;
-    attr0.binding = 0;
-    attr0.format = VK_FORMAT_R32G32B32_SFLOAT;
-    attr0.offset = 0;
+    // Buffer 0: Position + TexCoord (per-vertex)
+    VkVertexInputAttributeDescription vertexPosition{};
+    vertexPosition.binding = 0;
+    vertexPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertexPosition.location = 0;
+    vertexPosition.offset = 0;
 
-    VkVertexInputAttributeDescription attr1{}; // Normal
-    attr1.location = 1;
-    attr1.binding = 0;
-    attr1.format = VK_FORMAT_R32G32B32_SFLOAT;
-    attr1.offset = sizeof(float) * 3;
+    VkVertexInputAttributeDescription vertexUV{};
+    vertexUV.binding = 0;
+    vertexUV.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexUV.location = 1;
+    vertexUV.offset = sizeof(float) * 4;
 
-    VkVertexInputAttributeDescription attr2{}; // TexCoord
-    attr2.location = 2;
-    attr2.binding = 0;
-    attr2.format = VK_FORMAT_R32G32_SFLOAT;
-    attr2.offset = sizeof(float) * 6;
+    VkVertexInputAttributeDescription vertexNormal{};
+    vertexNormal.binding = 0;
+    vertexNormal.format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertexNormal.location = 2;
+    vertexNormal.offset = sizeof(float) * 8;
 
-    info.attributes = {attr0, attr1, attr2};
+    // Buffer 1: Instance data
+    // Model matrix (4 vec4)
+    VkVertexInputAttributeDescription modelMatrixPart0{};
+    modelMatrixPart0.location = 3;
+    modelMatrixPart0.binding = 1;
+    modelMatrixPart0.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart0.offset = 0;
 
-    VkVertexInputBindingDescription bufferDesc{};
-    bufferDesc.binding = 0;
-    bufferDesc.stride = sizeof(float) * 8; // vec3 + vec3 + vec2
-    bufferDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    info.bufferDescriptions = {bufferDesc};
+    VkVertexInputAttributeDescription modelMatrixPart1{};
+    modelMatrixPart1.location = 4;
+    modelMatrixPart1.binding = 1;
+    modelMatrixPart1.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart1.offset = sizeof(float) * 4;
+
+    VkVertexInputAttributeDescription modelMatrixPart2{};
+    modelMatrixPart2.location = 5;
+    modelMatrixPart2.binding = 1;
+    modelMatrixPart2.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart2.offset = sizeof(float) * 8;
+
+    VkVertexInputAttributeDescription modelMatrixPart3{};
+    modelMatrixPart3.location = 6;
+    modelMatrixPart3.binding = 1;
+    modelMatrixPart3.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    modelMatrixPart3.offset = sizeof(float) * 12;
+
+    VkVertexInputAttributeDescription color{};
+    color.location = 7;
+    color.binding = 1;
+    color.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    color.offset = sizeof(float) * 16;
+
+    VkVertexInputAttributeDescription materialId{};
+    materialId.location = 8;
+    materialId.binding = 1;
+    materialId.format = VK_FORMAT_R32_SINT; // int, not uint!
+    materialId.offset = sizeof(float) * 20; // = 80
+
+    VkVertexInputAttributeDescription texId{};
+    texId.location = 9;
+    texId.binding = 1;
+    texId.format = VK_FORMAT_R32_SINT;                   // int, not uint!
+    texId.offset = sizeof(float) * 20 + sizeof(int32_t); // = 84
+
+    info.attributes = {vertexPosition,
+                       vertexUV,
+                       vertexNormal,
+                       modelMatrixPart0,
+                       modelMatrixPart1,
+                       modelMatrixPart2,
+                       modelMatrixPart3,
+                       color,
+                       texId,
+                       materialId};
+
+    VkVertexInputBindingDescription vertexBufferDesc{};
+    vertexBufferDesc.binding = 0;
+    vertexBufferDesc.stride = sizeof(Core::SVertex);
+    vertexBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputBindingDescription instanceBufferDesc{};
+    instanceBufferDesc.binding = 1;
+    instanceBufferDesc.stride = sizeof(Core::SInstanceData);
+    instanceBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    info.bufferDescriptions = {vertexBufferDesc, instanceBufferDesc};
 
     return info;
 }

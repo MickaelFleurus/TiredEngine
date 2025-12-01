@@ -1,22 +1,21 @@
 #pragma once
 
+#include "engine/component/ComponentManager.h"
 #include "engine/core/Inputs.h"
+#include "engine/core/MeshFactory.h"
+#include "engine/core/MeshManager.h"
 #include "engine/debug/OverlordManager.h"
+#include "engine/font/FontHandler.h"
 #include "engine/input/InputHandler.h"
-
+#include "engine/material/MaterialFactory.h"
+#include "engine/material/MaterialManager.h"
 #include "engine/renderer/MemoryAllocator.h"
+#include "engine/renderer/RendererManager.h"
+#include "engine/renderer/TextureManager.h"
 #include "engine/renderer/Window.h"
+#include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
-
-#include "engine/component/ComponentManager.h"
-#include "engine/material/MaterialFactory.h"
-
-#include "engine/font/FontHandler.h"
-#include "engine/utils/FileHandler.h"
-
-#include "engine/renderer/TextRenderer.h"
-#include "engine/renderer/TextureManager.h"
 #include "engine/vulkan/VulkanRendering.h"
 
 #include <chrono>
@@ -57,8 +56,12 @@ protected:
     Vulkan::CDescriptorStorage mDescriptorStorage;
     Renderer::CMemoryAllocator mMemoryAllocator;
     Vulkan::CBufferHandler mBufferHandler;
-    Renderer::CTextRenderer mTextRenderer;
-    Material::CMaterialFactory mMaterialFactory;
+
+    Material::CMaterialManager mMaterialManager;
+    Renderer::CRendererManager mRendererManager;
+
+    Core::CMeshManager mMeshManager;
+
     Renderer::CWindow mWindow;
     Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;

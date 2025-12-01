@@ -13,6 +13,6 @@ public:
     }
     ~IDisplayComponent() override = default;
 
-    virtual glm::vec2 getSize() = 0;
+    virtual glm::vec2 GetSize() = 0;
 };
 } // namespace Component

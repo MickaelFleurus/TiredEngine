@@ -5,7 +5,9 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-namespace Renderer {
+namespace Core {
+
+using IndexType = uint32_t;
 
 struct SVertex {
     glm::vec3 position;
@@ -24,6 +26,14 @@ struct SInstanceData {
     float padding[2];
 };
 
+struct SIndirectDrawCommand {
+    uint32_t indexCount;
+    uint32_t instanceCount;
+    uint32_t firstIndex;
+    int32_t vertexOffset;
+    uint32_t firstInstance;
+};
+
 struct STextInstanceData {
     glm::mat4 modelMatrix;
     glm::vec4 color;
@@ -38,4 +48,4 @@ struct SPushConstantData {
     glm::mat4 projectionMatrix;
 };
 
-} // namespace Renderer
+} // namespace Core

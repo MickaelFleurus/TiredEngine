@@ -1,4 +1,5 @@
 #include "engine/vulkan/PipelineFactory.h"
+#include "engine/core/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/utils/Logger.h"
@@ -96,8 +97,8 @@ public:
     }
 
     Renderer::SPipelineDescriptors
-    CreateGraphicsPipeline(Renderer::SPipelineConfig config,
-                           CDescriptorStorage& layoutStorage) {
+    GetOrCreateGraphicsPipeline(Renderer::SPipelineConfig config,
+                                CDescriptorStorage& layoutStorage) {
         if (!mPipelineCache.contains(config)) {
             auto vertexShader = mShaderFactory.CreateVertexShader(
                 config.shaderName, config.shaderPath);
@@ -204,7 +205,7 @@ public:
             pushConstantRange.stageFlags =
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             pushConstantRange.offset = 0;
-            pushConstantRange.size = sizeof(Renderer::SPushConstantData);
+            pushConstantRange.size = sizeof(Core::SPushConstantData);
 
             pipelineLayoutInfo.pushConstantRangeCount = 1;
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
@@ -277,10 +278,10 @@ CPipelineFactory::CPipelineFactory(const Vulkan::CVulkanContext& contextGetter)
 
 CPipelineFactory::~CPipelineFactory() = default;
 
-Renderer::SPipelineDescriptors CPipelineFactory::CreateGraphicsPipeline(
+Renderer::SPipelineDescriptors CPipelineFactory::GetOrCreateGraphicsPipeline(
     const Renderer::SPipelineConfig& config,
     CDescriptorStorage& layoutStorage) {
-    return mImpl->CreateGraphicsPipeline(config, layoutStorage);
+    return mImpl->GetOrCreateGraphicsPipeline(config, layoutStorage);
 }
 
 } // namespace Vulkan

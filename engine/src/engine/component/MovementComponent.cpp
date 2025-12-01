@@ -56,7 +56,7 @@ void CMovementComponent::addDirection(glm::vec3 direction) {
 }
 
 void CMovementComponent::applyPosition(const glm::vec3& position) {
-    // mOwner.setLocalPosition(position);
+    // mOwner.SetLocalPosition(position);
     UpdatePosition(mOwner, mComponentManager);
 }
 

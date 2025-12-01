@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/utils/Hashing.h"
 #include "engine/utils/Token.h"
 #include <algorithm>
 #include <unordered_set>
@@ -29,9 +30,7 @@ private:
 struct SStoredObjectHasher {
     template <typename T>
     std::size_t operator()(const ::CStoredObject<T>& obj) const {
-        // Hash the address of the stored item
-        return std::hash<const void*>()(
-            static_cast<const void*>(&obj.mStoredItem));
+        return Utils::CreateHash(&obj.mStoredItem);
     }
 };
 

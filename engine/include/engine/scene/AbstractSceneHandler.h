@@ -12,9 +12,14 @@ namespace Component {
 class CComponentManager;
 }
 
+namespace Renderer {
+class CMeshRenderer;
+}
+
 namespace Core {
 class CWindowData;
 class CEngineLoop;
+class CMeshManager;
 } // namespace Core
 
 namespace Font {
@@ -28,7 +33,8 @@ public:
     explicit CAbstractSceneHandler(
         Core::CEngineLoop& engineLoop,
         Component::CComponentManager& componentManager,
-        Font::CFontHandler& fontHandler, const System::CSystem& system);
+        Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
+        const System::CSystem& system);
 
     CAbstractScene* GetCurrentScene() const override;
 
@@ -39,7 +45,7 @@ protected:
                       "GameSceneType must derive from CAbstractScene");
 
         auto scene = std::make_unique<GameSceneType>(
-            mComponentManager, mFontHandler, mSystem,
+            mComponentManager, mFontHandler, mMeshManager, mSystem,
             std::forward<Args>(args)...);
         SetCurrentScene(std::move(scene));
     }
@@ -48,6 +54,7 @@ protected:
     Core::CEngineLoop& mEngineLoop;
     Component::CComponentManager& mComponentManager;
     Font::CFontHandler& mFontHandler;
+    Core::CMeshManager& mMeshManager;
     const System::CSystem& mSystem;
 };
 } // namespace Scene

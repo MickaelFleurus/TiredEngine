@@ -6,9 +6,10 @@ namespace Core {
 CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                      Vulkan::CVulkanContext& vulkanContext)
     : CEngineLoop(system, window, vulkanContext)
-    , mSceneHandler(*this, mComponentManager, mFontHandler, system)
+    , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
+                    system)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
-                   mFontHandler) {
+                   mFontHandler, mBufferHandler, mTextureManager) {
 
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();

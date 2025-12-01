@@ -1,42 +1,41 @@
 #include "engine/renderer/Window.h"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
-
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
+#include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/Camera.h"
+#include "engine/core/DataTypes.h"
 #include "engine/core/GameObject.h"
+#include "engine/core/Mesh.h"
 #include "engine/debug/Overlord.h"
 #include "engine/font/Police.h"
 #include "engine/material/AbstractMaterial.h"
-#include "engine/material/MaterialFactory.h"
+#include "engine/material/MaterialManager.h"
+#include "engine/renderer/MeshRenderer.h"
+#include "engine/renderer/RendererManager.h"
 #include "engine/renderer/RendererUtils.h"
-
 #include "engine/renderer/TextRenderer.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/BufferHandleWrapper.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
 
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_vulkan.h>
 #include <functional>
 #include <vector>
+#include <vulkan/vulkan.h>
 
 namespace {
-
-struct SPushConstantData {
-    glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
-};
 
 VkViewport GetViewport(SDL_Window* window,
                        const System::SDisplayParameter& displayParams) {
@@ -73,15 +72,28 @@ void ExtractRenderable(Core::CGameObject& root,
         *componentManager.getComponent<Component::CTransformComponent>(
             root.getId());
 
-    if (auto* spriteComponent =
-            componentManager.getComponent<Component::CSpriteComponent>(
+    // if (auto* spriteComponent =
+    //         componentManager.getComponent<Component::CSpriteComponent>(
+    //             root.getId())) {
+    //     transformComponent.UpdateMatrix(transform,
+    //     spriteComponent->GetSize()); Renderer::SRenderable renderable{};
+    //     renderable.transform = transform;
+    //     renderable.layer = Renderer::ERenderLayer::World;
+    //     renderable.depth = transform[3][2]; // Z position
+    //     renderable.GenerateSortKey();
+
+    //     renderables.push_back(renderable);
+    // } else
+    if (auto* meshComponent =
+            componentManager.getComponent<Component::CMeshComponent>(
                 root.getId())) {
-        transformComponent.UpdateMatrix(transform, spriteComponent->getSize());
+        transformComponent.UpdateMatrix(transform);
         Renderer::SRenderable renderable{};
         renderable.transform = transform;
-        renderable.layer = Renderer::ERenderLayer::World;
-        renderable.depth = transform[3][2]; // Z position
-        renderable.GenerateSortKey();
+        renderable.material = meshComponent->GetMesh()->GetMaterial();
+        renderable.meshHash = meshComponent->GetMesh()->GetHash();
+        renderable.color = meshComponent->GetColor();
+        renderable.textureIndex = meshComponent->GetTextureIndex();
 
         renderables.push_back(renderable);
     } else {
@@ -93,28 +105,70 @@ void ExtractRenderable(Core::CGameObject& root,
     }
 }
 
-void RenderPass(const std::vector<Renderer::SRenderable>& renderables,
-                Core::CCamera& camera, VkCommandBuffer commandBuffer) {
+// void RenderPass(const std::vector<Renderer::SRenderable>& renderables,
+//                 Core::CCamera& camera, VkCommandBuffer commandBuffer) {
 
-    SPushConstantData pushConstants{};
-    pushConstants.viewMatrix = camera.GetViewMatrix();
-    pushConstants.projectionMatrix = camera.GetProjectionMatrix();
-    Material::AbstractMaterial* currentMaterial = nullptr;
-    for (const auto& renderable : renderables) {
-        if (!renderable.material) {
-            continue;
-        }
+//     Core::SPushConstantData pushConstants{};
+//     pushConstants.viewMatrix = camera.GetViewMatrix();
+//     pushConstants.projectionMatrix = camera.GetProjectionMatrix();
+//     Material::CAbstractMaterial* currentMaterial = nullptr;
+//     for (const auto& renderable : renderables) {
+//         if (!renderable.material) {
+//             continue;
+//         }
 
-        if (renderable.material != currentMaterial) {
-            currentMaterial = renderable.material;
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              currentMaterial->GetPipeline());
-            vkCmdPushConstants(
-                commandBuffer, currentMaterial->GetPipelineLayout(),
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(SPushConstantData), &pushConstants);
-        }
-    }
+//         if (renderable.material != currentMaterial) {
+//             currentMaterial = renderable.material;
+//             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+//                               currentMaterial->GetPipeline());
+//             vkCmdPushConstants(
+//                 commandBuffer, currentMaterial->GetPipelineLayout(),
+//                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+//                 sizeof(Core::SPushConstantData), &pushConstants);
+//         }
+//     }
+// }
+
+void BindBuffers(VkCommandBuffer commandBuffer, VkBuffer* vertexBuffers,
+                 VkDeviceSize* offsets, uint32_t bufferCount,
+                 VkBuffer indexBuffer) {
+    vkCmdBindVertexBuffers(commandBuffer, 0, bufferCount, vertexBuffers,
+                           offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+}
+
+void BindMeshBuffers(VkCommandBuffer commandBuffer,
+                     Vulkan::CBufferHandler& bufferHandler) {
+
+    VkDeviceSize offsets[] = {0, 0};
+    VkBuffer vertexBuffers[] = {
+        bufferHandler.GetWrapper<Core::SVertex>().GetBuffer()->GetBuffer(),
+        bufferHandler.GetWrapper<Core::SInstanceData>()
+            .GetBuffer()
+            ->GetBuffer()};
+
+    BindBuffers(
+        commandBuffer, vertexBuffers, offsets, 2,
+        bufferHandler.GetWrapper<Core::IndexType>().GetBuffer()->GetBuffer());
+}
+
+void BindUIBuffers(VkCommandBuffer commandBuffer,
+                   Vulkan::CBufferHandler& bufferHandler) {
+}
+
+void BindTextsBuffers(VkCommandBuffer commandBuffer,
+                      Vulkan::CBufferHandler& bufferHandler) {
+
+    VkDeviceSize offsets[] = {0, 0};
+    VkBuffer vertexBuffers[] = {
+        bufferHandler.GetWrapper<Core::SVertex>().GetBuffer()->GetBuffer(),
+        bufferHandler.GetWrapper<Core::STextInstanceData>()
+            .GetBuffer()
+            ->GetBuffer()};
+
+    BindBuffers(
+        commandBuffer, vertexBuffers, offsets, 2,
+        bufferHandler.GetWrapper<Core::IndexType>().GetBuffer()->GetBuffer());
 }
 
 } // namespace
@@ -125,16 +179,16 @@ CWindow::CWindow(System::CSystem& system, SDL_Window* window,
                  Vulkan::CVulkanContext& vulkanContext,
                  Vulkan::CVulkanRendering& renderer,
                  Vulkan::CBufferHandler& bufferHandler,
-                 CTextRenderer& textRenderer,
-                 Material::CMaterialFactory& materialFactory,
-                 Vulkan::CDescriptorStorage& descriptorStorage)
+                 Material::CMaterialManager& materialManager,
+                 Vulkan::CDescriptorStorage& descriptorStorage,
+                 CRendererManager& rendererManager)
     : mSystem(system)
     , mVulkanContext(vulkanContext)
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
-    , mTextRenderer(textRenderer)
-    , mMaterialFactory(materialFactory)
+    , mMaterialManager(materialManager)
     , mDescriptorStorage(descriptorStorage)
+    , mRendererManager(rendererManager)
     , mSDLWindow(window)
     , mViewport(GetViewport(window, mSystem.GetDisplayParameters()))
     , mScissor(GetScissor(mViewport))
@@ -157,39 +211,52 @@ void CWindow::Render(Scene::CAbstractScene& scene,
     }
 
     std::sort(renderables.begin(), renderables.end());
-
-    std::vector<SRenderable> worldRenderables;
-    std::vector<SRenderable> uiRenderables;
-
-    for (const auto& r : renderables) {
-        if (r.layer == ERenderLayer::UI || r.layer == ERenderLayer::Debug) {
-            uiRenderables.push_back(r);
-        } else {
-            worldRenderables.push_back(r);
-        }
+    if (renderables != mRenderables) {
+        mRendererManager.RebuildInstances(renderables);
+        mRenderables = std::move(renderables);
     }
 
     VkCommandBuffer commandBuffer =
         mVulkanContext.GetCommandBuffer(mImageIndex.value());
-    mBufferHandler.BindBuffers(commandBuffer);
-    SPushConstantData pushConstantData{};
-    pushConstantData.viewMatrix = camera.GetViewMatrix();
-    pushConstantData.projectionMatrix = camera.GetProjectionMatrix();
+    mRendererManager.Render(commandBuffer,
+                            mDescriptorStorage.GetDescriptorSet(),
+                            scene.GetActiveCamera());
 
-    auto textMaterial = mMaterialFactory.GetOrCreateTextMaterial();
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      textMaterial->GetPipeline());
-    VkPipelineLayout pipelineLayout = textMaterial->GetPipelineLayout();
-    VkDescriptorSet descriptorSet = mDescriptorStorage.GetDescriptorSet();
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-    vkCmdPushConstants(
-        commandBuffer, textMaterial->GetPipelineLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-        sizeof(Renderer::SPushConstantData), &pushConstantData);
-    mTextRenderer.Update();
-    mBufferHandler.BindBuffers(commandBuffer);
-    mTextRenderer.DrawTexts(commandBuffer);
+    // // Render Meshes
+    // BindMeshBuffers(commandBuffer, mBufferHandler);
+    // mMeshRenderer.Render(commandBuffer, renderables, camera);
+
+    // // Render UI
+    // BindUIBuffers(commandBuffer, mBufferHandler);
+    // // Render Texts
+    // BindTextsBuffers(commandBuffer, mBufferHandler);
+
+    // auto textMaterial =
+    //     mMaterialManager.GetorCreateMaterial(Material::EMaterialType::Text);
+    // vkCmdBindPipeline(commandBuffer,
+    // VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                   textMaterial->GetPipeline());
+    // VkPipelineLayout pipelineLayout =
+    // textMaterial->GetPipelineLayout(); VkDescriptorSet
+    // descriptorSet = mDescriptorStorage.GetDescriptorSet();
+    // vkCmdBindDescriptorSets(commandBuffer,
+    // VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                         pipelineLayout, 0, 1,
+    //                         &descriptorSet, 0, nullptr);
+
+    // Core::SPushConstantData pushConstantData{};
+    // pushConstantData.viewMatrix = camera.GetViewMatrix();
+    // pushConstantData.projectionMatrix =
+    // camera.GetProjectionMatrix();
+    // vkCmdPushConstants(commandBuffer,
+    // textMaterial->GetPipelineLayout(),
+    //                    VK_SHADER_STAGE_VERTEX_BIT |
+    //                        VK_SHADER_STAGE_FRAGMENT_BIT,
+    //                    0, sizeof(Core::SPushConstantData),
+    //                    &pushConstantData);
+
+    // mTextRenderer.Update();
+    // mTextRenderer.DrawTextsDirect(commandBuffer);
 }
 
 bool CWindow::BeginRender() {

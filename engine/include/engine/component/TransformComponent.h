@@ -24,7 +24,7 @@ public:
     void setScale(const glm::vec3& scale);
     const glm::vec3& getScale() const;
 
-    void setAnchor(Utils::EAnchors anchor);
+    void SetAnchor(Utils::EAnchors anchor);
     Utils::EAnchors getAnchor() const;
 
     void UpdateMatrix(glm::mat4& parentTransform,

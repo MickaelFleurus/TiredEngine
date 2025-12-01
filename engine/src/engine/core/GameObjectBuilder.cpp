@@ -1,11 +1,15 @@
 #include "engine/core/GameObjectBuilder.h"
 
+#include "engine/component/CameraComponent.h"
 #include "engine/component/CollisionComponent.h"
 #include "engine/component/ComponentManager.h"
 #include "engine/component/InputComponent.h"
+#include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
-
+#include "engine/component/TextComponent.h"
+#include "engine/component/TransformComponent.h"
+#include "engine/core/MeshManager.h"
 #include "engine/font/FontHandler.h"
 
 namespace Core {
@@ -14,18 +18,22 @@ GameObjectId CGameObjectBuilder::mNextId = 0;
 
 CGameObjectBuilder::CGameObjectBuilder(
     Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler)
-    : mComponentManager(componentManager), mFontHandler(fontHandler) {
+    Font::CFontHandler& fontHandler, CMeshManager& meshManager)
+    : mComponentManager(componentManager)
+    , mFontHandler(fontHandler)
+    , mMeshManager(meshManager) {
 }
 
+// Pass meshRenderer to builder
 CGameObjectBuilder::CBuilder
 CGameObjectBuilder::CreateBuilder(const std::string& name,
                                   CGameObject& parent) {
-    return CBuilder(name, mComponentManager, mFontHandler, parent);
+    return CBuilder(name, mComponentManager, mFontHandler, mMeshManager,
+                    parent);
 }
 
 CGameObject*
-CGameObjectBuilder::createRoot(Component::CComponentManager& componentManager) {
+CGameObjectBuilder::CreateRoot(Component::CComponentManager& componentManager) {
     return new CGameObject("Root", componentManager, nullptr, mNextId++);
 }
 
@@ -33,18 +41,20 @@ CGameObjectBuilder::createRoot(Component::CComponentManager& componentManager) {
 
 CGameObjectBuilder::CBuilder::CBuilder(
     const std::string& name, Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler, CGameObject& parent)
+    Font::CFontHandler& fontHandler, CMeshManager& meshFactory,
+    CGameObject& parent)
     : mComponentManager(componentManager)
     , mFontHandler(fontHandler)
+    , mMeshManager(meshFactory)
     , mParent(parent)
     , mGameObject(std::unique_ptr<CGameObject>(new CGameObject(
           name, componentManager, &parent, CGameObjectBuilder::mNextId++))) {
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::addText(const std::string& text,
+CGameObjectBuilder::CBuilder::AddText(const std::string& text,
                                       unsigned int size, std::string fontName) {
-    auto& component{mComponentManager.addTextComponent(*mGameObject)};
+    auto& component{mComponentManager.AddTextComponent(*mGameObject)};
 
     component.setText(text);
     component.SetFontSize(size);
@@ -52,21 +62,21 @@ CGameObjectBuilder::CBuilder::addText(const std::string& text,
     return *this;
 }
 
-CGameObjectBuilder::CBuilder& CGameObjectBuilder::CBuilder::addSprite() {
-    auto& component{mComponentManager.addSpriteComponent(*mGameObject)};
-    // component.addSprite(type);
+CGameObjectBuilder::CBuilder& CGameObjectBuilder::CBuilder::AddSprite() {
+    auto& component{mComponentManager.AddSpriteComponent(*mGameObject)};
+    // component.AddSprite(type);
     return *this;
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::addCameraComponent() {
-    auto& component{mComponentManager.addCameraComponent(*mGameObject)};
-    // component.addSprite(type);
+CGameObjectBuilder::CBuilder::AddCameraComponent() {
+    auto& component{mComponentManager.AddCameraComponent(*mGameObject)};
+    // component.AddSprite(type);
     return *this;
 }
 
 // CGameObjectBuilder::CBuilder&
-// CGameObjectBuilder::CBuilder::addAABBCollisionData(float width, float height,
+// CGameObjectBuilder::CBuilder::AddAABBCollisionData(float width, float height,
 //                                                    bool isStatic,
 //                                                    bool isTrigger) {
 
@@ -77,7 +87,7 @@ CGameObjectBuilder::CBuilder::addCameraComponent() {
 // }
 
 // CGameObjectBuilder::CBuilder&
-// CGameObjectBuilder::CBuilder::addCircleCollisionData(float radius,
+// CGameObjectBuilder::CBuilder::AddCircleCollisionData(float radius,
 //                                                      bool isStatic,
 //                                                      bool isTrigger) {
 //     mComponentManager.addCollisionComponent(
@@ -99,13 +109,13 @@ CGameObjectBuilder::CBuilder::addCameraComponent() {
 // }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::addMovementData(float acceleration) {
+CGameObjectBuilder::CBuilder::AddMovementData(float acceleration) {
     mComponentManager.addMovementComponent(*mGameObject, acceleration);
     return *this;
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::addInputInfo(CInputCallbacks callbacks) {
+CGameObjectBuilder::CBuilder::AddInputInfo(CInputCallbacks callbacks) {
     mComponentManager.addInputComponent(*mGameObject, callbacks.onSpacePressed,
                                         callbacks.onLeftPressed,
                                         callbacks.onRightPressed);
@@ -113,7 +123,7 @@ CGameObjectBuilder::CBuilder::addInputInfo(CInputCallbacks callbacks) {
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::setLocalPosition(const glm::vec3& position) {
+CGameObjectBuilder::CBuilder::SetLocalPosition(const glm::vec3& position) {
     mComponentManager
         .getComponent<Component::CTransformComponent>(mGameObject->getId())
         ->setPosition(position);
@@ -121,14 +131,31 @@ CGameObjectBuilder::CBuilder::setLocalPosition(const glm::vec3& position) {
 }
 
 CGameObjectBuilder::CBuilder&
-CGameObjectBuilder::CBuilder::setAnchor(Utils::EAnchors anchor) {
+CGameObjectBuilder::CBuilder::SetAnchor(Utils::EAnchors anchor) {
     mComponentManager
         .getComponent<Component::CTransformComponent>(mGameObject->getId())
-        ->setAnchor(anchor);
+        ->SetAnchor(anchor);
     return *this;
 }
 
-CGameObject* CGameObjectBuilder::CBuilder::build() {
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::Add3DCube(float size) {
+    auto* cube = mMeshManager.CreateTriangle();
+    auto& meshComponent = mComponentManager.addMeshComponent(*mGameObject);
+    meshComponent.SetMesh(cube);
+
+    return *this;
+}
+
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::Add3DQuad(float width, float height,
+                                        float depth) {
+    // Create mesh
+    // Add mesh component
+    return *this;
+}
+
+CGameObject* CGameObjectBuilder::CBuilder::Build() {
     auto* rawPtr = mGameObject.get();
     mParent.addChild(std::move(mGameObject));
 

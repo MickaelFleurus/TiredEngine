@@ -5,10 +5,8 @@
 #include <typeindex>
 #include <unordered_map>
 
-#include "engine/component/CameraComponent.h"
 #include "engine/component/IComponent.h"
-#include "engine/component/TextComponent.h"
-#include "engine/component/TransformComponent.h"
+
 #include "engine/core/GameObjectId.h"
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
@@ -30,8 +28,10 @@ namespace Component {
 class CSpriteComponent;
 class CInputComponent;
 class CCameraComponent;
-// class CCollisionComponent;
+class CTextComponent;
 class CMovementComponent;
+class CMeshComponent;
+class CTransformComponent;
 
 class CComponentManager {
 public:
@@ -91,8 +91,8 @@ public:
     CMovementComponent& addMovementComponent(Core::CGameObject& owner,
                                              float acceleration);
 
-    CTextComponent& addTextComponent(Core::CGameObject& owner);
-    CCameraComponent& addCameraComponent(Core::CGameObject& owner);
+    CTextComponent& AddTextComponent(Core::CGameObject& owner);
+    CCameraComponent& AddCameraComponent(Core::CGameObject& owner);
 
     // CCollisionComponent& addCollisionComponent(Core::CGameObject& owner, bool
     // isStatic,
@@ -100,9 +100,10 @@ public:
     //                                            shape, bool isTrigger =
     //                                            false);
 
-    CSpriteComponent& addSpriteComponent(Core::CGameObject& owner);
+    CSpriteComponent& AddSpriteComponent(Core::CGameObject& owner);
 
     CTransformComponent& addTransformComponent(Core::CGameObject& owner);
+    CMeshComponent& addMeshComponent(Core::CGameObject& owner);
 
     void update(float deltaTime);
 

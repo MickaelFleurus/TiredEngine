@@ -1,8 +1,8 @@
 #include "engine/utils/Logger.h"
+
 #include <array>
 #include <ctime>
 #include <filesystem>
-
 #include <vulkan/vulkan.h>
 
 namespace {
@@ -127,6 +127,9 @@ void Logger::FlushMessage(const LogMessage& msg) {
     if (s_File.is_open()) {
         s_File << line << '\n';
         s_File.flush();
+    }
+    if (msg.level == LogLevel::Fatal) {
+        throw std::runtime_error(msg.text);
     }
 }
 } // namespace Utils

@@ -1,5 +1,6 @@
 #include "engine/debug/EntityWidget.h"
 
+#include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
 #include "engine/component/TextComponent.h"
 #include "engine/component/TransformComponent.h"

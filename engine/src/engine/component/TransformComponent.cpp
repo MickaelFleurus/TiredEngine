@@ -38,7 +38,7 @@ const glm::vec3& CTransformComponent::getScale() const {
     return mScale;
 }
 
-void CTransformComponent::setAnchor(Utils::EAnchors anchor) {
+void CTransformComponent::SetAnchor(Utils::EAnchors anchor) {
     mAnchor = anchor;
     mIsDirty = true;
 }

@@ -1,33 +1,28 @@
 #include "engine/vulkan/BufferHandler.h"
-#include "engine/renderer/MemoryAllocator.h"
 
+#include "engine/core/DataTypes.h"
+#include "engine/renderer/MemoryAllocator.h"
+#include "engine/utils/Logger.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/VulkanContext.h"
 
-#include "engine/vulkan/IndexesBufferHandleWrapper.h"
-#include "engine/vulkan/VertexBufferHandleWrapper.h"
-
-#include "engine/renderer/DataTypes.h"
-
-#include "engine/utils/Logger.h"
-
 namespace {
 constexpr int kVerticesBufferIndex = 0;
-constexpr auto kVertexStructSize = sizeof(Renderer::SVertex);
+constexpr auto kVertexStructSize = sizeof(Core::SVertex);
 constexpr int kVertexBufferDefaultSize =
     Vulkan::kVertexAmountPerBuffer * kVertexStructSize;
 constexpr auto kVertexBufferUsage =
     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kIndicesBufferIndex = 1;
-constexpr auto kIndexStructSize = sizeof(uint32_t);
+constexpr auto kIndexStructSize = sizeof(Core::IndexType);
 constexpr int kIndexBufferDefaultSize =
     Vulkan::kIndexAmountPerBuffer * kIndexStructSize;
 constexpr auto kIndexBufferUsage =
     VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kInstanceBufferIndex = 2;
-constexpr auto kInstanceStructSize = sizeof(Renderer::SInstanceData);
+constexpr auto kInstanceStructSize = sizeof(Core::SInstanceData);
 constexpr int kInstanceBufferDefaultSize =
     Vulkan::kInstanceAmountPerBuffer * kInstanceStructSize;
 constexpr auto kInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
@@ -35,27 +30,19 @@ constexpr auto kInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                       VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
 constexpr int kInstanceInfoBufferIndex = 3;
-constexpr auto kInstanceInfoStructSize = sizeof(VkDrawIndexedIndirectCommand);
+constexpr auto kInstanceInfoStructSize = sizeof(Core::SIndirectDrawCommand);
 constexpr int kInstanceInfoBufferDefaultSize =
     Vulkan::kInstanceInfoAmountPerBuffer * kInstanceInfoStructSize;
 constexpr auto kInstanceInfoBufferUsage =
     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kTextInstanceBufferIndex = 4;
-constexpr auto kTextInstanceStructSize = sizeof(Renderer::STextInstanceData);
+constexpr auto kTextInstanceStructSize = sizeof(Core::STextInstanceData);
 constexpr int kTextInstanceBufferDefaultSize =
     Vulkan::kTextInstanceAmountPerBuffer * kTextInstanceStructSize;
 constexpr auto kTextInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                           VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-
-constexpr int kTextInstanceInfoBufferIndex = 5;
-constexpr auto kTextInstanceInfoStructSize =
-    sizeof(VkDrawIndexedIndirectCommand);
-constexpr int kTextInstanceInfoBufferDefaultSize =
-    Vulkan::kTextInstanceInfoAmountPerBuffer * kTextInstanceInfoStructSize;
-constexpr auto kTextInstanceInfoBufferUsage =
-    VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 } // namespace
 
@@ -64,25 +51,53 @@ namespace Vulkan {
 CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
                                Renderer::CMemoryAllocator& memoryAllocator)
     : mVulkanContext(vulkanContext), mMemoryAllocator(memoryAllocator) {
-    mBuffers.reserve(3);
-    mVerticesBufferHandle =
-        std::make_unique<CVertexBufferHandleWrapper>(CreateBuffer(
+    mBuffers.reserve(5);
+
+    mBufferWrappers[typeid(Core::SVertex)] =
+        std::make_unique<CBufferHandleWrapper<Core::SVertex>>(CreateBuffer(
             kVertexStructSize, kVertexBufferDefaultSize, kVertexBufferUsage));
-    mIndexesBufferHandle =
-        std::make_unique<CIndexesBufferHandleWrapper>(CreateBuffer(
+
+    mBufferWrappers[typeid(Core::IndexType)] =
+        std::make_unique<CBufferHandleWrapper<Core::IndexType>>(CreateBuffer(
             kIndexStructSize, kIndexBufferDefaultSize, kIndexBufferUsage));
-    CreateBuffer(kInstanceStructSize, kInstanceBufferDefaultSize,
-                 kInstanceBufferUsage);
-    CreateBuffer(kInstanceInfoStructSize, kInstanceInfoBufferDefaultSize,
-                 kInstanceInfoBufferUsage);
-    CreateBuffer(kTextInstanceStructSize, kTextInstanceBufferDefaultSize,
-                 kTextInstanceBufferUsage);
-    CreateBuffer(kTextInstanceInfoStructSize,
-                 kTextInstanceInfoBufferDefaultSize,
-                 kTextInstanceInfoBufferUsage);
+
+    mBufferWrappers[typeid(Core::SInstanceData)] =
+        std::make_unique<CBufferHandleWrapper<Core::SInstanceData>>(
+            CreateBuffer(kInstanceStructSize, kInstanceBufferDefaultSize,
+                         kInstanceBufferUsage));
+
+    mBufferWrappers[typeid(Core::SIndirectDrawCommand)] =
+        std::make_unique<CBufferHandleWrapper<Core::SIndirectDrawCommand>>(
+            CreateBuffer(kInstanceInfoStructSize,
+                         kInstanceInfoBufferDefaultSize,
+                         kInstanceInfoBufferUsage));
+
+    mBufferWrappers[typeid(Core::STextInstanceData)] =
+        std::make_unique<CBufferHandleWrapper<Core::STextInstanceData>>(
+            CreateBuffer(kTextInstanceStructSize,
+                         kTextInstanceBufferDefaultSize,
+                         kTextInstanceBufferUsage));
 }
 
 CBufferHandler::~CBufferHandler() = default;
+
+void CBufferHandler::Free() {
+    for (auto& buffer : mBuffers) {
+        FreeBuffer(buffer.get());
+    }
+}
+
+void CBufferHandler::FreeBuffer(CBufferHandle* bufferHandle) {
+    bufferHandle->FreeRanges();
+}
+
+void CBufferHandler::Upload() {
+    for (auto& wrapperPair : mBufferWrappers) {
+        if (!wrapperPair.second->Upload()) {
+            LOG_ERROR("Failed to upload buffer data!");
+        }
+    }
+}
 
 CBufferHandle* CBufferHandler::CreateBuffer(int dataSize, int size,
                                             VkBufferUsageFlags usage) {
@@ -95,53 +110,6 @@ CBufferHandle* CBufferHandler::CreateBuffer(int dataSize, int size,
 
     mBuffers.push_back(std::move(bufferHandle));
     return mBuffers.back().get();
-}
-
-CVertexBufferHandleWrapper& CBufferHandler::GetVerticesBufferHandle() {
-    return *mVerticesBufferHandle;
-}
-
-CIndexesBufferHandleWrapper& CBufferHandler::GetIndexesBufferHandle() {
-    return *mIndexesBufferHandle;
-}
-
-CBufferHandle& CBufferHandler::GetInstanceBufferHandle() {
-    return *mBuffers.at(kInstanceBufferIndex);
-}
-
-CBufferHandle& CBufferHandler::GetInstancesInfoBufferHandle() {
-    return *mBuffers.at(kInstanceBufferIndex);
-}
-
-CBufferHandle& CBufferHandler::GetTextInstanceBufferHandle() {
-    return *mBuffers.at(kTextInstanceBufferIndex);
-}
-
-CBufferHandle& CBufferHandler::GetTextInstancesInfoBufferHandle() {
-    return *mBuffers.at(kTextInstanceBufferIndex);
-}
-
-void CBufferHandler::BindBuffers(VkCommandBuffer commandBuffer) {
-    VkBuffer vertexBuffers[] = {mBuffers.at(kVerticesBufferIndex)->GetBuffer(),
-                                mBuffers.at(kInstanceBufferIndex)->GetBuffer()};
-    VkDeviceSize offsets[] = {0, 0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
-
-    VkBuffer indexBuffer = mBuffers.at(kIndicesBufferIndex)->GetBuffer();
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-}
-
-void CBufferHandler::FreeBuffer(CBufferHandle* bufferHandle) {
-    auto it = std::remove_if(
-        mBuffers.begin(), mBuffers.end(),
-        [bufferHandle](const std::unique_ptr<CBufferHandle>& ptr) {
-            return ptr.get() == bufferHandle;
-        });
-    if (it != mBuffers.end()) {
-        mBuffers.erase(it, mBuffers.end());
-    } else {
-        LOG_WARNING("Trying to free a non-existing buffer handle!");
-    }
 }
 
 } // namespace Vulkan

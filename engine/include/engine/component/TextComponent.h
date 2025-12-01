@@ -1,6 +1,6 @@
 #pragma once
 #include "engine/component/IDisplayComponent.h"
-#include "engine/renderer/DataTypes.h"
+#include "engine/core/DataTypes.h"
 #include "engine/renderer/RendererUtils.h"
 
 #include <string>
@@ -32,9 +32,9 @@ public:
     void SetColor(const glm::vec4& color);
     const std::string& getText() const;
 
-    glm::vec2 getSize() override;
+    glm::vec2 GetSize() override;
 
-    const std::vector<Renderer::STextInstanceData>& GetInstances();
+    const std::vector<Core::STextInstanceData>& GetInstances();
 
 protected:
     virtual void setDirty(bool dirty) override;
@@ -43,7 +43,7 @@ private:
     void GenerateInstances();
 
     Renderer::CTextRenderer& mTextRenderer;
-    std::vector<Renderer::STextInstanceData> mInstances;
+    std::vector<Core::STextInstanceData> mInstances;
 
     std::string mText;
     Font::CPolice* mPolice = nullptr;

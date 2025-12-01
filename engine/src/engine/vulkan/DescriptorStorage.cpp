@@ -1,9 +1,8 @@
 #include "engine/vulkan/DescriptorStorage.h"
 
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/VulkanContext.h"
-
 #include "engine/vulkan/Constants.h"
+#include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
 
@@ -24,9 +23,7 @@ void CDescriptorStorage::Init() {
     VkDescriptorPoolSize poolSizes[] = {
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kMaxTextures},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, kMaxUBO},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, kMaxSSBO}
-        // Add more types as needed
-    };
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, kMaxSSBO}};
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

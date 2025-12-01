@@ -2,12 +2,13 @@
 
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObjectBuilder.h"
 
 namespace {
 Core::CGameObject& BuildEntity(Core::CGameObjectBuilder::CBuilder builder,
                                Component::CComponentManager& componentManager) {
-    Core::CGameObject& entity = *builder.addCameraComponent().build();
+    Core::CGameObject& entity = *builder.AddCameraComponent().Build();
     return entity;
 }
 } // namespace

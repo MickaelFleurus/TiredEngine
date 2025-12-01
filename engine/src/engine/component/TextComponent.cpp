@@ -3,9 +3,11 @@
 #include "engine/component/MovementComponent.h"
 #include "engine/core/GameObject.h"
 
+#include "engine/core/DataTypes.h"
 #include "engine/font/Police.h"
-#include "engine/renderer/DataTypes.h"
 #include "engine/renderer/TextRenderer.h"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace {
 constexpr size_t kMaxCharacters = 64;
@@ -91,7 +93,7 @@ void CTextComponent::GenerateInstances() {
         float vh = glyph.uv.w;
         glm::vec4 uvRect(u, v, uw, vh);
 
-        Renderer::STextInstanceData instance;
+        Core::STextInstanceData instance;
 
         instance.textureId = mPolice->GetTextureIndex();
         instance.materialId = 0;
@@ -107,7 +109,7 @@ void CTextComponent::GenerateInstances() {
     setDirty(false);
 }
 
-glm::vec2 CTextComponent::getSize() {
+glm::vec2 CTextComponent::GetSize() {
     if (!isDirty()) {
         return mSize;
     }
@@ -135,7 +137,7 @@ glm::vec2 CTextComponent::getSize() {
     return mSize;
 }
 
-const std::vector<Renderer::STextInstanceData>& CTextComponent::GetInstances() {
+const std::vector<Core::STextInstanceData>& CTextComponent::GetInstances() {
     if (isDirty()) {
         GenerateInstances();
     }

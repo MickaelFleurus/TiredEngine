@@ -128,6 +128,15 @@ CTextureManager::GetTextureIndex(const std::string& filename) const {
     return std::nullopt;
 }
 
+const VulkanTexture& CTextureManager::GetTexture(int index) const {
+    return mLoadedTextures.at(index);
+}
+
+const std::unordered_map<std::string, int>&
+CTextureManager::GetAllTextureIndices() const {
+    return mLoadedTexturesIndices;
+}
+
 void CTextureManager::UpdateDescriptor(int index) {
 
     VkDescriptorSet descriptorSet = mDescriptorStorage.GetDescriptorSet();

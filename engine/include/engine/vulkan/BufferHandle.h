@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/utils/BufferMemoryBlocks.h"
+
 #include <vulkan/vulkan.h>
 
 namespace Renderer {
@@ -28,22 +29,28 @@ public:
     bool Init(int dataSize, int bufferSize, VkBufferUsageFlags usage);
 
     std::optional<Utils::SBufferRange> Reserve(int size);
+    bool Resize(Utils::SBufferRange& range, int size);
     bool Fill(const void* data, int size, int offset,
               const Utils::SBufferRange& range);
     void FreeRange(const Utils::SBufferRange& range);
+    void FreeRanges();
 
     VkBuffer GetBuffer() const;
 
+    VkBufferUsageFlags GetUsageFlags() const;
+    const Utils::CBufferMemoryBlocks& GetMemoryBlocks() const;
     int GetSize() const;
 
 private:
-    void Free();
+    void Destroy();
 
     VkDevice mDevice;
     Renderer::CMemoryAllocator& mMemoryAllocator;
     Vulkan::CBufferHandler& mHandler;
 
-    int mDataSize = 0;
+    VkBufferUsageFlags mUsage{0};
+
+    int mDataSize{0};
     Utils::CBufferMemoryBlocks mMemoryBlocks;
 
     VkBuffer mBuffer = VK_NULL_HANDLE;

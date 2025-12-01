@@ -21,7 +21,7 @@ class CFileHandler;
 }
 
 namespace Material {
-class AbstractMaterial;
+class CAbstractMaterial;
 
 class CMaterialFactory {
 public:
@@ -29,19 +29,22 @@ public:
                               Utils::CFileHandler& fileHandler,
                               const Vulkan::CVulkanContext& contextGetter,
                               Vulkan::CDescriptorStorage& descriptorStorage);
+    ~CMaterialFactory();
 
-    // Create material with specified parameters
-    std::unique_ptr<AbstractMaterial>
-    CreateMaterial(EMaterialType type, const Renderer::SPipelineConfig& info);
+    std::unique_ptr<CAbstractMaterial> GetMaterial(EMaterialType type);
 
-    std::unique_ptr<AbstractMaterial> GetOrCreateTextMaterial();
     // // Pre-defined material types
-    // std::unique_ptr<AbstractMaterial>
+    // std::unique_ptr<CAbstractMaterial>
     // CreateUnlitMaterial(SDL_GPUTexture* texture);
-    // std::unique_ptr<AbstractMaterial>
+    // std::unique_ptr<CAbstractMaterial>
     // CreateSpriteMaterial(SDL_GPUTexture* sprite);
 
 private:
+    std::unique_ptr<CAbstractMaterial>
+    CreateMaterial(EMaterialType type, const Renderer::SPipelineConfig& info);
+
+    std::unique_ptr<CAbstractMaterial> CreateTextMaterial();
+
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
     Vulkan::CPipelineFactory mPipelineFactory;

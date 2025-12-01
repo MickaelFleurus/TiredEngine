@@ -3,56 +3,9 @@
 namespace Scene {
 CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          Font::CFontHandler& fontHandler,
+                         Core::CMeshManager& meshManager,
                          const System::CSystem& system)
-    : CAbstractScene(componentManager, fontHandler, system) {
-    CreateGameObjectBuilder("Bibboop").build();
-    CreateGameObjectBuilder("TopLeft")
-        .addText("TopLeft", 50)
-        .setAnchor(Utils::EAnchors::TopLeft)
-        .setLocalPosition({0.0f, 1080.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("TopRight")
-        .addText("TopRight", 50)
-        .setAnchor(Utils::EAnchors::TopRight)
-        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("BottomLeft")
-        .addText("BottomLeft", 50)
-        .setAnchor(Utils::EAnchors::BottomLeft)
-        .setLocalPosition({0.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("BottomRight")
-        .addText("BottomRight", 50)
-        .setAnchor(Utils::EAnchors::BottomRight)
-        .setLocalPosition({1920.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("0,0")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({0.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("1920,0")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({1920.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("1920,1080")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("0,1080")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({0.0f, 1080.0f, 0.0f})
-        .build();
+    : CAbstractScene(componentManager, fontHandler, meshManager, system) {
 }
 
 void CDebugScene::Update(float deltaTime) {
@@ -65,6 +18,66 @@ CAbstractScene* CDebugScene::GetNextScene() const {
 
 const char* CDebugScene::GetName() const {
     return "CDebugScene";
+}
+
+void CDebugScene::Load() {
+    CreateGameObjectBuilder("Bibboop").Build();
+    CreateGameObjectBuilder("TopLeft")
+        .AddText("TopLeft", 50)
+        .SetAnchor(Utils::EAnchors::TopLeft)
+        .SetLocalPosition({0.0f, 1080.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("TopRight")
+        .AddText("TopRight", 50)
+        .SetAnchor(Utils::EAnchors::TopRight)
+        .SetLocalPosition({1920.0f, 1080.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("BottomLeft")
+        .AddText("BottomLeft", 50)
+        .SetAnchor(Utils::EAnchors::BottomLeft)
+        .SetLocalPosition({0.0f, 0.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("BottomRight")
+        .AddText("BottomRight", 50)
+        .SetAnchor(Utils::EAnchors::BottomRight)
+        .SetLocalPosition({1920.0f, 0.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("0,0")
+        .AddText("X", 50)
+        .SetAnchor(Utils::EAnchors::Center)
+        .SetLocalPosition({0.0f, 0.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("1920,0")
+        .AddText("X", 50)
+        .SetAnchor(Utils::EAnchors::Center)
+        .SetLocalPosition({1920.0f, 0.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("1920,1080")
+        .AddText("X", 50)
+        .SetAnchor(Utils::EAnchors::Center)
+        .SetLocalPosition({1920.0f, 1080.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("0,1080")
+        .AddText("X", 50)
+        .SetAnchor(Utils::EAnchors::Center)
+        .SetLocalPosition({0.0f, 1080.0f, 0.0f})
+        .Build();
+
+    CreateGameObjectBuilder("Cube!")
+        .Add3DCube(1.0f)
+        .SetLocalPosition({0.0f, 0.0f, -5.0f})
+        .Build();
+}
+
+void CDebugScene::Unload() {
+    // Unload resources specific to the debug scene
 }
 
 } // namespace Scene

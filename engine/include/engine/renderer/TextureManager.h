@@ -49,6 +49,9 @@ public:
     std::optional<VulkanTexture> GetTexture(const std::string& filename);
     std::optional<int> GetTextureIndex(const std::string& filename) const;
 
+    const VulkanTexture& GetTexture(int index) const;
+    const std::unordered_map<std::string, int>& GetAllTextureIndices() const;
+
 private:
     void UpdateDescriptor(int index);
 

@@ -1,14 +1,15 @@
 #include "engine/font/Police.h"
+
 #include "engine/material/AbstractMaterial.h"
-#include "engine/renderer/DataTypes.h"
 
 namespace Font {
-CPolice::CPolice(const char* name,
-                 std::unique_ptr<Material::AbstractMaterial> material,
+CPolice::CPolice(const char* name, Material::CAbstractMaterial* material,
+                 int textureIndex,
                  std::unordered_map<std::string, Font::GlyphInfo> glyphs,
                  CPolice::SMetrics fontMetrics)
     : mName(name)
-    , mMaterial(std::move(material))
+    , mMaterial(material)
+    , mTextureIndex(textureIndex)
     , mGlyphs(std::move(glyphs))
     , mFontMetrics(fontMetrics) {
 }
@@ -28,12 +29,12 @@ const CPolice::SMetrics& CPolice::GetFontMetrics() const {
     return mFontMetrics;
 }
 
-Material::AbstractMaterial& CPolice::GetMaterial() {
-    return *mMaterial;
+Material::CAbstractMaterial* CPolice::GetMaterial() {
+    return mMaterial;
 }
 
 int CPolice::GetTextureIndex() const {
-    return mMaterial->GetTextureIndex();
+    return mTextureIndex;
 }
 
 const std::string& CPolice::GetName() const {

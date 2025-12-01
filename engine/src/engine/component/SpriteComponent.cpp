@@ -19,7 +19,7 @@ void CSpriteComponent::removeSprite() {
 void CSpriteComponent::update(float) {
 }
 
-glm::vec2 CSpriteComponent::getSize() {
+glm::vec2 CSpriteComponent::GetSize() {
     return glm::vec2(1.0f, 1.0f);
 }
 

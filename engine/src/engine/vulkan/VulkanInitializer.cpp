@@ -29,6 +29,7 @@ VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         LOG_ERROR("Vulkan: {}", pCallbackData->pMessage);
         break;
     default:
+        break;
     }
 
     return VK_FALSE;

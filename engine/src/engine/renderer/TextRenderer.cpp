@@ -1,12 +1,11 @@
 #include "engine/renderer/TextRenderer.h"
-#include "engine/renderer/DataTypes.h"
 
 #include "engine/component/TextComponent.h"
+#include "engine/core/DataTypes.h"
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
 #include "engine/vulkan/BufferHandle.h"
-#include "engine/vulkan/IndexesBufferHandleWrapper.h"
-#include "engine/vulkan/VertexBufferHandleWrapper.h"
+#include "engine/vulkan/BufferHandleWrapper.h"
 
 #include <array>
 #include <cstring>
@@ -14,39 +13,42 @@
 namespace {
 constexpr size_t kMaxCharacters = 500;
 
-Utils::SBufferRange
-CreateVertices(Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle) {
-    std::vector<Renderer::SVertex> vertices;
-    Renderer::SVertex topLeft{.position{0.0f, 0.0f, 0.0f}};
-    Renderer::SVertex topRight{.position{1.0f, 0.0f, 0.0f}};
-    Renderer::SVertex bottomRight{.position{1.0f, 1.0f, 0.0f}};
-    Renderer::SVertex bottomLeft{.position{0.0f, 1.0f, 0.0f}};
+std::optional<Utils::SBufferIndexRange> CreateVertices(
+    Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle) {
+    std::vector<Core::SVertex> vertices;
+    Core::SVertex topLeft{.position{0.0f, 0.0f, 0.0f}};
+    Core::SVertex topRight{.position{1.0f, 0.0f, 0.0f}};
+    Core::SVertex bottomRight{.position{1.0f, 1.0f, 0.0f}};
+    Core::SVertex bottomLeft{.position{0.0f, 1.0f, 0.0f}};
+
     vertices.reserve(4);
     vertices.push_back(topLeft);
     vertices.push_back(topRight);
     vertices.push_back(bottomRight);
     vertices.push_back(bottomLeft);
 
-    return vertexBufferHandle.AddVertices(vertices).value_or(
-        Utils::SBufferRange{0, 0});
+    return vertexBufferHandle.Prepare(vertices);
 }
 
-Utils::SBufferRange
-CreateIndexes(Vulkan::CIndexesBufferHandleWrapper& indexesBufferHandle,
-              const Utils::SBufferRange& vertexBufferRange) {
+std::optional<Utils::SBufferIndexRange> CreateIndexes(
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+    const std::optional<Utils::SBufferIndexRange>& vertexBufferRange) {
+    if (!vertexBufferRange.has_value()) {
+        LOG_ERROR("Vertex buffer range is not valid!");
+        return std::nullopt;
+    }
 
     std::vector<uint32_t> indexes;
     indexes.reserve(6);
-    const int index = vertexBufferRange.offset / sizeof(Renderer::SVertex);
-    indexes.push_back(index + 0);
-    indexes.push_back(index + 1);
-    indexes.push_back(index + 2);
+    indexes.push_back(vertexBufferRange->first + 0);
+    indexes.push_back(vertexBufferRange->first + 1);
+    indexes.push_back(vertexBufferRange->first + 2);
 
-    indexes.push_back(index + 2);
-    indexes.push_back(index + 1);
-    indexes.push_back(index + 3);
-    return indexesBufferHandle.AddIndexes(indexes).value_or(
-        Utils::SBufferRange{0, 0});
+    indexes.push_back(vertexBufferRange->first + 2);
+    indexes.push_back(vertexBufferRange->first + 1);
+    indexes.push_back(vertexBufferRange->first + 3);
+
+    return indexesBufferHandle.Prepare(indexes);
 }
 
 } // namespace
@@ -54,38 +56,48 @@ CreateIndexes(Vulkan::CIndexesBufferHandleWrapper& indexesBufferHandle,
 namespace Renderer {
 
 CTextRenderer::CTextRenderer(
-    Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle,
-    Vulkan::CIndexesBufferHandleWrapper& indexesBufferHandle,
-    Vulkan::CBufferHandle& textInstanceBuffer, Vulkan::CBufferHandle& textInstanceInfoBuffer)
+    Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& textInstanceBuffer,
+    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+        indirectDrawBuffer)
     : mTextInstanceBuffer(textInstanceBuffer)
-    , mTextInstanceBufferRange(
-          textInstanceBuffer
-              .Reserve(static_cast<int>(kMaxCharacters * sizeof(SInstanceData)))
-              .value_or(Utils::SBufferRange{0, 0}))
-    , mTextInstanceInfoBuffer(textInstanceInfoBuffer)
-    , mVerticesRange(CreateVertices(vertexBufferHandle))
-    , mIndexesRange(CreateIndexes(indexesBufferHandle, mVerticesRange)) {
+    , mIndirectDrawBuffer(indirectDrawBuffer)
+    , mVertexBufferHandle(vertexBufferHandle)
+    , mIndexesBufferHandle(indexesBufferHandle) {
 }
 
-void CTextRenderer::Update() {
+void CTextRenderer::Free() {
+    mIndexesRange.reset();
+    mVerticesRange.reset();
+}
+
+void CTextRenderer::Prepare() {
+    mVerticesRange = CreateVertices(mVertexBufferHandle);
+    mIndexesRange = CreateIndexes(mIndexesBufferHandle, mVerticesRange);
+}
+
+std::unordered_map<Material::CAbstractMaterial*,
+                   std::vector<Utils::SBufferIndexRange>>
+CTextRenderer::RebuildInstances(const std::vector<SRenderable>&) {
     if (mNeedUpdate) {
+        if (!mVerticesRange.has_value() || !mIndexesRange.has_value()) {
+            LOG_ERROR("Vertex or Index buffer not initialized!");
+            return {};
+        }
         GenerateInstanceData();
         mNeedUpdate = false;
     }
+    return {};
 }
 
-void CTextRenderer::DrawTexts(VkCommandBuffer commandBuffer) {
-    int offset = 0;
-    for (const auto& r : mInstanceInfos) {
-        vkCmdDrawIndexedIndirect(
-            commandBuffer, mTextInstanceInfoBuffer.GetBuffer(),
-            ++offset * sizeof(VkDrawIndexedIndirectCommand), 1,
-            sizeof(VkDrawIndexedIndirectCommand));
-    }
+void CTextRenderer::Update() {
+    // Implementation for updating text data goes here
 }
 
 void CTextRenderer::GenerateInstanceData() {
-    std::unordered_map<Font::SFont, std::vector<Renderer::STextInstanceData>,
+
+    std::unordered_map<Font::SFont, std::vector<Core::STextInstanceData>,
                        Font::SFontHash>
         instancesMap;
 
@@ -101,29 +113,26 @@ void CTextRenderer::GenerateInstanceData() {
         }
     }
 
-    std::vector<STextInstanceData> allInstances;
-    auto firstIndex = mIndexesRange.offset / sizeof(uint32_t);
-    auto firstVertice = mVerticesRange.offset / sizeof(Renderer::SVertex);
+    std::vector<Core::STextInstanceData> allInstances;
     for (const auto& [font, instances] : instancesMap) {
-
-        SInstanceInfo info{};
-        info.firstIndex = firstIndex;
-        info.vertexOffset = firstVertice;
-        info.firstInstance = static_cast<uint32_t>(mInstanceInfos.size());
+        SIndirectDrawInfo info{};
+        info.firstIndex = mIndexesRange->first;
+        info.vertexOffset = mVerticesRange->first;
+        info.firstInstance = static_cast<uint32_t>(mIndirectDrawInfos.size());
         info.instanceCount = static_cast<uint32_t>(instances.size());
-        mInstanceInfos.push_back(info);
+        mIndirectDrawInfos.push_back(info);
         allInstances.insert(allInstances.end(), instances.begin(),
                             instances.end());
     }
+    auto textInstanceRange = mTextInstanceBuffer.Prepare(allInstances);
+    if (!textInstanceRange.has_value()) {
+        LOG_ERROR("Failed to prepare text instance buffer!");
+        return;
+    }
 
-    mTextInstanceBuffer.Fill(
-        allInstances.data(),
-        static_cast<int>(allInstances.size() * sizeof(SInstanceData)), 0,
-        mTextInstanceBufferRange);
-
-    std::vector<VkDrawIndexedIndirectCommand> indirectCommands;
-    for (const auto& r : mInstanceInfos) {
-        VkDrawIndexedIndirectCommand cmd{};
+    std::vector<Core::SIndirectDrawCommand> indirectCommands;
+    for (const auto& r : mIndirectDrawInfos) {
+        Core::SIndirectDrawCommand cmd{};
         cmd.indexCount = 6;
         cmd.instanceCount = r.instanceCount;
         cmd.firstIndex = r.firstIndex;
@@ -131,17 +140,12 @@ void CTextRenderer::GenerateInstanceData() {
         cmd.firstInstance = r.firstInstance;
         indirectCommands.push_back(cmd);
     }
-
-    mTextInstanceInfoBufferRange =
-        mTextInstanceInfoBuffer
-            .Reserve(static_cast<int>(indirectCommands.size() *
-                                      sizeof(VkDrawIndexedIndirectCommand)))
-            .value_or(Utils::SBufferRange{0, 0});
-    mTextInstanceInfoBuffer.Fill(
-        indirectCommands.data(),
-        static_cast<int>(indirectCommands.size() *
-                         sizeof(VkDrawIndexedIndirectCommand)),
-        0, mTextInstanceInfoBufferRange);
+    mIndirectDrawBufferRange = mIndirectDrawBuffer.Prepare(indirectCommands);
+    if (!mIndirectDrawBufferRange.has_value()) {
+        LOG_ERROR("Failed to prepare indirect draw buffer!");
+        return;
+    }
+    LOG_INFO("Generated {} text instances for rendering.", allInstances.size());
 }
 
 void CTextRenderer::SetNeedUpdate() {

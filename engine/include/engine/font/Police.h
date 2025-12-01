@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 namespace Material {
-class AbstractMaterial;
+class CAbstractMaterial;
 }
 
 namespace Font {
@@ -22,8 +22,8 @@ public:
         double underlineThickness;
     };
 
-    CPolice(const char* name,
-            std::unique_ptr<Material::AbstractMaterial> material,
+    CPolice(const char* name, Material::CAbstractMaterial* material,
+            int textureIndex,
             std::unordered_map<std::string, Font::GlyphInfo> glyphs,
             SMetrics fontMetrics);
     ~CPolice();
@@ -31,14 +31,15 @@ public:
     const Font::GlyphInfo& GetGlyphInfo(char c) const;
     const SMetrics& GetFontMetrics() const;
 
-    Material::AbstractMaterial& GetMaterial();
+    Material::CAbstractMaterial* GetMaterial();
     int GetTextureIndex() const;
 
     const std::string& GetName() const;
 
 private:
     const std::string mName;
-    std::unique_ptr<Material::AbstractMaterial> mMaterial;
+    Material::CAbstractMaterial* mMaterial;
+    int mTextureIndex;
 
     std::unordered_map<std::string, Font::GlyphInfo> mGlyphs;
     SMetrics mFontMetrics;

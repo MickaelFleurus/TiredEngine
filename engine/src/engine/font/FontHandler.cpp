@@ -1,14 +1,11 @@
 #include "engine/font/FontHandler.h"
 
 #include "engine/material/AbstractMaterial.h"
-#include "engine/material/MaterialFactory.h"
-#include "engine/renderer/DataTypes.h"
+#include "engine/material/MaterialManager.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/BufferHandler.h"
-#include "engine/vulkan/IndexesBufferHandleWrapper.h"
-#include "engine/vulkan/VertexBufferHandleWrapper.h"
+
 #include <SDL3/SDL_surface.h>
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
@@ -225,10 +222,10 @@ SFontData CreateFontData(const std::string& fontPath) {
 namespace Font {
 CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
                            Utils::CFileHandler& fileHandler,
-                           Material::CMaterialFactory& materialFactory)
+                           Material::CMaterialManager& materialManager)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mMaterialFactory(materialFactory) {
+    , mMaterialManager(materialManager) {
 }
 
 CFontHandler::~CFontHandler() {
@@ -256,12 +253,14 @@ CPolice& CFontHandler::GetPolice(std::string name) {
             GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
     }
 
-    mTextureManager.LoadTextureFromSurface(name, fontData.surface);
+    auto textureIndex =
+        mTextureManager.LoadTextureFromSurface(name, fontData.surface);
+
     SDL_DestroySurface(fontData.surface);
     auto [emplaced_it, inserted] = mPolices.try_emplace(
         name, name.c_str(),
-        std::move(mMaterialFactory.GetOrCreateTextMaterial()),
-        fontData.glyphInfos,
+        mMaterialManager.GetorCreateMaterial(Material::EMaterialType::Text),
+        textureIndex, fontData.glyphInfos,
         CPolice::SMetrics{
             fontData.fontMetrics.ascenderY, fontData.fontMetrics.descenderY,
             fontData.fontMetrics.lineHeight, fontData.fontMetrics.underlineY,

@@ -1,9 +1,9 @@
 #include "engine/material/MaterialFactory.h"
 
+#include "engine/material/AbstractMaterial.h"
 #include "engine/material/Material.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/TextureManager.h"
-
 #include "engine/utils/FileHandler.h"
 
 namespace Material {
@@ -18,16 +18,34 @@ CMaterialFactory::CMaterialFactory(
     , mDescriptorStorage(descriptorStorage) {
 }
 
-std::unique_ptr<AbstractMaterial>
+CMaterialFactory::~CMaterialFactory() = default;
+
+std::unique_ptr<CAbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
     auto pipeline =
-        mPipelineFactory.CreateGraphicsPipeline(info, mDescriptorStorage);
+        mPipelineFactory.GetOrCreateGraphicsPipeline(info, mDescriptorStorage);
     return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
 }
 
-std::unique_ptr<AbstractMaterial> CMaterialFactory::GetOrCreateTextMaterial() {
+std::unique_ptr<CAbstractMaterial>
+CMaterialFactory::GetMaterial(EMaterialType type) {
+    switch (type) {
+    case EMaterialType::Normal:
+        return CreateMaterial(
+            type, Renderer::SPipelineConfig{
+                      .shaderName = "NormalShader",
+                      .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
+                      .vertexLayout = Renderer::EVertexLayout::Mesh3D});
+    case EMaterialType::Text:
+        return CreateTextMaterial();
+    default:
+        return nullptr;
+    }
+}
+
+std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateTextMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "TextShader";
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
@@ -38,7 +56,7 @@ std::unique_ptr<AbstractMaterial> CMaterialFactory::GetOrCreateTextMaterial() {
     return material;
 }
 
-// std::shared_ptr<AbstractMaterial>
+// std::shared_ptr<CAbstractMaterial>
 // CMaterialFactory::CreateUnlitMaterial(SDL_GPUTexture* texture) {
 
 //     MaterialCreateInfo info;
@@ -50,7 +68,7 @@ std::unique_ptr<AbstractMaterial> CMaterialFactory::GetOrCreateTextMaterial() {
 //     return CreateMaterial(info);
 // }
 
-// std::shared_ptr<AbstractMaterial>
+// std::shared_ptr<CAbstractMaterial>
 // CMaterialFactory::CreateTextMaterial(SDL_GPUTexture* fontAtlas) {
 
 //     MaterialCreateInfo info;

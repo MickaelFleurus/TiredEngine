@@ -1,6 +1,5 @@
 #pragma once
-#include <bitset>
-#include <compare>
+#include "engine/utils/Hashing.h"
 #include <string>
 
 namespace Font {
@@ -14,8 +13,7 @@ struct SFont {
 
 struct SFontHash {
     std::size_t operator()(const SFont& key) const {
-        return std::hash<std::string>{}(key.fontName) ^
-               (std::hash<unsigned char>{}(key.character) << 1);
+        return Utils::CreateHash(key.fontName, key.character);
     }
 };
 

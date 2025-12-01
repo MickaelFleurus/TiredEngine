@@ -3,11 +3,11 @@
 #include "engine/material/AbstractMaterial.h"
 
 namespace Material {
-class CMaterial : public AbstractMaterial {
+class CMaterial : public CAbstractMaterial {
 public:
     CMaterial(EMaterialType type, Renderer::EVertexLayout vertexLayout,
               Renderer::SPipelineDescriptors& pipeline)
-        : AbstractMaterial(type, vertexLayout, pipeline) {
+        : CAbstractMaterial(type, vertexLayout, pipeline) {
     }
 
 private:

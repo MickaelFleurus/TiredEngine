@@ -20,3 +20,5 @@ AllowShortFunctionsOnASingleLine: false
 DerivePointerAlignment: false
 PointerAlignment: Left
 AlwaysBreakTemplateDeclarations: Yes
+IncludeBlocks: Regroup
+SortIncludes: true

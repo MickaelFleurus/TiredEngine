@@ -1,11 +1,11 @@
 #include "engine/core/EngineLoop.h"
-#include "engine/scene/AbstractScene.h"
-#include "engine/system/System.h"
 
 #include "engine/renderer/Window.h"
+#include "engine/scene/AbstractScene.h"
+#include "engine/system/System.h"
+#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
-#include "engine/utils/Logger.h"
 #include <SDL3/SDL.h>
 
 namespace Core {
@@ -17,19 +17,17 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
-    , mTextRenderer(mBufferHandler.GetVerticesBufferHandle(),
-                    mBufferHandler.GetIndexesBufferHandle(),
-                    mBufferHandler.GetTextInstanceBufferHandle(),
-                    mBufferHandler.GetTextInstancesInfoBufferHandle())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mVulkanContext,
+    , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
+    , mRendererManager(mBufferHandler, mMaterialManager)
+    , mMeshManager(mRendererManager.GetMeshRenderer())
     , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mTextRenderer, mMaterialFactory, mDescriptorStorage)
+              mMaterialManager, mDescriptorStorage, mRendererManager)
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
-    , mComponentManager(mFontHandler, mTextRenderer)
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
+    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer())
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
@@ -68,6 +66,14 @@ bool CEngineLoop::Run() {
             mWindow.EndRender();
         }
         if (mPendingScene) {
+            if (mCurrentScene) {
+                mCurrentScene->Unload();
+            }
+            mRendererManager.FreeSceneData();
+
+            mPendingScene->Load();
+
+            mRendererManager.UploadSceneData();
             mCurrentScene.swap(mPendingScene);
             mPendingScene.reset();
         }

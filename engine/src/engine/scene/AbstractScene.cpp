@@ -7,13 +7,14 @@ namespace Scene {
 
 CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
                                Font::CFontHandler& fontHandler,
+                               Core::CMeshManager& meshManager,
                                const System::CSystem& system)
     : mComponentManager(componentManager)
     , mSystem(system)
-    , mGameObjectBuilder(componentManager, fontHandler) {
+    , mGameObjectBuilder(componentManager, fontHandler, meshManager) {
     const auto& windowData = mSystem.GetDisplayParameters();
     mSceneRoot = std::unique_ptr<Core::CGameObject>(
-        Core::CGameObjectBuilder::createRoot(componentManager));
+        Core::CGameObjectBuilder::CreateRoot(componentManager));
     mActiveCamera = std::make_unique<Core::CCamera>(
         *mSceneRoot, mGameObjectBuilder, mComponentManager);
     mUICamera = std::make_unique<Core::CUICamera>(
