@@ -1,19 +1,19 @@
 #pragma once
 
 #include "engine/material/MaterialTypes.h"
-#include "engine/renderer/PipelineFactory.h"
+#include "engine/vulkan/PipelineFactory.h"
 
 #include <memory>
 #include <string>
 
 namespace Vulkan {
 class CVulkanContext;
+class CDescriptorStorage;
 } // namespace Vulkan
 
 namespace Renderer {
 struct SPipelineConfig;
 class CTextureManager;
-class CDescriptorStorage;
 } // namespace Renderer
 
 namespace Utils {
@@ -28,7 +28,7 @@ public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
                               const Vulkan::CVulkanContext& contextGetter,
-                              Renderer::CDescriptorStorage& descriptorStorage);
+                              Vulkan::CDescriptorStorage& descriptorStorage);
 
     // Create material with specified parameters
     std::unique_ptr<AbstractMaterial>
@@ -44,8 +44,8 @@ public:
 private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
-    Renderer::CPipelineFactory mPipelineFactory;
-    Renderer::CDescriptorStorage& mDescriptorStorage;
+    Vulkan::CPipelineFactory mPipelineFactory;
+    Vulkan::CDescriptorStorage& mDescriptorStorage;
 };
 
 } // namespace Material

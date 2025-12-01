@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Renderer {
+namespace Vulkan {
 constexpr size_t kMaxTextures = 256;
 constexpr size_t kMaxSSBO = 8192;
 constexpr size_t kMaxUBO = 8192;
@@ -14,4 +14,4 @@ constexpr size_t kTextInstanceInfoAmountPerBuffer = 8192;
 
 constexpr size_t kTextureBinding = 0;
 constexpr size_t kInstanceBufferBinding = 1;
-} // namespace Renderer
+} // namespace Vulka

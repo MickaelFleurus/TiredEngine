@@ -1,11 +1,11 @@
-#include "engine/renderer/BufferHandler.h"
+#include "engine/vulkan/BufferHandler.h"
 #include "engine/renderer/MemoryAllocator.h"
 
-#include "engine/renderer/Constants.h"
+#include "engine/vulkan/Constants.h"
 #include "engine/vulkan/VulkanContext.h"
 
-#include "engine/renderer/IndexesBufferHandleWrapper.h"
-#include "engine/renderer/VertexBufferHandleWrapper.h"
+#include "engine/vulkan/IndexesBufferHandleWrapper.h"
+#include "engine/vulkan/VertexBufferHandleWrapper.h"
 
 #include "engine/renderer/DataTypes.h"
 
@@ -15,21 +15,21 @@ namespace {
 constexpr int kVerticesBufferIndex = 0;
 constexpr auto kVertexStructSize = sizeof(Renderer::SVertex);
 constexpr int kVertexBufferDefaultSize =
-    Renderer::kVertexAmountPerBuffer * kVertexStructSize;
+    Vulkan::kVertexAmountPerBuffer * kVertexStructSize;
 constexpr auto kVertexBufferUsage =
     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kIndicesBufferIndex = 1;
 constexpr auto kIndexStructSize = sizeof(uint32_t);
 constexpr int kIndexBufferDefaultSize =
-    Renderer::kIndexAmountPerBuffer * kIndexStructSize;
+    Vulkan::kIndexAmountPerBuffer * kIndexStructSize;
 constexpr auto kIndexBufferUsage =
     VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kInstanceBufferIndex = 2;
 constexpr auto kInstanceStructSize = sizeof(Renderer::SInstanceData);
 constexpr int kInstanceBufferDefaultSize =
-    Renderer::kInstanceAmountPerBuffer * kInstanceStructSize;
+    Vulkan::kInstanceAmountPerBuffer * kInstanceStructSize;
 constexpr auto kInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                       VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -37,14 +37,14 @@ constexpr auto kInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
 constexpr int kInstanceInfoBufferIndex = 3;
 constexpr auto kInstanceInfoStructSize = sizeof(VkDrawIndexedIndirectCommand);
 constexpr int kInstanceInfoBufferDefaultSize =
-    Renderer::kInstanceInfoAmountPerBuffer * kInstanceInfoStructSize;
+    Vulkan::kInstanceInfoAmountPerBuffer * kInstanceInfoStructSize;
 constexpr auto kInstanceInfoBufferUsage =
     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 constexpr int kTextInstanceBufferIndex = 4;
 constexpr auto kTextInstanceStructSize = sizeof(Renderer::STextInstanceData);
 constexpr int kTextInstanceBufferDefaultSize =
-    Renderer::kTextInstanceAmountPerBuffer * kTextInstanceStructSize;
+    Vulkan::kTextInstanceAmountPerBuffer * kTextInstanceStructSize;
 constexpr auto kTextInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                           VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -53,13 +53,13 @@ constexpr int kTextInstanceInfoBufferIndex = 5;
 constexpr auto kTextInstanceInfoStructSize =
     sizeof(VkDrawIndexedIndirectCommand);
 constexpr int kTextInstanceInfoBufferDefaultSize =
-    Renderer::kTextInstanceInfoAmountPerBuffer * kTextInstanceInfoStructSize;
+    Vulkan::kTextInstanceInfoAmountPerBuffer * kTextInstanceInfoStructSize;
 constexpr auto kTextInstanceInfoBufferUsage =
     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 } // namespace
 
-namespace Renderer {
+namespace Vulkan {
 
 CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
                                Renderer::CMemoryAllocator& memoryAllocator)
@@ -144,4 +144,4 @@ void CBufferHandler::FreeBuffer(CBufferHandle* bufferHandle) {
     }
 }
 
-} // namespace Renderer
+} // namespace Vulkan

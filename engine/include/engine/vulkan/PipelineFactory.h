@@ -1,15 +1,14 @@
 #pragma once
 #include <memory>
-#include <vulkan/vulkan.h>
 
 #include "engine/renderer/MaterialStructures.h"
 
-namespace Vulkan {
-class CVulkanContext;
-}
-
 namespace Renderer {
 struct SPipelineConfig;
+} // namespace Renderer
+
+namespace Vulkan {
+class CVulkanContext;
 class CDescriptorStorage;
 
 class CPipelineFactory {
@@ -17,12 +16,12 @@ public:
     CPipelineFactory(const Vulkan::CVulkanContext& contextGetter);
     ~CPipelineFactory();
 
-    SPipelineDescriptors
-    CreateGraphicsPipeline(const SPipelineConfig& config,
-                           CDescriptorStorage& layoutStorage);
+    Renderer::SPipelineDescriptors
+    CreateGraphicsPipeline(const Renderer::SPipelineConfig& config,
+                           Vulkan::CDescriptorStorage& layoutStorage);
 
 private:
     class CImpl;
     std::unique_ptr<CImpl> mImpl;
 };
-} // namespace Renderer
+} // namespace Vulkan

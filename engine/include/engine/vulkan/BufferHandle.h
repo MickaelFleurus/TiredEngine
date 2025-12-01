@@ -3,19 +3,20 @@
 #include "engine/utils/BufferMemoryBlocks.h"
 #include <vulkan/vulkan.h>
 
-namespace Vulkan {
-class CVulkanContext;
-}
-
 namespace Renderer {
+class CMemoryAllocator;
+} // namespace Renderer
+
+namespace Vulkan {
 
 class CBufferHandler;
-class CMemoryAllocator;
+class CVulkanContext;
+
 class CBufferHandle {
 public:
-    explicit CBufferHandle(const Vulkan::CVulkanContext& vulkanContext,
+    explicit CBufferHandle(const CVulkanContext& vulkanContext,
                            Renderer::CMemoryAllocator& memoryAllocator,
-                           CBufferHandler& handler);
+                           Vulkan::CBufferHandler& handler);
 
     CBufferHandle(const CBufferHandle&) = delete;
     CBufferHandle& operator=(const CBufferHandle&) = delete;
@@ -40,7 +41,7 @@ private:
 
     VkDevice mDevice;
     Renderer::CMemoryAllocator& mMemoryAllocator;
-    CBufferHandler& mHandler;
+    Vulkan::CBufferHandler& mHandler;
 
     int mDataSize = 0;
     Utils::CBufferMemoryBlocks mMemoryBlocks;
@@ -48,4 +49,4 @@ private:
     VkBuffer mBuffer = VK_NULL_HANDLE;
     VkDeviceMemory mMemory = VK_NULL_HANDLE;
 };
-} // namespace Renderer
+} // namespace Vulkan

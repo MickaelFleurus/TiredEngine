@@ -6,9 +6,6 @@
 
 namespace Vulkan {
 class CVulkanContext;
-}
-
-namespace Renderer {
 class CDescriptorStorage {
 public:
     CDescriptorStorage(const Vulkan::CVulkanContext& contextGetter);
@@ -28,4 +25,4 @@ private:
     VkDescriptorSet mDescriptorSet = VK_NULL_HANDLE;
     std::vector<VkDescriptorSetLayoutBinding> mBindingInfos;
 };
-} // namespace Renderer
+} // namespace Vulkan

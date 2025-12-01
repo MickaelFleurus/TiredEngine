@@ -4,8 +4,9 @@
 #include "engine/component/TextComponent.h"
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
-#include "engine/renderer/IndexesBufferHandleWrapper.h"
-#include "engine/renderer/VertexBufferHandleWrapper.h"
+#include "engine/vulkan/BufferHandle.h"
+#include "engine/vulkan/IndexesBufferHandleWrapper.h"
+#include "engine/vulkan/VertexBufferHandleWrapper.h"
 
 #include <array>
 #include <cstring>
@@ -14,7 +15,7 @@ namespace {
 constexpr size_t kMaxCharacters = 500;
 
 Utils::SBufferRange
-CreateVertices(Renderer::CVertexBufferHandleWrapper& vertexBufferHandle) {
+CreateVertices(Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle) {
     std::vector<Renderer::SVertex> vertices;
     Renderer::SVertex topLeft{.position{0.0f, 0.0f, 0.0f}};
     Renderer::SVertex topRight{.position{1.0f, 0.0f, 0.0f}};
@@ -31,7 +32,7 @@ CreateVertices(Renderer::CVertexBufferHandleWrapper& vertexBufferHandle) {
 }
 
 Utils::SBufferRange
-CreateIndexes(Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle,
+CreateIndexes(Vulkan::CIndexesBufferHandleWrapper& indexesBufferHandle,
               const Utils::SBufferRange& vertexBufferRange) {
 
     std::vector<uint32_t> indexes;
@@ -53,9 +54,9 @@ CreateIndexes(Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle,
 namespace Renderer {
 
 CTextRenderer::CTextRenderer(
-    Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
-    Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle,
-    CBufferHandle& textInstanceBuffer, CBufferHandle& textInstanceInfoBuffer)
+    Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle,
+    Vulkan::CIndexesBufferHandleWrapper& indexesBufferHandle,
+    Vulkan::CBufferHandle& textInstanceBuffer, Vulkan::CBufferHandle& textInstanceInfoBuffer)
     : mTextInstanceBuffer(textInstanceBuffer)
     , mTextInstanceBufferRange(
           textInstanceBuffer

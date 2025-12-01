@@ -4,10 +4,10 @@
 #include "engine/debug/OverlordManager.h"
 #include "engine/input/InputHandler.h"
 
-#include "engine/renderer/BufferHandler.h"
-#include "engine/renderer/DescriptorStorage.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/renderer/Window.h"
+#include "engine/vulkan/BufferHandler.h"
+#include "engine/vulkan/DescriptorStorage.h"
 
 #include "engine/component/ComponentManager.h"
 #include "engine/material/MaterialFactory.h"
@@ -54,9 +54,9 @@ protected:
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
 
-    Renderer::CDescriptorStorage mDescriptorStorage;
+    Vulkan::CDescriptorStorage mDescriptorStorage;
     Renderer::CMemoryAllocator mMemoryAllocator;
-    Renderer::CBufferHandler mBufferHandler;
+    Vulkan::CBufferHandler mBufferHandler;
     Renderer::CTextRenderer mTextRenderer;
     Material::CMaterialFactory mMaterialFactory;
     Renderer::CWindow mWindow;

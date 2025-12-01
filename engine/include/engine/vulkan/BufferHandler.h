@@ -2,24 +2,24 @@
 
 #include <vector>
 
-#include "engine/renderer/BufferHandle.h"
+#include "engine/vulkan/BufferHandle.h"
 
 #include <memory>
 
-namespace Vulkan {
-class CVulkanContext;
+namespace Renderer {
+class CMemoryAllocator;
 }
 
-namespace Renderer {
+namespace Vulkan {
 
-class CMemoryAllocator;
+class CVulkanContext;
 class CIndexesBufferHandleWrapper;
 class CVertexBufferHandleWrapper;
 
 class CBufferHandler {
 public:
     CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
-                   CMemoryAllocator& memoryAllocator);
+                   Renderer::CMemoryAllocator& memoryAllocator);
     ~CBufferHandler();
 
     CBufferHandle* CreateBuffer(int dataSize, int size,
@@ -38,10 +38,10 @@ public:
 
 private:
     const Vulkan::CVulkanContext& mVulkanContext;
-    CMemoryAllocator& mMemoryAllocator;
+    Renderer::CMemoryAllocator& mMemoryAllocator;
 
     std::vector<std::unique_ptr<CBufferHandle>> mBuffers;
     std::unique_ptr<CVertexBufferHandleWrapper> mVerticesBufferHandle;
     std::unique_ptr<CIndexesBufferHandleWrapper> mIndexesBufferHandle;
 };
-} // namespace Renderer
+} // namespace Vulkan

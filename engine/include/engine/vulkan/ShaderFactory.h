@@ -8,13 +8,10 @@
 
 namespace Vulkan {
 class CVulkanContext;
-} // namespace Vulkan
-
-namespace Renderer {
 
 class CShaderFactory {
 public:
-    CShaderFactory(const Vulkan::CVulkanContext& contextGetter);
+    CShaderFactory(const CVulkanContext& contextGetter);
     ~CShaderFactory();
 
     VkShaderModule CreateFragmentShader(std::string name, std::string path);
@@ -24,4 +21,4 @@ private:
     class CImpl;
     std::unique_ptr<CImpl> mImpl;
 };
-} // namespace Renderer
+} // namespace Vulkan

@@ -2,13 +2,13 @@
 
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialFactory.h"
-#include "engine/renderer/BufferHandler.h"
 #include "engine/renderer/DataTypes.h"
-#include "engine/renderer/IndexesBufferHandleWrapper.h"
 #include "engine/renderer/TextureManager.h"
-#include "engine/renderer/VertexBufferHandleWrapper.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/BufferHandler.h"
+#include "engine/vulkan/IndexesBufferHandleWrapper.h"
+#include "engine/vulkan/VertexBufferHandleWrapper.h"
 #include <SDL3/SDL_surface.h>
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
@@ -223,9 +223,9 @@ SFontData CreateFontData(const std::string& fontPath) {
 } // namespace
 
 namespace Font {
-CFontHandler::CFontHandler(
-    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
-    Material::CMaterialFactory& materialFactory)
+CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
+                           Utils::CFileHandler& fileHandler,
+                           Material::CMaterialFactory& materialFactory)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
     , mMaterialFactory(materialFactory) {

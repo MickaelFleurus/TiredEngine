@@ -1,6 +1,6 @@
-#include "engine/renderer/ShaderFactory.h"
+#include "engine/vulkan/ShaderFactory.h"
 
-#include "engine/renderer/DescriptorStorage.h"
+#include "engine/vulkan/DescriptorStorage.h"
 
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
@@ -14,7 +14,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Renderer {
+namespace Vulkan {
 
 class CShaderFactory::CImpl {
 public:
@@ -83,4 +83,4 @@ VkShaderModule CShaderFactory::CreateVertexShader(std::string name,
     return mImpl->CreateShader(name + ".vert", path);
 }
 
-} // namespace Renderer
+} // namespace Vulkan

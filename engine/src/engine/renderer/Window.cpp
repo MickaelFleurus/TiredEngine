@@ -17,14 +17,14 @@
 #include "engine/font/Police.h"
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialFactory.h"
-#include "engine/renderer/BufferHandler.h"
-#include "engine/renderer/DescriptorStorage.h"
 #include "engine/renderer/RendererUtils.h"
-#include "engine/renderer/SamplerCache.h"
+
 #include "engine/renderer/TextRenderer.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/BufferHandler.h"
+#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
 
@@ -124,9 +124,10 @@ namespace Renderer {
 CWindow::CWindow(System::CSystem& system, SDL_Window* window,
                  Vulkan::CVulkanContext& vulkanContext,
                  Vulkan::CVulkanRendering& renderer,
-                 CBufferHandler& bufferHandler, CTextRenderer& textRenderer,
+                 Vulkan::CBufferHandler& bufferHandler,
+                 CTextRenderer& textRenderer,
                  Material::CMaterialFactory& materialFactory,
-                 CDescriptorStorage& descriptorStorage)
+                 Vulkan::CDescriptorStorage& descriptorStorage)
     : mSystem(system)
     , mVulkanContext(vulkanContext)
     , mRenderer(renderer)

@@ -1,6 +1,6 @@
 #include "engine/material/AbstractMaterial.h"
 
-#include "engine/renderer/DescriptorStorage.h"
+#include "engine/vulkan/DescriptorStorage.h"
 
 namespace Material {
 AbstractMaterial::AbstractMaterial(EMaterialType type,

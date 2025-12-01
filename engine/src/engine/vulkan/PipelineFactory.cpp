@@ -1,9 +1,9 @@
-#include "engine/renderer/PipelineFactory.h"
-#include "engine/renderer/DescriptorStorage.h"
+#include "engine/vulkan/PipelineFactory.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
-#include "engine/renderer/ShaderFactory.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/DescriptorStorage.h"
+#include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
 #include <array>
 #include <functional>
@@ -78,7 +78,7 @@ VkFrontFace ConvertFrontFace(Renderer::EFrontFace face) {
 
 } // namespace
 
-namespace Renderer {
+namespace Vulkan {
 
 class CPipelineFactory::CImpl {
 public:
@@ -95,8 +95,8 @@ public:
         }
     }
 
-    SPipelineDescriptors
-    CreateGraphicsPipeline(SPipelineConfig config,
+    Renderer::SPipelineDescriptors
+    CreateGraphicsPipeline(Renderer::SPipelineConfig config,
                            CDescriptorStorage& layoutStorage) {
         if (!mPipelineCache.contains(config)) {
             auto vertexShader = mShaderFactory.CreateVertexShader(
@@ -265,8 +265,9 @@ public:
 private:
     const Vulkan::CVulkanContext& mContextGetter;
     CShaderFactory mShaderFactory;
-    std::unordered_map<SPipelineConfig, SPipelineDescriptors,
-                       SPipelineConfigHash>
+    std::unordered_map<Renderer::SPipelineConfig,
+                       Renderer::SPipelineDescriptors,
+                       Renderer::SPipelineConfigHash>
         mPipelineCache;
 };
 
@@ -276,10 +277,10 @@ CPipelineFactory::CPipelineFactory(const Vulkan::CVulkanContext& contextGetter)
 
 CPipelineFactory::~CPipelineFactory() = default;
 
-SPipelineDescriptors
-CPipelineFactory::CreateGraphicsPipeline(const SPipelineConfig& config,
-                                         CDescriptorStorage& layoutStorage) {
+Renderer::SPipelineDescriptors CPipelineFactory::CreateGraphicsPipeline(
+    const Renderer::SPipelineConfig& config,
+    CDescriptorStorage& layoutStorage) {
     return mImpl->CreateGraphicsPipeline(config, layoutStorage);
 }
 
-} // namespace Renderer
+} // namespace Vulkan

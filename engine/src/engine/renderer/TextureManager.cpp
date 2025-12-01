@@ -1,10 +1,10 @@
 #include "engine/renderer/TextureManager.h"
 #include "engine/renderer/RendererUtils.h"
 
-#include "engine/renderer/BufferHandler.h"
-#include "engine/renderer/Constants.h"
-#include "engine/renderer/DescriptorStorage.h"
 #include "engine/utils/FileHandler.h"
+#include "engine/vulkan/BufferHandler.h"
+#include "engine/vulkan/Constants.h"
+#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
 #include <SDL3/SDL_surface.h>
@@ -19,18 +19,19 @@ constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
 } // namespace
 
 namespace Renderer {
-CTextureManager::CTextureManager(
-    const Vulkan::CVulkanContext& context, Vulkan::CVulkanRendering& renderer,
-    Renderer::CMemoryAllocator& memoryAllocator, CBufferHandler& bufferHandler,
-    Utils::CFileHandler& fileHandler,
-    Renderer::CDescriptorStorage& descriptorStorage)
+CTextureManager::CTextureManager(const Vulkan::CVulkanContext& context,
+                                 Vulkan::CVulkanRendering& renderer,
+                                 Renderer::CMemoryAllocator& memoryAllocator,
+                                 Vulkan::CBufferHandler& bufferHandler,
+                                 Utils::CFileHandler& fileHandler,
+                                 Vulkan::CDescriptorStorage& descriptorStorage)
     : mContext(context)
     , mRenderer(renderer)
     , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
     , mFileHandler(fileHandler)
     , mDescriptorStorage(descriptorStorage) {
-    mLoadedTextures.reserve(kMaxTextures);
+    mLoadedTextures.reserve(Vulkan::kMaxTextures);
 }
 
 CTextureManager::~CTextureManager() {
@@ -139,7 +140,7 @@ void CTextureManager::UpdateDescriptor(int index) {
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = descriptorSet;
-    write.dstBinding = Renderer::kTextureBinding;
+    write.dstBinding = Vulkan::kTextureBinding;
     write.dstArrayElement = static_cast<uint32_t>(index);
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write.descriptorCount = 1;

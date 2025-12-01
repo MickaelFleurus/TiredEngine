@@ -19,6 +19,8 @@ class CSystem;
 namespace Vulkan {
 class CVulkanContext;
 class CVulkanRendering;
+class CDescriptorStorage;
+class CBufferHandler;
 } // namespace Vulkan
 
 namespace Material {
@@ -27,18 +29,16 @@ class CMaterialFactory;
 
 namespace Renderer {
 
-class CBufferHandler;
 class CTextRenderer;
-class CDescriptorStorage;
 
 class CWindow {
 public:
     CWindow(System::CSystem& system, SDL_Window* window,
             Vulkan::CVulkanContext& vulkanContext,
-            Vulkan::CVulkanRendering& renderer, CBufferHandler& bufferHandler,
-            CTextRenderer& textRenderer,
+            Vulkan::CVulkanRendering& renderer,
+            Vulkan::CBufferHandler& bufferHandler, CTextRenderer& textRenderer,
             Material::CMaterialFactory& materialFactory,
-            CDescriptorStorage& descriptorStorage);
+            Vulkan::CDescriptorStorage& descriptorStorage);
     ~CWindow();
 
     bool BeginRender();
@@ -58,9 +58,9 @@ private:
     SDL_Window* mSDLWindow;
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering& mRenderer;
-    CBufferHandler& mBufferHandler;
+    Vulkan::CBufferHandler& mBufferHandler;
     CTextRenderer& mTextRenderer;
-    CDescriptorStorage& mDescriptorStorage;
+    Vulkan::CDescriptorStorage& mDescriptorStorage;
     Material::CMaterialFactory& mMaterialFactory;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;

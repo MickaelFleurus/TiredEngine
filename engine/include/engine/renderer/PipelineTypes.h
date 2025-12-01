@@ -1,7 +1,5 @@
 #pragma once
-struct SDL_GPUShader;
 
-#include "engine/renderer/ShaderFactory.h" // For SShaderResources
 #include <glm/vec4.hpp>
 
 namespace Renderer {

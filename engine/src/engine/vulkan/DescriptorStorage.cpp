@@ -1,13 +1,11 @@
-#include "engine/renderer/DescriptorStorage.h"
+#include "engine/vulkan/DescriptorStorage.h"
 
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
-#include "engine/renderer/Constants.h"
+#include "engine/vulkan/Constants.h"
 
-namespace {} // namespace
-
-namespace Renderer {
+namespace Vulkan {
 
 CDescriptorStorage::CDescriptorStorage(
     const Vulkan::CVulkanContext& contextGetter)
@@ -45,7 +43,7 @@ void CDescriptorStorage::Init() {
     VkDescriptorSetLayoutBinding textureBinding{};
     textureBinding.binding = kTextureBinding;
     textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    textureBinding.descriptorCount = Renderer::kMaxTextures;
+    textureBinding.descriptorCount = Vulkan::kMaxTextures;
     textureBinding.stageFlags =
         VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
     textureBinding.pImmutableSamplers = nullptr;
@@ -54,7 +52,7 @@ void CDescriptorStorage::Init() {
     VkDescriptorSetLayoutBinding instancesBinding{};
     instancesBinding.binding = kInstanceBufferBinding;
     instancesBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    instancesBinding.descriptorCount = Renderer::kInstanceAmountPerBuffer;
+    instancesBinding.descriptorCount = Vulkan::kInstanceAmountPerBuffer;
     instancesBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     instancesBinding.pImmutableSamplers = nullptr;
     mBindingInfos.push_back(instancesBinding);
@@ -113,4 +111,4 @@ VkDescriptorPool CDescriptorStorage::GetDescriptorPool() const {
     return mDescriptorPool;
 }
 
-} // namespace Renderer
+} // namespace Vulkan

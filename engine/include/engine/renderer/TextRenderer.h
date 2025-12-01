@@ -1,8 +1,8 @@
 #pragma once
 
-#include "engine/renderer/BufferHandle.h"
 #include "engine/renderer/DataTypes.h"
 #include "engine/utils/BufferMemoryBlocks.h"
+#include <vulkan/vulkan.h>
 
 #include <string>
 #include <unordered_map>
@@ -12,10 +12,13 @@ namespace Component {
 class CTextComponent;
 }
 
-namespace Renderer {
-
+namespace Vulkan {
+class CBufferHandle;
 class CVertexBufferHandleWrapper;
 class CIndexesBufferHandleWrapper;
+} // namespace Vulkan
+
+namespace Renderer {
 
 class CTextRenderer {
 public:
@@ -26,9 +29,10 @@ public:
         uint32_t vertexOffset;
     };
     explicit CTextRenderer(
-        Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
-        Renderer::CIndexesBufferHandleWrapper& mIndexesBufferHandle,
-        CBufferHandle& instanceBuffer, CBufferHandle& instanceInfoBuffer);
+        Vulkan::CVertexBufferHandleWrapper& vertexBufferHandle,
+        Vulkan::CIndexesBufferHandleWrapper& mIndexesBufferHandle,
+        Vulkan::CBufferHandle& instanceBuffer,
+        Vulkan::CBufferHandle& instanceInfoBuffer);
 
     void Update();
     void DrawTexts(VkCommandBuffer commandBuffer);
@@ -40,10 +44,10 @@ public:
 
 private:
     void GenerateInstanceData();
-    CBufferHandle& mTextInstanceBuffer;
+    Vulkan::CBufferHandle& mTextInstanceBuffer;
     Utils::SBufferRange mTextInstanceBufferRange;
 
-    CBufferHandle& mTextInstanceInfoBuffer;
+    Vulkan::CBufferHandle& mTextInstanceInfoBuffer;
     Utils::SBufferRange mTextInstanceInfoBufferRange;
     bool mNeedUpdate = true;
 

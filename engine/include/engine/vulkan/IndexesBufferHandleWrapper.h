@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-namespace Renderer {
+namespace Vulkan {
 class CBufferHandle;
 class CIndexesBufferHandleWrapper {
 public:
@@ -18,4 +18,4 @@ public:
 private:
     CBufferHandle* mBufferHandle;
 };
-} // namespace Renderer
+} // namespace Vulkan

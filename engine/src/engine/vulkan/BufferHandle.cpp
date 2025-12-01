@@ -1,11 +1,11 @@
-#include "engine/renderer/BufferHandle.h"
+#include "engine/vulkan/BufferHandle.h"
 #include "engine/vulkan/VulkanContext.h"
 
 #include "engine/renderer/MemoryAllocator.h"
 
 #include "engine/utils/Logger.h"
 
-namespace Renderer {
+namespace Vulkan {
 
 CBufferHandle::CBufferHandle(const Vulkan::CVulkanContext& vulkanContext,
                              Renderer::CMemoryAllocator& memoryAllocator,
@@ -136,4 +136,4 @@ void CBufferHandle::FreeRange(const Utils::SBufferRange& range) {
     mMemoryBlocks.Free(range);
 }
 
-} // namespace Renderer
+} // namespace Vulkan

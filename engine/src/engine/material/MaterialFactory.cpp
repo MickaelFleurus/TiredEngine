@@ -11,7 +11,7 @@ namespace Material {
 CMaterialFactory::CMaterialFactory(
     Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
     const Vulkan::CVulkanContext& contextGetter,
-    Renderer::CDescriptorStorage& descriptorStorage)
+    Vulkan::CDescriptorStorage& descriptorStorage)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
     , mPipelineFactory(contextGetter)

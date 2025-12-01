@@ -1,8 +1,8 @@
-#include "engine/renderer/IndexesBufferHandleWrapper.h"
+#include "engine/vulkan/IndexesBufferHandleWrapper.h"
 
-#include "engine/renderer/BufferHandle.h"
+#include "engine/vulkan/BufferHandle.h"
 
-namespace Renderer {
+namespace Vulkan {
 
 CIndexesBufferHandleWrapper::CIndexesBufferHandleWrapper(
     CBufferHandle* bufferHandle)
@@ -20,4 +20,4 @@ CIndexesBufferHandleWrapper::AddIndexes(const std::vector<uint32_t>& indexes) {
                         rangeOpt.value());
     return rangeOpt;
 }
-} // namespace Renderer
+} // namespace Vulkan
