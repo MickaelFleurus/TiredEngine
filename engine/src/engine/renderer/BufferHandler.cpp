@@ -41,6 +41,22 @@ constexpr int kInstanceInfoBufferDefaultSize =
 constexpr auto kInstanceInfoBufferUsage =
     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
+constexpr int kTextInstanceBufferIndex = 4;
+constexpr auto kTextInstanceStructSize = sizeof(Renderer::STextInstanceData);
+constexpr int kTextInstanceBufferDefaultSize =
+    Renderer::kTextInstanceAmountPerBuffer * kTextInstanceStructSize;
+constexpr auto kTextInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                          VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+
+constexpr int kTextInstanceInfoBufferIndex = 5;
+constexpr auto kTextInstanceInfoStructSize =
+    sizeof(VkDrawIndexedIndirectCommand);
+constexpr int kTextInstanceInfoBufferDefaultSize =
+    Renderer::kTextInstanceInfoAmountPerBuffer * kTextInstanceInfoStructSize;
+constexpr auto kTextInstanceInfoBufferUsage =
+    VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
 } // namespace
 
 namespace Renderer {
@@ -59,6 +75,11 @@ CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
                  kInstanceBufferUsage);
     CreateBuffer(kInstanceInfoStructSize, kInstanceInfoBufferDefaultSize,
                  kInstanceInfoBufferUsage);
+    CreateBuffer(kTextInstanceStructSize, kTextInstanceBufferDefaultSize,
+                 kTextInstanceBufferUsage);
+    CreateBuffer(kTextInstanceInfoStructSize,
+                 kTextInstanceInfoBufferDefaultSize,
+                 kTextInstanceInfoBufferUsage);
 }
 
 CBufferHandler::~CBufferHandler() = default;
@@ -90,6 +111,14 @@ CBufferHandle& CBufferHandler::GetInstanceBufferHandle() {
 
 CBufferHandle& CBufferHandler::GetInstancesInfoBufferHandle() {
     return *mBuffers.at(kInstanceBufferIndex);
+}
+
+CBufferHandle& CBufferHandler::GetTextInstanceBufferHandle() {
+    return *mBuffers.at(kTextInstanceBufferIndex);
+}
+
+CBufferHandle& CBufferHandler::GetTextInstancesInfoBufferHandle() {
+    return *mBuffers.at(kTextInstanceBufferIndex);
 }
 
 void CBufferHandler::BindBuffers(VkCommandBuffer commandBuffer) {

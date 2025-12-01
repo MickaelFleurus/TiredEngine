@@ -14,6 +14,9 @@ class CTextComponent;
 
 namespace Renderer {
 
+class CVertexBufferHandleWrapper;
+class CIndexesBufferHandleWrapper;
+
 class CTextRenderer {
 public:
     struct SInstanceInfo {
@@ -22,8 +25,10 @@ public:
         uint32_t firstIndex;
         uint32_t vertexOffset;
     };
-    explicit CTextRenderer(CBufferHandle& instanceBuffer,
-                           CBufferHandle& instanceInfoBuffer);
+    explicit CTextRenderer(
+        Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
+        Renderer::CIndexesBufferHandleWrapper& mIndexesBufferHandle,
+        CBufferHandle& instanceBuffer, CBufferHandle& instanceInfoBuffer);
 
     void Update();
     void DrawTexts(VkCommandBuffer commandBuffer);
@@ -33,22 +38,20 @@ public:
     void RegisterTextComponent(Component::CTextComponent* textComponent);
     void UnregisterTextComponent(Component::CTextComponent* textComponent);
 
-    // SBufferRange ReserveBufferRange(size_t maxCharacters);
-
-    // void UpdateInstanceBuffer(SBufferRange range,
-    //                           const std::vector<SInstanceData>& instances);
-
 private:
     void GenerateInstanceData();
-    CBufferHandle& mInstanceBuffer;
+    CBufferHandle& mTextInstanceBuffer;
     Utils::SBufferRange mTextInstanceBufferRange;
 
-    CBufferHandle& mInstanceInfoBuffer;
-    Utils::SBufferRange mInstanceInfoBufferRange;
+    CBufferHandle& mTextInstanceInfoBuffer;
+    Utils::SBufferRange mTextInstanceInfoBufferRange;
     bool mNeedUpdate = true;
 
     std::vector<SInstanceInfo> mInstanceInfos;
     std::vector<Component::CTextComponent*> mRegisteredTextComponents;
+
+    Utils::SBufferRange mVerticesRange;
+    Utils::SBufferRange mIndexesRange;
 };
 
 } // namespace Renderer

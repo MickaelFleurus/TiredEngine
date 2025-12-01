@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/font/FontTypes.h"
-#include "engine/utils/BufferMemoryBlocks.h"
+
 #include <glm/vec4.hpp>
 #include <memory>
 #include <string>
@@ -25,17 +25,11 @@ public:
     CPolice(const char* name,
             std::unique_ptr<Material::AbstractMaterial> material,
             std::unordered_map<std::string, Font::GlyphInfo> glyphs,
-            Utils::SBufferRange vertexBufferRange,
-            Utils::SBufferRange indexBufferRange, SMetrics fontMetrics);
+            SMetrics fontMetrics);
     ~CPolice();
 
     const Font::GlyphInfo& GetGlyphInfo(char c) const;
-    const SMetrics& GetFontMetrics() const {
-        return mFontMetrics;
-    }
-
-    uint32_t GetIndexOffset(char c) const;
-    uint32_t GetVertexOffset(char c) const;
+    const SMetrics& GetFontMetrics() const;
 
     Material::AbstractMaterial& GetMaterial();
     int GetTextureIndex() const;
@@ -47,8 +41,6 @@ private:
     std::unique_ptr<Material::AbstractMaterial> mMaterial;
 
     std::unordered_map<std::string, Font::GlyphInfo> mGlyphs;
-    Utils::SBufferRange mVertexBufferRange;
-    Utils::SBufferRange mIndexBufferRange;
     SMetrics mFontMetrics;
 };
 } // namespace Font

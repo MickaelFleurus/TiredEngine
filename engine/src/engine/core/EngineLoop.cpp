@@ -17,8 +17,10 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
-    , mTextRenderer(mBufferHandler.GetInstanceBufferHandle(),
-                    mBufferHandler.GetInstancesInfoBufferHandle())
+    , mTextRenderer(mBufferHandler.GetVerticesBufferHandle(),
+                    mBufferHandler.GetIndexesBufferHandle(),
+                    mBufferHandler.GetTextInstanceBufferHandle(),
+                    mBufferHandler.GetTextInstancesInfoBufferHandle())
     , mMaterialFactory(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
     , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
@@ -26,9 +28,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory,
-                   mBufferHandler.GetVerticesBufferHandle(),
-                   mBufferHandler.GetIndexesBufferHandle())
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
     , mComponentManager(mFontHandler, mTextRenderer)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)

@@ -34,7 +34,7 @@ public:
 
     glm::vec2 getSize() override;
 
-    const std::vector<Renderer::SInstanceData>& GetInstances();
+    const std::vector<Renderer::STextInstanceData>& GetInstances();
 
 protected:
     virtual void setDirty(bool dirty) override;
@@ -43,7 +43,7 @@ private:
     void GenerateInstances();
 
     Renderer::CTextRenderer& mTextRenderer;
-    std::vector<Renderer::SInstanceData> mInstances;
+    std::vector<Renderer::STextInstanceData> mInstances;
 
     std::string mText;
     Font::CPolice* mPolice = nullptr;

@@ -24,6 +24,15 @@ struct SInstanceData {
     float padding[2];
 };
 
+struct STextInstanceData {
+    glm::mat4 modelMatrix;
+    glm::vec4 color;
+    glm::vec4 uvRect;
+    int materialId;
+    int textureId;
+    float padding[2];
+};
+
 struct SPushConstantData {
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;

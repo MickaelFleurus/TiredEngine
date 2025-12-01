@@ -24,9 +24,7 @@ class CFontHandler {
 public:
     CFontHandler(Renderer::CTextureManager& textureManager,
                  Utils::CFileHandler& fileHandler,
-                 Material::CMaterialFactory& materialFactory,
-                 Renderer::CVertexBufferHandleWrapper& vertexBufferHandle,
-                 Renderer::CIndexesBufferHandleWrapper& indexesBufferHandle);
+                 Material::CMaterialFactory& materialFactory);
     ~CFontHandler();
 
     CPolice& GetPolice(std::string name);
@@ -36,7 +34,5 @@ private:
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
     Material::CMaterialFactory& mMaterialFactory;
-    Renderer::CVertexBufferHandleWrapper& mVertexBufferHandle;
-    Renderer::CIndexesBufferHandleWrapper& mIndexesBufferHandle;
 };
 } // namespace Font

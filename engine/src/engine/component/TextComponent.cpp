@@ -85,13 +85,20 @@ void CTextComponent::GenerateInstances() {
             continue;
         }
 
-        Renderer::SInstanceData instance;
+        float u = glyph.uv.x;
+        float v = glyph.uv.y;
+        float uw = glyph.uv.z;
+        float vh = glyph.uv.w;
+        glm::vec4 uvRect(u, v, uw, vh);
+
+        Renderer::STextInstanceData instance;
 
         instance.textureId = mPolice->GetTextureIndex();
         instance.materialId = 0;
         instance.color = mColor;
         instance.modelMatrix =
             glm::translate(modelMatrix, glm::vec3(cursorX, cursorY, 0.0f));
+        instance.uvRect = uvRect;
         mInstances.push_back(instance);
 
         cursorX += glyph.advance * mFontSize;
@@ -128,7 +135,7 @@ glm::vec2 CTextComponent::getSize() {
     return mSize;
 }
 
-const std::vector<Renderer::SInstanceData>& CTextComponent::GetInstances() {
+const std::vector<Renderer::STextInstanceData>& CTextComponent::GetInstances() {
     if (isDirty()) {
         GenerateInstances();
     }

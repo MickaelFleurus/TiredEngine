@@ -29,6 +29,8 @@ public:
     CIndexesBufferHandleWrapper& GetIndexesBufferHandle();
     CBufferHandle& GetInstanceBufferHandle();
     CBufferHandle& GetInstancesInfoBufferHandle();
+    CBufferHandle& GetTextInstanceBufferHandle();
+    CBufferHandle& GetTextInstancesInfoBufferHandle();
 
     void BindBuffers(VkCommandBuffer commandBuffer);
 
