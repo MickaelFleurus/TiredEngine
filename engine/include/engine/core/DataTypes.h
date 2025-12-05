@@ -38,8 +38,8 @@ struct STextInstanceData {
     glm::mat4 modelMatrix;
     glm::vec4 color;
     glm::vec4 uvRect;
-    int materialId;
-    int textureId;
+    uint32_t materialId;
+    uint32_t textureId;
     float padding[2];
 };
 

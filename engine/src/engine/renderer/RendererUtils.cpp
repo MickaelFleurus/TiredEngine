@@ -83,16 +83,16 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     color.offset = sizeof(float) * 16;
 
     VkVertexInputAttributeDescription materialId{};
-    materialId.location = 8;
+    materialId.location = 7;
     materialId.binding = 1;
-    materialId.format = VK_FORMAT_R32_SINT; // int, not uint!
-    materialId.offset = sizeof(float) * 20; // = 80
+    materialId.format = VK_FORMAT_R32_UINT;
+    materialId.offset = sizeof(float) * 20;
 
     VkVertexInputAttributeDescription texId{};
-    texId.location = 9;
+    texId.location = 8;
     texId.binding = 1;
-    texId.format = VK_FORMAT_R32_SINT;                   // int, not uint!
-    texId.offset = sizeof(float) * 20 + sizeof(int32_t); // = 84
+    texId.format = VK_FORMAT_R32_UINT;
+    texId.offset = sizeof(float) * 20 + sizeof(uint32_t);
 
     info.attributes = {vertexPosition,
                        vertexUV,
@@ -101,8 +101,8 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
                        modelMatrixPart2,
                        modelMatrixPart3,
                        color,
-                       texId,
-                       materialId};
+                       materialId,
+                       texId};
 
     VkVertexInputBindingDescription vertexBufferDesc{};
     vertexBufferDesc.binding = 0;
@@ -177,14 +177,14 @@ Renderer::VertexLayoutInfo CreateMeshVertexLayout() {
     VkVertexInputAttributeDescription materialId{};
     materialId.location = 8;
     materialId.binding = 1;
-    materialId.format = VK_FORMAT_R32_SINT; // int, not uint!
-    materialId.offset = sizeof(float) * 20; // = 80
+    materialId.format = VK_FORMAT_R32_UINT;
+    materialId.offset = sizeof(float) * 20;
 
     VkVertexInputAttributeDescription texId{};
     texId.location = 9;
     texId.binding = 1;
-    texId.format = VK_FORMAT_R32_SINT;                   // int, not uint!
-    texId.offset = sizeof(float) * 20 + sizeof(int32_t); // = 84
+    texId.format = VK_FORMAT_R32_UINT;
+    texId.offset = sizeof(float) * 20 + sizeof(uint32_t);
 
     info.attributes = {vertexPosition,
                        vertexUV,
@@ -236,7 +236,11 @@ VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context) {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(context.GetDevice(), &allocInfo, &commandBuffer);
+    if (vkAllocateCommandBuffers(context.GetDevice(), &allocInfo,
+                                 &commandBuffer) != VK_SUCCESS) {
+        LOG_ERROR("Failed to allocate command buffer!");
+        return VK_NULL_HANDLE;
+    }
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -252,8 +256,7 @@ void EndSingleTimeCommands(const Vulkan::CVulkanContext& context,
                            VkCommandBuffer commandBuffer) {
 
     vkEndCommandBuffer(commandBuffer);
-    renderer.SubmitSync(commandBuffer);
-    renderer.WaitIdle();
+    renderer.SubmitSyncSingleUse(commandBuffer);
 
     vkFreeCommandBuffers(context.GetDevice(), context.GetCommandPool(), 1,
                          &commandBuffer);

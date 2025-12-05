@@ -101,8 +101,8 @@ constexpr std::array<Core::SVertex, 24> GenerateCubeVertices(float size) {
 }
 
 constexpr std::array<uint32_t, 36> kCubeIndices{
-    0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
-    12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+    0,  3,  2,  2,  1,  0,  4,  7,  6,  6,  5,  4,  8,  11, 10, 10, 9,  8,
+    12, 15, 14, 14, 13, 12, 16, 19, 18, 18, 17, 16, 20, 23, 22, 22, 21, 20};
 } // namespace
 
 namespace Core {
@@ -121,7 +121,7 @@ CMesh CMeshFactory::CreateTriangle() {
                       .texCoord{1.0f, 0.0f},
                       .normal{0.0f, 0.0f, 1.0f}}};
 
-    std::array<uint32_t, 3> triangleIndices{0, 1, 2};
+    std::array<uint32_t, 3> triangleIndices{0, 2, 1};
 
     return CMesh{EMeshBaseType::Triangle, EMeshDynamicType::Static,
                  triangleVertices, triangleIndices};

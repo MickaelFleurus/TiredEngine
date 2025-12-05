@@ -1,4 +1,5 @@
 #include "engine/vulkan/PipelineFactory.h"
+
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
@@ -6,6 +7,7 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
+
 #include <array>
 #include <functional>
 #include <vulkan/vulkan.h>

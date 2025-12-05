@@ -1,7 +1,9 @@
 #pragma once
 
 #include "engine/vulkan/VulkanContext.h"
+
 #include <optional>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
@@ -12,8 +14,9 @@ public:
 
     void Destroy();
     std::optional<uint32_t> AcquireNextImage();
-    void SubmitSync(VkCommandBuffer commandBuffer) const;
-    void SubmitAsync(VkCommandBuffer commandBuffer) const;
+    void SubmitSync(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+    void SubmitAsync(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+    void SubmitSyncSingleUse(VkCommandBuffer commandBuffer) const;
     void Present(uint32_t imageIndex);
     void WaitIdle() const;
 
@@ -28,5 +31,6 @@ private:
     VkQueue mQueue = VK_NULL_HANDLE;
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
     VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
+    std::vector<VkFence> mFrameFences;
 };
 } // namespace Vulkan

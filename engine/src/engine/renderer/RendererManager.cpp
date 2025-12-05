@@ -91,6 +91,7 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
             sizeof(Core::SPushConstantData), &pushConstantData);
         // mMeshRenderer.Draw(commandBuffer);
+
         for (const auto& range : instanceRanges) {
             vkCmdDrawIndexedIndirect(
                 commandBuffer,

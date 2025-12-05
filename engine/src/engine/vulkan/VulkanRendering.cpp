@@ -7,8 +7,8 @@ namespace Vulkan {
 CVulkanRendering::CVulkanRendering(CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext) {
     VkDevice device = mVulkanContext.GetDevice();
-    vkGetDeviceQueue(device, mVulkanContext.GetGraphicsQueueFamilyIndex(),
-                     mVulkanContext.GetGraphicsQueueFamilyIndex(), &mQueue);
+    vkGetDeviceQueue(device, mVulkanContext.GetGraphicsQueueFamilyIndex(), 0,
+                     &mQueue);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -18,6 +18,18 @@ CVulkanRendering::CVulkanRendering(CVulkanContext& vulkanContext)
         vkCreateSemaphore(device, &semaphoreInfo, nullptr,
                           &mRenderFinishedSemaphore) != VK_SUCCESS) {
         LOG_FATAL("Failed to create semaphores!");
+    }
+
+    // Create fence
+    for (int i = 0; i < mVulkanContext.GetImageCount(); ++i) {
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        VkFence fence;
+        if (vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
+            LOG_FATAL("Failed to create fence!");
+        }
+        mFrameFences.push_back(fence);
     }
 }
 
@@ -30,6 +42,9 @@ void CVulkanRendering::Destroy() {
     WaitIdle();
     vkDestroySemaphore(device, mRenderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, mImageAvailableSemaphore, nullptr);
+    for (auto& fence : mFrameFences) {
+        vkDestroyFence(device, fence, nullptr);
+    }
 }
 
 std::optional<uint32_t> CVulkanRendering::AcquireNextImage() {
@@ -51,19 +66,25 @@ std::optional<uint32_t> CVulkanRendering::AcquireNextImage() {
     return imageIndex;
 }
 
-void CVulkanRendering::SubmitSync(VkCommandBuffer commandBuffer) const {
+void CVulkanRendering::SubmitSync(VkCommandBuffer commandBuffer,
+                                  uint32_t imageIndex) const {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    if (vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    VkDevice device = mVulkanContext.GetDevice();
+    vkResetFences(device, 1, &mFrameFences[imageIndex]);
+    if (vkQueueSubmit(mQueue, 1, &submitInfo, mFrameFences[imageIndex]) !=
+        VK_SUCCESS) {
         LOG_ERROR("Failed to submit command buffer!");
     }
+    vkWaitForFences(device, 1, &mFrameFences[imageIndex], VK_TRUE, UINT64_MAX);
 }
 
-void CVulkanRendering::SubmitAsync(VkCommandBuffer commandBuffer) const {
+void CVulkanRendering::SubmitAsync(VkCommandBuffer commandBuffer,
+                                   uint32_t imageIndex) const {
     VkPipelineStageFlags waitStages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -79,9 +100,26 @@ void CVulkanRendering::SubmitAsync(VkCommandBuffer commandBuffer) const {
     submitInfo.pWaitSemaphores = &mImageAvailableSemaphore;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.waitSemaphoreCount = 1;
+    if (vkQueueSubmit(mQueue, 1, &submitInfo, mFrameFences[imageIndex]) !=
+        VK_SUCCESS) {
+        LOG_ERROR("Failed to submit command buffer!");
+    }
+}
+
+void CVulkanRendering::SubmitSyncSingleUse(
+    VkCommandBuffer commandBuffer) const {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    // Use a temporary fence or just wait on the queue
     if (vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         LOG_ERROR("Failed to submit command buffer!");
     }
+
+    // Wait for queue to finish (simpler than managing a fence)
+    vkQueueWaitIdle(mQueue);
 }
 
 void CVulkanRendering::Present(uint32_t imageIndex) {
@@ -111,8 +149,14 @@ VkQueue CVulkanRendering::GetHandle() const {
 
 void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
                                        VkRect2D scissor) {
+    VkDevice device = mVulkanContext.GetDevice();
+
+    // Wait for GPU to finish with this frame
+    vkWaitForFences(device, 1, &mFrameFences[index], VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &mFrameFences[index]);
 
     VkCommandBuffer commandBuffer = mVulkanContext.GetCommandBuffer(index);
+    vkResetCommandBuffer(commandBuffer, 0);
 
     VkClearColorValue red{0.0f, 0.0f, 0.0f, 0.0f};
     VkClearValue clearColor{};

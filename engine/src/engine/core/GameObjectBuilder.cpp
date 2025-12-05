@@ -140,7 +140,7 @@ CGameObjectBuilder::CBuilder::SetAnchor(Utils::EAnchors anchor) {
 
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::Add3DCube(float size) {
-    auto* cube = mMeshManager.CreateTriangle();
+    auto* cube = mMeshManager.CreateCube(size);
     auto& meshComponent = mComponentManager.addMeshComponent(*mGameObject);
     meshComponent.SetMesh(cube);
 

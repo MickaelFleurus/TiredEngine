@@ -109,27 +109,39 @@ bool CBufferHandle::Fill(const void* data, int size, int offset,
         return false;
     }
 
-    VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
-    VkDeviceSize alignedOffset = (offset / atomSize) * atomSize;
-    VkDeviceSize end = offset + size;
-    VkDeviceSize alignedEnd = ((end + atomSize - 1) / atomSize) * atomSize;
-    VkDeviceSize alignedSize = alignedEnd - alignedOffset;
+    // Calculate absolute offset in the buffer
+    int absoluteOffset = range.offset + offset;
 
-    if (alignedOffset + alignedSize > range.size) {
+    // Check bounds: data must fit within the reserved range
+    if (offset + size > range.size) {
         LOG_ERROR("Trying to fill more data than reserved!");
         return false;
     }
 
+    VkDeviceSize atomSize = mMemoryAllocator.GetBufferMemoryAlignment();
+    VkDeviceSize alignedOffset = (absoluteOffset / atomSize) * atomSize;
+    VkDeviceSize end = absoluteOffset + size;
+    VkDeviceSize alignedEnd = ((end + atomSize - 1) / atomSize) * atomSize;
+    VkDeviceSize alignedSize = alignedEnd - alignedOffset;
+
     void* mappedData;
-    vkMapMemory(mDevice, mMemory, alignedOffset, alignedSize, 0, &mappedData);
-    memcpy(static_cast<uint8_t*>(mappedData) + (offset - alignedOffset), data,
-           size);
+    VkResult result = vkMapMemory(mDevice, mMemory, alignedOffset, alignedSize,
+                                  0, &mappedData);
+    if (result != VK_SUCCESS) {
+        LOG_ERROR("Failed to map memory!");
+        return false;
+    }
+
+    memcpy(static_cast<uint8_t*>(mappedData) + (absoluteOffset - alignedOffset),
+           data, size);
+
     VkMappedMemoryRange mappedRange{};
     mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mappedRange.memory = mMemory;
     mappedRange.offset = alignedOffset;
     mappedRange.size = alignedSize;
     vkFlushMappedMemoryRanges(mDevice, 1, &mappedRange);
+
     vkUnmapMemory(mDevice, mMemory);
     return true;
 }
