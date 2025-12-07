@@ -23,7 +23,8 @@ public:
 
     CMeshRenderer& GetMeshRenderer();
     CTextRenderer& GetTextRenderer();
-    void RebuildInstances(const std::vector<SRenderable>& renderables);
+    void GenerateInstances(const std::vector<SRenderable>& renderables);
+    void UpdateInstances(const std::vector<SRenderable>& renderables);
 
     void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
                 Core::CCamera& camera);

@@ -44,8 +44,8 @@ struct STextInstanceData {
 };
 
 struct SPushConstantData {
-    glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+    glm::mat4 viewMatrix;
 };
 
 } // namespace Core

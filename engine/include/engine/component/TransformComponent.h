@@ -32,7 +32,8 @@ public:
 
 private:
     glm::vec3 mPosition{0.f, 0.f, 0.f};
-    glm::quat mRotation{1.f, 0.f, 0.f, 0.f};
+    glm::vec3 mRotation{0.f, 0.f, 0.f};
+    glm::quat mRotationQuat{1.f, 0.f, 0.f, 0.f};
     glm::vec3 mScale{1.f, 1.f, 1.f};
     Utils::EAnchors mAnchor{Utils::EAnchors::BottomLeft};
 };

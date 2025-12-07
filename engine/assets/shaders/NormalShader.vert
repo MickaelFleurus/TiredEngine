@@ -17,8 +17,15 @@ layout(push_constant) uniform PushConstants {
 } pc;
 
 layout(location = 0) out vec4 fragColor;
+layout(location = 1) out vec2 fragUV;
+layout(location = 2) out vec3 fragNormal;
 
 void main() {
-    gl_Position = vec4(vertexPosition*0.5, 1.0);
-    fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_Position = pc.projection * pc.view * modelMatrix * vec4(vertexPosition, 1.0);
+    
+    // Transform normal by inverse transpose of model matrix
+    fragNormal = normalize(mat3(transpose(inverse(modelMatrix))) * vertexNormal);
+    
+    fragColor = instanceColor;
+    fragUV = vertexUV;
 }

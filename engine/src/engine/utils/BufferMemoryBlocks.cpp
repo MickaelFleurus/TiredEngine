@@ -4,20 +4,20 @@
 
 namespace Utils {
 
-CBufferMemoryBlocks::CBufferMemoryBlocks() : mTotalSize(0) {
+CBufferMemoryBlocks::CBufferMemoryBlocks() : mTotalSize(0ULL) {
 }
 
 CBufferMemoryBlocks::~CBufferMemoryBlocks() {
     mBlocks.clear();
 }
 
-void CBufferMemoryBlocks::Init(std::size_t totalSize) {
+void CBufferMemoryBlocks::Init(uint64_t totalSize) {
     mTotalSize = totalSize;
     mBlocks.clear();
     mBlocks.push_back(BufferBlock{0, totalSize, true});
 }
 
-std::optional<SBufferRange> CBufferMemoryBlocks::Allocate(std::size_t size) {
+std::optional<SBufferRange> CBufferMemoryBlocks::Allocate(uint64_t size) {
     BufferBlock* bestFit = nullptr;
     for (auto& block : mBlocks) {
         if (block.free && block.size >= size) {
@@ -83,12 +83,49 @@ bool CBufferMemoryBlocks::Contains(const SBufferRange& block) const {
     return it != mBlocks.cend();
 }
 
+std::optional<SBufferRange>
+CBufferMemoryBlocks::TryResize(const SBufferRange& block, std::size_t newSize) {
+    auto it =
+        std::find_if(mBlocks.begin(), mBlocks.end(), [&](const BufferBlock& b) {
+            return b.offset == block.offset && b.size == block.size && !b.free;
+        });
+    if (it == mBlocks.end()) {
+        return std::nullopt;
+    }
+
+    if (newSize == block.size) {
+        return block;
+    } else if (newSize < block.size) {
+        std::size_t sizeDifference = block.size - newSize;
+        it->size = newSize;
+        auto nextIt = std::next(it);
+        mBlocks.insert(nextIt,
+                       BufferBlock{it->offset + newSize, sizeDifference, true});
+        return SBufferRange{it->offset, newSize};
+    } else {
+        std::size_t additionalSizeNeeded = newSize - block.size;
+        auto nextIt = std::next(it);
+        if (nextIt != mBlocks.end() && nextIt->free &&
+            nextIt->size >= additionalSizeNeeded) {
+            it->size = newSize;
+            if (nextIt->size > additionalSizeNeeded) {
+                nextIt->offset += additionalSizeNeeded;
+                nextIt->size -= additionalSizeNeeded;
+            } else {
+                mBlocks.erase(nextIt);
+            }
+            return SBufferRange{it->offset, newSize};
+        }
+    }
+    return std::nullopt;
+}
+
 void CBufferMemoryBlocks::Reset() {
     mBlocks.clear();
     mBlocks.push_back(BufferBlock{0, mTotalSize, true});
 }
 
-int CBufferMemoryBlocks::GetTotalSize() const {
+uint64_t CBufferMemoryBlocks::GetTotalSize() const {
     return mTotalSize;
 }
 

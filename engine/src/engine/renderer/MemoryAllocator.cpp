@@ -1,6 +1,6 @@
 #include "engine/renderer/MemoryAllocator.h"
-#include "engine/utils/Logger.h"
 
+#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace {
@@ -77,5 +77,10 @@ VkDeviceSize CMemoryAllocator::GetBufferMemoryAlignment() const {
     VkPhysicalDeviceProperties deviceProperties =
         mVulkanContext.GetPhysicalDeviceProperties();
     return deviceProperties.limits.nonCoherentAtomSize;
+}
+
+VkDeviceSize CMemoryAllocator::AlignSize(VkDeviceSize size) const {
+    VkDeviceSize alignment = GetBufferMemoryAlignment();
+    return (size + alignment - 1) & ~(alignment - 1);
 }
 } // namespace Renderer

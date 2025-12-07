@@ -23,6 +23,8 @@ public:
     VkPipeline GetPipeline() const;
     VkPipelineLayout GetPipelineLayout() const;
 
+    std::size_t GetId() const;
+
     virtual void Bind(VkDevice device, VkCommandBuffer commandBuffer,
                       SMaterialBindingInfo& bindingInfo,
                       VkDescriptorPool descriptorPool);
@@ -41,6 +43,7 @@ protected:
     Renderer::SPipelineDescriptors mPipeline;
     glm::vec4 mColor = glm::vec4(1.0f);
     int mTextureIndex = -1;
+    const std::size_t mId;
 };
 
 } // namespace Material

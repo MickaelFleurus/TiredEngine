@@ -22,10 +22,9 @@ void CTransformComponentWidget::Render() {
         mTransformComponent.setPosition(pos);
     }
 
-    auto rotEuler = mTransformComponent.getRotation();
-    glm::vec3 rot = glm::degrees(rotEuler);
+    auto rot = mTransformComponent.getRotation();
     if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f, -360.0f, 360.0f, "%.1f°")) {
-        mTransformComponent.setRotation(glm::radians(rot));
+        mTransformComponent.setRotation(rot);
     }
 
     auto scale = mTransformComponent.getScale();

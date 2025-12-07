@@ -17,6 +17,7 @@ public:
                                   VkMemoryPropertyFlags properties);
 
     VkDeviceSize GetBufferMemoryAlignment() const;
+    VkDeviceSize AlignSize(VkDeviceSize size) const;
 
 private:
     Vulkan::CVulkanContext& mVulkanContext;

@@ -35,15 +35,20 @@ public:
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
             indirectDrawBuffer);
     void Free() override;
-    void Prepare() override;
+    void Prepare();
     void Update() override;
     // void DrawTextsIndirect(VkCommandBuffer commandBuffer);
     //  void DrawTextsDirect(VkCommandBuffer commandBuffer);
 
     void SetNeedUpdate();
+
+    void UpdateInstances(const std::vector<SRenderable>& renderables) {
+        // TODO
+    }
+
     std::unordered_map<Material::CAbstractMaterial*,
                        std::vector<Utils::SBufferIndexRange>>
-    RebuildInstances(const std::vector<SRenderable>& renderables) override;
+    GenerateInstances(const std::vector<SRenderable>& renderables);
 
     void RegisterTextComponent(Component::CTextComponent* textComponent);
     void UnregisterTextComponent(Component::CTextComponent* textComponent);

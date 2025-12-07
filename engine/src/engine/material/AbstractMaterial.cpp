@@ -2,11 +2,18 @@
 
 #include "engine/vulkan/DescriptorStorage.h"
 
+namespace {
+static std::size_t gMaterialIdCounter = 0;
+} // namespace
+
 namespace Material {
 CAbstractMaterial::CAbstractMaterial(EMaterialType type,
                                      Renderer::EVertexLayout vertexLayout,
                                      Renderer::SPipelineDescriptors& pipeline)
-    : mType(type), mVertexLayout(vertexLayout), mPipeline(pipeline) {
+    : mType(type)
+    , mVertexLayout(vertexLayout)
+    , mPipeline(pipeline)
+    , mId(gMaterialIdCounter++) {
 }
 
 CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
@@ -14,7 +21,8 @@ CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTextureIndex(other.mTextureIndex) {
+    , mTextureIndex(other.mTextureIndex)
+    , mId(gMaterialIdCounter++) {
 }
 
 CAbstractMaterial::CAbstractMaterial(CAbstractMaterial&& other) noexcept
@@ -22,7 +30,8 @@ CAbstractMaterial::CAbstractMaterial(CAbstractMaterial&& other) noexcept
     , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTextureIndex(other.mTextureIndex) {
+    , mTextureIndex(other.mTextureIndex)
+    , mId(gMaterialIdCounter++) {
     other.mPipeline = {};
     other.mTextureIndex = -1;
 }
@@ -53,6 +62,10 @@ int CAbstractMaterial::GetTextureIndex() const {
 
 VkPipelineLayout CAbstractMaterial::GetPipelineLayout() const {
     return mPipeline.pipelineLayout;
+}
+
+std::size_t CAbstractMaterial::GetId() const {
+    return mId;
 }
 
 void CAbstractMaterial::Bind(VkDevice device, VkCommandBuffer commandBuffer,

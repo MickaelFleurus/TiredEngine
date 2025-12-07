@@ -61,13 +61,16 @@ VkRect2D GetScissor(VkViewport viewport) {
     return scissor;
 }
 
-void ExtractRenderable(Core::CGameObject& root,
-                       Component::CComponentManager& componentManager,
-                       std::vector<Renderer::SRenderable>& renderables,
-                       glm::mat4 transform = glm::mat4(1.0f)) {
+void ExtractRenderable(
+    Core::CGameObject& root, Component::CComponentManager& componentManager,
+    std::vector<Renderer::SRenderable>& renderables,
+    const std::unordered_map<Core::GameObjectId, Renderer::SRenderable>&
+        previousRenderables,
+    glm::mat4 transform = glm::mat4(1.0f)) {
     if (!root.IsVisible()) {
         return;
     }
+    auto gameObjectId = root.getId();
     auto& transformComponent =
         *componentManager.getComponent<Component::CTransformComponent>(
             root.getId());
@@ -77,19 +80,23 @@ void ExtractRenderable(Core::CGameObject& root,
                 root.getId())) {
         transformComponent.UpdateMatrix(transform);
         Renderer::SRenderable renderable{};
+        renderable.id = gameObjectId;
         renderable.transform = transform;
         renderable.material = meshComponent->GetMesh()->GetMaterial();
         renderable.meshHash = meshComponent->GetMesh()->GetHash();
         renderable.color = meshComponent->GetColor();
         renderable.textureIndex = meshComponent->GetTextureIndex();
-
-        renderables.push_back(renderable);
+        if (!previousRenderables.contains(gameObjectId) ||
+            previousRenderables.at(gameObjectId) != renderable) {
+            renderables.push_back(renderable);
+        }
     } else {
         transformComponent.UpdateMatrix(transform);
     }
 
     for (auto& child : root.getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables, transform);
+        ExtractRenderable(*child, componentManager, renderables,
+                          previousRenderables, transform);
     }
 }
 
@@ -129,13 +136,17 @@ void CWindow::Render(Scene::CAbstractScene& scene,
 
     std::vector<SRenderable> renderables;
     for (auto& child : scene.GetRoot().getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables);
+        ExtractRenderable(*child, componentManager, renderables, mRenderables);
     }
 
     std::sort(renderables.begin(), renderables.end());
-    if (renderables != mRenderables) {
-        mRendererManager.RebuildInstances(renderables);
-        mRenderables = std::move(renderables);
+    if (mRenderables.empty()) {
+        mRendererManager.GenerateInstances(renderables);
+    } else if (!renderables.empty()) {
+        mRendererManager.UpdateInstances(renderables);
+    }
+    for (const auto& renderable : renderables) {
+        mRenderables[renderable.id] = renderable;
     }
 
     VkCommandBuffer commandBuffer =

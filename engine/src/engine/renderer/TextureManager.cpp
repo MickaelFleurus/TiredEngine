@@ -1,12 +1,13 @@
 #include "engine/renderer/TextureManager.h"
-#include "engine/renderer/RendererUtils.h"
 
+#include "engine/renderer/RendererUtils.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+
 #include <SDL3/SDL_surface.h>
 
 namespace {
@@ -66,15 +67,20 @@ int CTextureManager::LoadTextureFromSurface(const std::string& filename,
 
     int width = surface->w;
     int height = surface->h;
-    void* pixels = surface->pixels;
-    int imageSize =
+    uint64_t imageSize =
         width * height * sizeof(float); // Assuming SDL_PIXELFORMAT_RGBA32
+    std::vector<uint8_t> pixelData(static_cast<uint8_t*>(surface->pixels),
+                                   static_cast<uint8_t*>(surface->pixels) +
+                                       imageSize);
 
-    auto bufferHandle = mBufferHandler.CreateBuffer(
-        sizeof(float), imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    auto bufferHandle = std::unique_ptr<Vulkan::CBufferHandleWrapper<uint8_t>>(
+        mBufferHandler.CreateTemp<uint8_t>());
+    bufferHandle->Init(static_cast<int>(imageSize),
+                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    auto range = bufferHandle->Reserve(static_cast<int>(imageSize));
-    bufferHandle->Fill(pixels, static_cast<int>(imageSize), 0, range.value());
+    Utils::SBufferIndexRange range{};
+    bufferHandle->PrepareData(range, pixelData);
+    bufferHandle->Upload();
 
     // 2. Create Vulkan image
     VulkanImage image = CreateImage(

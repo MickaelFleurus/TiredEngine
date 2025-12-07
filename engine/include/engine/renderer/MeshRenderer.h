@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/core/DataTypes.h"
+#include "engine/core/GameObjectId.h"
 #include "engine/renderer/IRenderer.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/utils/BufferMemoryBlocks.h"
@@ -19,6 +20,15 @@ class CBufferHandleWrapper;
 } // namespace Vulkan
 
 namespace Renderer {
+struct SPairHash {
+    template <typename T1, typename T2>
+    std::size_t operator()(const std::pair<T1, T2>& p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+        // Combine hashes using XOR and bit shifting
+        return h1 ^ (h2 << 1);
+    }
+};
 
 class CMeshRenderer : public IRenderer {
 public:
@@ -33,26 +43,21 @@ public:
     void RegisterMesh(const Core::CMesh* mesh);
 
     void Free() override;
-    void Prepare() override;
     void Update() override;
 
-    std::unordered_map<Material::CAbstractMaterial*,
-                       std::vector<Utils::SBufferIndexRange>>
-    RebuildInstances(const std::vector<SRenderable>& renderables) override;
-
-    void Draw(VkCommandBuffer commandBuffer);
+    void UpdateInstances(const std::vector<SRenderable>& renderables);
 
 private:
+    struct SMeshPipelineGroup {
+        Utils::SBufferIndexRange instanceBufferRange;
+        Utils::SBufferIndexRange indirectBufferRange;
+        std::vector<Core::SInstanceData> instancesData;
+    };
+
     struct SMeshDrawData {
         Utils::SBufferIndexRange verticesRange{};
         Utils::SBufferIndexRange indexesRange{};
-    };
-    struct SMeshInstanceData {
-        int indexOffset{0};
-        int vertexOffset{0};
-        int indexCount{0};
-        int instanceCount{0};
-        int instanceOffset{0};
+        bool uploaded{false};
     };
 
     Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBufferHandle;
@@ -61,8 +66,10 @@ private:
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;
 
-    std::vector<const Core::CMesh*> mRegisteredMeshes;
+    std::unordered_map<std::pair<std::size_t, std::size_t>, SMeshPipelineGroup,
+                       SPairHash>
+        mInstanceCache;
+
     std::unordered_map<std::size_t, SMeshDrawData> mMeshDrawRanges;
-    std::unordered_map<std::size_t, SMeshInstanceData> mMeshInstanceRanges;
 };
 } // namespace Renderer

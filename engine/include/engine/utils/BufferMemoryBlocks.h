@@ -2,6 +2,7 @@
 
 #include "engine/utils/BufferTypes.h"
 
+#include <cstdint>
 #include <list>
 #include <optional>
 
@@ -12,23 +13,25 @@ public:
     CBufferMemoryBlocks();
     ~CBufferMemoryBlocks();
 
-    void Init(std::size_t totalSize);
-    std::optional<SBufferRange> Allocate(std::size_t size);
+    void Init(uint64_t totalSize);
+    std::optional<SBufferRange> Allocate(uint64_t size);
     void Free(const SBufferRange& block);
     bool Contains(const SBufferRange& block) const;
+    std::optional<SBufferRange> TryResize(const SBufferRange& block,
+                                          uint64_t newSize);
     void Reset();
 
-    int GetTotalSize() const;
+    uint64_t GetTotalSize() const;
 
 private:
     struct BufferBlock {
-        std::size_t offset;
-        std::size_t size;
+        uint64_t offset;
+        uint64_t size;
         bool free;
     };
 
     std::list<BufferBlock> mBlocks;
-    std::size_t mTotalSize;
+    uint64_t mTotalSize;
 };
 
 } // namespace Utils

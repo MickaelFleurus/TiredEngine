@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/core/GameObjectId.h"
 #include "engine/material/AbstractMaterial.h"
 #include "engine/renderer/PipelineTypes.h"
 
@@ -21,6 +22,7 @@ namespace Renderer {
 class CMemoryAllocator;
 
 struct SRenderable {
+    Core::GameObjectId id;
     glm::mat4 transform;
     Material::CAbstractMaterial* material;
     float depth;

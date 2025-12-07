@@ -20,30 +20,8 @@ CMeshRenderer::CMeshRenderer(
 CMeshRenderer::~CMeshRenderer() = default;
 
 void CMeshRenderer::Free() {
-    mMeshDrawRanges.clear();
-    mMeshInstanceRanges.clear();
-}
-
-void CMeshRenderer::Prepare() {
-    for (const auto* mesh : mRegisteredMeshes) {
-        if (mMeshDrawRanges.contains(mesh->GetHash())) {
-            continue;
-        }
-
-        auto verticesRange = mVertexBufferHandle.Prepare(mesh->GetVertices());
-        auto indexesRange = mIndexesBufferHandle.Prepare(mesh->GetIndexes());
-
-        if (!verticesRange.has_value() || !indexesRange.has_value()) {
-            LOG_ERROR("Failed to register mesh!");
-            continue;
-        }
-
-        mMeshDrawRanges.emplace(
-            mesh->GetHash(),
-            SMeshDrawData{.verticesRange = verticesRange.value(),
-                          .indexesRange = indexesRange.value()});
-    }
-    mRegisteredMeshes.clear();
+    // mMeshDrawRanges.clear();
+    // mMeshInstancesRanges.clear();
 }
 
 void CMeshRenderer::Update() {
@@ -51,75 +29,79 @@ void CMeshRenderer::Update() {
 }
 
 void CMeshRenderer::RegisterMesh(const Core::CMesh* mesh) {
-    mRegisteredMeshes.push_back(mesh);
+    if (mMeshDrawRanges.contains(mesh->GetHash())) {
+        return;
+    }
+
+    Utils::SBufferIndexRange verticesRange{};
+    Utils::SBufferIndexRange indexesRange{};
+    bool dataPrepared =
+        mVertexBufferHandle.PrepareData(verticesRange, mesh->GetVertices());
+    dataPrepared = dataPrepared && mIndexesBufferHandle.PrepareData(
+                                       indexesRange, mesh->GetIndexes());
+
+    if (!dataPrepared) {
+        LOG_FATAL(
+            "Failed to register mesh! This is the symptom of too many unique "
+            "meshes being created or a buffer being way too small.");
+        return;
+    }
+
+    mMeshDrawRanges.emplace(mesh->GetHash(),
+                            SMeshDrawData{.verticesRange = verticesRange,
+                                          .indexesRange = indexesRange});
 }
 
-std::unordered_map<Material::CAbstractMaterial*,
-                   std::vector<Utils::SBufferIndexRange>>
-CMeshRenderer::RebuildInstances(const std::vector<SRenderable>& renderables) {
-
-    // Vector of pair <meshHash, instance index>
-    std::unordered_map<
-        Material::CAbstractMaterial*,
-        std::unordered_map<std::size_t, std::vector<Core::SInstanceData>>>
-        renderablesByMaterial;
-
-    for (auto& renderable : renderables) {
-        Core::SInstanceData instanceData{};
-        instanceData.modelMatrix = renderable.transform;
-        instanceData.color = renderable.color;
-        instanceData.materialId = 0; // FIXME: Assign proper material ID
-        instanceData.textureId = renderable.textureIndex;
-
-        renderablesByMaterial[renderable.material][renderable.meshHash]
-            .push_back(instanceData);
+void CMeshRenderer::UpdateInstances(
+    const std::vector<SRenderable>& renderables) {
+    std::unordered_map<std::pair<std::size_t, std::size_t>, SMeshPipelineGroup,
+                       SPairHash>
+        instancesAddedOrModified;
+    for (const auto& renderable : renderables) {
+        auto key =
+            std::make_pair(renderable.meshHash, renderable.material->GetId());
+        instancesAddedOrModified[key].instancesData.push_back(
+            Core::SInstanceData{
+                .modelMatrix = renderable.transform,
+                .color = renderable.color,
+                .materialId = static_cast<int>(renderable.material->GetId()),
+                .textureId = renderable.textureIndex,
+            });
     }
-    std::unordered_map<Material::CAbstractMaterial*,
-                       std::vector<Utils::SBufferIndexRange>>
-        drawCommands;
 
-    for (const auto& [material, meshesInstances] : renderablesByMaterial) {
-        for (const auto& [meshHash, instances] : meshesInstances) {
-            auto drawDataIt = mMeshDrawRanges.find(meshHash);
-            if (drawDataIt == mMeshDrawRanges.end()) {
-                LOG_WARNING("Mesh not registered for rendering!");
-                continue;
-            }
-            const auto& drawData = drawDataIt->second;
+    for (auto& [key, pipelineGroup] : instancesAddedOrModified) {
+        auto& alreadyUploaded = mInstanceCache[key];
+        const auto uploadedSize = alreadyUploaded.instancesData.size();
+        const auto newSize = pipelineGroup.instancesData.size();
 
-            auto instanceRange = mInstancesBuffer.Prepare(instances);
-            if (!instanceRange.has_value()) {
-                LOG_ERROR("Failed to prepare instance data!");
-                continue;
-            }
-            Core::SIndirectDrawCommand drawCommand{};
-            drawCommand.indexCount =
-                mMeshDrawRanges[meshHash].indexesRange.count;
-            drawCommand.instanceCount =
-                static_cast<uint32_t>(instanceRange->count);
-            drawCommand.firstIndex = static_cast<uint32_t>(
-                mMeshDrawRanges[meshHash].indexesRange.first);
-            drawCommand.vertexOffset =
-                static_cast<int>(mMeshDrawRanges[meshHash].verticesRange.first);
-            drawCommand.firstInstance =
-                static_cast<uint32_t>(instanceRange->first);
-            auto indirectRange = mIndirectDrawBuffer.Prepare({drawCommand});
-            if (indirectRange.has_value()) {
-                drawCommands[material].push_back(indirectRange.value());
-            } else {
-                LOG_ERROR("Failed to prepare indirect draw command!");
-                continue;
-            }
+        if (uploadedSize == newSize) {
+            alreadyUploaded.instancesData.swap(pipelineGroup.instancesData);
+        } else {
+            alreadyUploaded.instanceBufferRange.count = newSize;
+            alreadyUploaded.instancesData.swap(pipelineGroup.instancesData);
+        }
+
+        if (!mInstancesBuffer.PrepareData(alreadyUploaded.instanceBufferRange,
+                                          alreadyUploaded.instancesData)) {
+            LOG_WARNING("Failed to prepare instance data for mesh renderer!");
+        }
+
+        Core::SIndirectDrawCommand indirectCommand{};
+        indirectCommand.indexCount = static_cast<uint32_t>(
+            mMeshDrawRanges[key.first].indexesRange.count);
+        indirectCommand.instanceCount = newSize;
+        indirectCommand.firstIndex = static_cast<uint32_t>(
+            mMeshDrawRanges[key.first].indexesRange.first);
+        indirectCommand.vertexOffset = static_cast<int32_t>(
+            mMeshDrawRanges[key.first].verticesRange.first);
+        indirectCommand.firstInstance =
+            static_cast<uint32_t>(alreadyUploaded.instanceBufferRange.first);
+        if (!mIndirectDrawBuffer.PrepareData(
+                alreadyUploaded.indirectBufferRange, indirectCommand)) {
+            LOG_WARNING("Failed to prepare indirect draw command for mesh "
+                        "renderer!");
         }
     }
-    return std::move(drawCommands);
 }
 
-void CMeshRenderer::Draw(VkCommandBuffer commandBuffer) {
-    for (const auto& [meshHash, drawData] : mMeshDrawRanges) {
-        vkCmdDrawIndexed(
-            commandBuffer, static_cast<uint32_t>(drawData.indexesRange.count),
-            1, drawData.indexesRange.first, drawData.verticesRange.first, 0);
-    }
-}
 } // namespace Renderer

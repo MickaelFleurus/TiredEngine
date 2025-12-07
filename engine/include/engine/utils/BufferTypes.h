@@ -1,16 +1,16 @@
 #pragma once
-#include <cstddef>
+#include <cstdint>
 
 namespace Utils {
 
 struct SBufferRange {
-    std::size_t offset;
-    std::size_t size;
+    uint64_t offset{};
+    uint64_t size{};
 };
 
 struct SBufferIndexRange {
-    std::size_t first;
-    std::size_t count;
+    uint64_t first{};
+    uint64_t count{};
 };
 
 } // namespace Utils

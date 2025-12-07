@@ -2,9 +2,7 @@
 
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/MemoryAllocator.h"
-#include "engine/utils/Logger.h"
 #include "engine/vulkan/Constants.h"
-#include "engine/vulkan/VulkanContext.h"
 
 namespace {
 constexpr int kVerticesBufferIndex = 0;
@@ -51,65 +49,38 @@ namespace Vulkan {
 CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
                                Renderer::CMemoryAllocator& memoryAllocator)
     : mVulkanContext(vulkanContext), mMemoryAllocator(memoryAllocator) {
-    mBuffers.reserve(5);
 
     mBufferWrappers[typeid(Core::SVertex)] =
-        std::make_unique<CBufferHandleWrapper<Core::SVertex>>(CreateBuffer(
-            kVertexStructSize, kVertexBufferDefaultSize, kVertexBufferUsage));
+        std::make_unique<CBufferHandleWrapper<Core::SVertex>>(mVulkanContext,
+                                                              mMemoryAllocator);
+    mBufferWrappers[typeid(Core::SVertex)]->Init(kVertexBufferDefaultSize,
+                                                 kVertexBufferUsage);
 
     mBufferWrappers[typeid(Core::IndexType)] =
-        std::make_unique<CBufferHandleWrapper<Core::IndexType>>(CreateBuffer(
-            kIndexStructSize, kIndexBufferDefaultSize, kIndexBufferUsage));
+        std::make_unique<CBufferHandleWrapper<Core::IndexType>>(
+            mVulkanContext, mMemoryAllocator);
+    mBufferWrappers[typeid(Core::IndexType)]->Init(kIndexBufferDefaultSize,
+                                                   kIndexBufferUsage);
 
     mBufferWrappers[typeid(Core::SInstanceData)] =
         std::make_unique<CBufferHandleWrapper<Core::SInstanceData>>(
-            CreateBuffer(kInstanceStructSize, kInstanceBufferDefaultSize,
-                         kInstanceBufferUsage));
+            mVulkanContext, mMemoryAllocator);
+    mBufferWrappers[typeid(Core::SInstanceData)]->Init(
+        kInstanceBufferDefaultSize, kInstanceBufferUsage);
 
     mBufferWrappers[typeid(Core::SIndirectDrawCommand)] =
         std::make_unique<CBufferHandleWrapper<Core::SIndirectDrawCommand>>(
-            CreateBuffer(kInstanceInfoStructSize,
-                         kInstanceInfoBufferDefaultSize,
-                         kInstanceInfoBufferUsage));
+            mVulkanContext, mMemoryAllocator);
+    mBufferWrappers[typeid(Core::SIndirectDrawCommand)]->Init(
+        kInstanceInfoBufferDefaultSize, kInstanceInfoBufferUsage);
 
     mBufferWrappers[typeid(Core::STextInstanceData)] =
         std::make_unique<CBufferHandleWrapper<Core::STextInstanceData>>(
-            CreateBuffer(kTextInstanceStructSize,
-                         kTextInstanceBufferDefaultSize,
-                         kTextInstanceBufferUsage));
+            mVulkanContext, mMemoryAllocator);
+    mBufferWrappers[typeid(Core::STextInstanceData)]->Init(
+        kTextInstanceBufferDefaultSize, kTextInstanceBufferUsage);
 }
 
 CBufferHandler::~CBufferHandler() = default;
-
-void CBufferHandler::Free() {
-    for (auto& buffer : mBuffers) {
-        FreeBuffer(buffer.get());
-    }
-}
-
-void CBufferHandler::FreeBuffer(CBufferHandle* bufferHandle) {
-    bufferHandle->FreeRanges();
-}
-
-void CBufferHandler::Upload() {
-    for (auto& wrapperPair : mBufferWrappers) {
-        if (!wrapperPair.second->Upload()) {
-            LOG_ERROR("Failed to upload buffer data!");
-        }
-    }
-}
-
-CBufferHandle* CBufferHandler::CreateBuffer(int dataSize, int size,
-                                            VkBufferUsageFlags usage) {
-    auto bufferHandle = std::make_unique<CBufferHandle>(
-        mVulkanContext, mMemoryAllocator, *this);
-    if (!bufferHandle->Init(dataSize, size, usage)) {
-        LOG_ERROR("Failed to create buffer handle!");
-        return nullptr;
-    }
-
-    mBuffers.push_back(std::move(bufferHandle));
-    return mBuffers.back().get();
-}
 
 } // namespace Vulkan

@@ -4,7 +4,6 @@
 #include "engine/core/DataTypes.h"
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
-#include "engine/vulkan/BufferHandle.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
 
 #include <array>
@@ -26,8 +25,11 @@ std::optional<Utils::SBufferIndexRange> CreateVertices(
     vertices.push_back(topRight);
     vertices.push_back(bottomRight);
     vertices.push_back(bottomLeft);
-
-    return vertexBufferHandle.Prepare(vertices);
+    Utils::SBufferIndexRange range;
+    if (vertexBufferHandle.PrepareData(range, vertices)) {
+        return range;
+    }
+    return std::nullopt;
 }
 
 std::optional<Utils::SBufferIndexRange> CreateIndexes(
@@ -48,7 +50,11 @@ std::optional<Utils::SBufferIndexRange> CreateIndexes(
     indexes.push_back(vertexBufferRange->first + 1);
     indexes.push_back(vertexBufferRange->first + 3);
 
-    return indexesBufferHandle.Prepare(indexes);
+    Utils::SBufferIndexRange range;
+    if (indexesBufferHandle.PrepareData(range, indexes)) {
+        return range;
+    }
+    return std::nullopt;
 }
 
 } // namespace
@@ -79,7 +85,7 @@ void CTextRenderer::Prepare() {
 
 std::unordered_map<Material::CAbstractMaterial*,
                    std::vector<Utils::SBufferIndexRange>>
-CTextRenderer::RebuildInstances(const std::vector<SRenderable>&) {
+CTextRenderer::GenerateInstances(const std::vector<SRenderable>&) {
     if (mNeedUpdate) {
         if (!mVerticesRange.has_value() || !mIndexesRange.has_value()) {
             LOG_ERROR("Vertex or Index buffer not initialized!");
@@ -124,8 +130,8 @@ void CTextRenderer::GenerateInstanceData() {
         allInstances.insert(allInstances.end(), instances.begin(),
                             instances.end());
     }
-    auto textInstanceRange = mTextInstanceBuffer.Prepare(allInstances);
-    if (!textInstanceRange.has_value()) {
+    Utils::SBufferIndexRange textInstanceRange;
+    if (!mTextInstanceBuffer.PrepareData(textInstanceRange, allInstances)) {
         LOG_ERROR("Failed to prepare text instance buffer!");
         return;
     }
@@ -140,8 +146,9 @@ void CTextRenderer::GenerateInstanceData() {
         cmd.firstInstance = r.firstInstance;
         indirectCommands.push_back(cmd);
     }
-    mIndirectDrawBufferRange = mIndirectDrawBuffer.Prepare(indirectCommands);
-    if (!mIndirectDrawBufferRange.has_value()) {
+
+    Utils::SBufferIndexRange range;
+    if (!mIndirectDrawBuffer.PrepareData(range, indirectCommands)) {
         LOG_ERROR("Failed to prepare indirect draw buffer!");
         return;
     }

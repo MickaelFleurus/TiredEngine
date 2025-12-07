@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/core/GameObjectId.h"
 #include "engine/renderer/RendererUtils.h"
 
 #include <optional>
@@ -68,7 +69,7 @@ private:
     CRendererManager& mRendererManager;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;
-    std::vector<Renderer::SRenderable> mRenderables;
+    std::unordered_map<Core::GameObjectId, Renderer::SRenderable> mRenderables;
 
     VkViewport mViewport;
     VkRect2D mScissor;

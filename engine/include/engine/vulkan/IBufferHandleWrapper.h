@@ -7,7 +7,7 @@ public:
     virtual ~IBufferHandleWrapper() = default;
     virtual bool Upload() = 0;
     virtual bool Clear() = 0;
-    virtual CBufferHandle* GetBuffer() const = 0;
+    virtual bool Init(uint64_t bufferSize, VkBufferUsageFlags usage) = 0;
 };
 
 } // namespace Vulkan

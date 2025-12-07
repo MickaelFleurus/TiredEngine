@@ -9,14 +9,14 @@ CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
                                    Material::CMaterialManager& materialManager)
     : mBufferHandler(bufferHandler)
     , mMaterialManager(materialManager)
-    , mMeshRenderer(mBufferHandler.GetWrapper<Core::SVertex>(),
-                    mBufferHandler.GetWrapper<Core::IndexType>(),
-                    mBufferHandler.GetWrapper<Core::SInstanceData>(),
-                    mBufferHandler.GetWrapper<Core::SIndirectDrawCommand>())
-    , mTextRenderer(mBufferHandler.GetWrapper<Core::SVertex>(),
-                    mBufferHandler.GetWrapper<Core::IndexType>(),
-                    mBufferHandler.GetWrapper<Core::STextInstanceData>(),
-                    mBufferHandler.GetWrapper<Core::SIndirectDrawCommand>()) {
+    , mMeshRenderer(mBufferHandler.Get<Core::SVertex>(),
+                    mBufferHandler.Get<Core::IndexType>(),
+                    mBufferHandler.Get<Core::SInstanceData>(),
+                    mBufferHandler.Get<Core::SIndirectDrawCommand>())
+    , mTextRenderer(mBufferHandler.Get<Core::SVertex>(),
+                    mBufferHandler.Get<Core::IndexType>(),
+                    mBufferHandler.Get<Core::STextInstanceData>(),
+                    mBufferHandler.Get<Core::SIndirectDrawCommand>()) {
 }
 
 CRendererManager::~CRendererManager() = default;
@@ -32,25 +32,27 @@ CTextRenderer& CRendererManager::GetTextRenderer() {
 void CRendererManager::FreeSceneData() {
     mTextRenderer.Free();
     mMeshRenderer.Free();
-    mBufferHandler.Free();
+    // mBufferHandler.Free();
 }
 
 void CRendererManager::UploadSceneData() {
     mTextRenderer.Prepare();
-    mMeshRenderer.Prepare();
-    mBufferHandler.Upload<Core::SVertex>();
-    mBufferHandler.Upload<Core::IndexType>();
+    // mMeshRenderer.Prepare();
+    //  mBufferHandler.Upload<Core::SVertex>();
+    //  mBufferHandler.Upload<Core::IndexType>();
 }
 
-void CRendererManager::RebuildInstances(
+void CRendererManager::GenerateInstances(
     const std::vector<SRenderable>& renderables) {
-    mBufferHandler.FreeBuffer<Core::SInstanceData>();
-    mBufferHandler.FreeBuffer<Core::SIndirectDrawCommand>();
-    mMeshInstanceRanges = mMeshRenderer.RebuildInstances(renderables);
-    // mTextRenderer.RebuildInstances(renderables);
+    mMeshRenderer.UpdateInstances(renderables);
+    // mBufferHandler.Upload<Core::SInstanceData>();
+    // mBufferHandler.Upload<Core::SIndirectDrawCommand>();
+}
 
-    mBufferHandler.Upload<Core::SInstanceData>();
-    mBufferHandler.Upload<Core::SIndirectDrawCommand>();
+void CRendererManager::UpdateInstances(
+    const std::vector<SRenderable>& renderables) {
+    mMeshRenderer.UpdateInstances(renderables);
+    // mTextRenderer.RebuildInstances(renderables);
 }
 
 void CRendererManager::Render(VkCommandBuffer commandBuffer,
@@ -58,16 +60,13 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
                               Core::CCamera& camera) {
     VkDeviceSize offsets[] = {0, 0};
     VkBuffer vertexBuffers[] = {
-        mBufferHandler.GetWrapper<Core::SVertex>().GetBuffer()->GetBuffer(),
-        mBufferHandler.GetWrapper<Core::SInstanceData>()
-            .GetBuffer()
-            ->GetBuffer()};
+        mBufferHandler.Get<Core::SVertex>().GetBuffer(),
+        mBufferHandler.Get<Core::SInstanceData>().GetBuffer()};
 
     vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(
-        commandBuffer,
-        mBufferHandler.GetWrapper<Core::IndexType>().GetBuffer()->GetBuffer(),
-        0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer,
+                         mBufferHandler.Get<Core::IndexType>().GetBuffer(), 0,
+                         VK_INDEX_TYPE_UINT32);
     Material::CAbstractMaterial* currentMaterial = nullptr;
     for (auto& [material, instanceRanges] : mMeshInstanceRanges) {
         currentMaterial = material;
@@ -95,9 +94,7 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
         for (const auto& range : instanceRanges) {
             vkCmdDrawIndexedIndirect(
                 commandBuffer,
-                mBufferHandler.GetWrapper<Core::SIndirectDrawCommand>()
-                    .GetBuffer()
-                    ->GetBuffer(),
+                mBufferHandler.Get<Core::SIndirectDrawCommand>().GetBuffer(),
                 range.first * sizeof(Core::SIndirectDrawCommand), range.count,
                 sizeof(Core::SIndirectDrawCommand));
         }
