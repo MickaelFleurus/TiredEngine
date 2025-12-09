@@ -9,7 +9,7 @@ public:
     CMovementComponent(Core::CGameObject& owner,
                        CComponentManager& componentManager, float acceleration);
 
-    void update(float deltaTime) override;
+    void Update(float deltaTime) override;
 
     void addDirection(glm::vec3 direction);
     void setDirection(glm::vec3 direction);

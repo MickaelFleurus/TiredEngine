@@ -8,7 +8,6 @@ namespace Core {
 
 CMeshManager::CMeshManager(Renderer::CMeshRenderer& meshRenderer)
     : mMeshRenderer(meshRenderer) {
-    mMeshes.reserve(100);
 }
 
 CMeshManager::~CMeshManager() = default;
@@ -28,11 +27,8 @@ CMesh* CMeshManager::CreateCube(float size) {
     std::size_t meshHash =
         Utils::CreateHash(EMeshBaseType::Cube, EMeshDynamicType::Static, size);
     if (!HasMesh(meshHash)) {
-        auto mesh = mFactory.CreateCube(size);
-        mesh.SetHash(meshHash);
-        mMeshes.emplace(meshHash, std::move(mesh));
-        mMeshRenderer.RegisterMesh(
-            &mMeshes.at(meshHash)); // FIXME Won't work with rehashing
+        mMeshes.emplace(meshHash, std::move(mFactory.CreateCube(
+                                      size, meshHash, mMeshRenderer)));
     }
     return &mMeshes.at(meshHash);
 }
@@ -41,11 +37,8 @@ CMesh* CMeshManager::CreateTriangle() {
     std::size_t meshHash =
         Utils::CreateHash(EMeshBaseType::Triangle, EMeshDynamicType::Static);
     if (!HasMesh(meshHash)) {
-        auto mesh = mFactory.CreateTriangle();
-        mesh.SetHash(meshHash);
+        auto mesh = mFactory.CreateTriangle(meshHash, mMeshRenderer);
         mMeshes.emplace(meshHash, std::move(mesh));
-        mMeshRenderer.RegisterMesh(
-            &mMeshes.at(meshHash)); // FIXME Won't work with rehashing
     }
     return &mMeshes.at(meshHash);
 }

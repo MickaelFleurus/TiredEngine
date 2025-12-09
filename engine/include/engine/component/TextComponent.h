@@ -1,25 +1,19 @@
 #pragma once
-#include "engine/component/IDisplayComponent.h"
-#include "engine/core/DataTypes.h"
-#include "engine/renderer/RendererUtils.h"
-
 #include <string>
 #include <vector>
+
+#include "engine/component/IDisplayComponent.h"
+#include "engine/core/DataTypes.h"
 
 namespace Font {
 class CPolice;
 }
 
-namespace Renderer {
-class CTextRenderer;
-} // namespace Renderer
-
 namespace Component {
 class CTextComponent : public IDisplayComponent {
 public:
     explicit CTextComponent(Core::CGameObject& owner,
-                            CComponentManager& componentManager,
-                            Renderer::CTextRenderer& textRenderer);
+                            CComponentManager& componentManager);
     ~CTextComponent() override;
 
     void setText(const std::string& text);
@@ -36,13 +30,9 @@ public:
 
     const std::vector<Core::STextInstanceData>& GetInstances();
 
-protected:
-    virtual void setDirty(bool dirty) override;
-
 private:
     void GenerateInstances();
 
-    Renderer::CTextRenderer& mTextRenderer;
     std::vector<Core::STextInstanceData> mInstances;
 
     std::string mText;

@@ -16,7 +16,7 @@ public:
                              std::optional<Input::InputFunc> onLeftPressed,
                              std::optional<Input::InputFunc> onRightPressed);
 
-    void update(float deltaTime) override;
+    void Update(float deltaTime) override;
 
 private:
     const Input::CInputWatcher mInputWatcher;

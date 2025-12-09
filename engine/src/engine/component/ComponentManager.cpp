@@ -19,18 +19,18 @@ CComponentManager::CComponentManager(
     , mMaterialManager(materialManager) {
 }
 
-CInputComponent& CComponentManager::addInputComponent(
+CInputComponent& CComponentManager::AddInputComponent(
     Core::CGameObject& owner, std::optional<Input::InputFunc> onFirePressed,
     std::optional<Input::InputFunc> onLeftPressed,
     std::optional<Input::InputFunc> onRightPressed) {
-    return createComponent<CInputComponent>(owner, owner.getId(), onFirePressed,
+    return CreateComponent<CInputComponent>(owner, owner.GetId(), onFirePressed,
                                             onLeftPressed, onRightPressed);
 }
 
 CMovementComponent&
-CComponentManager::addMovementComponent(Core::CGameObject& owner,
+CComponentManager::AddMovementComponent(Core::CGameObject& owner,
                                         float acceleration) {
-    return createComponent<CMovementComponent>(owner, owner.getId(),
+    return CreateComponent<CMovementComponent>(owner, owner.GetId(),
                                                acceleration);
 }
 
@@ -40,42 +40,42 @@ CComponentManager::addMovementComponent(Core::CGameObject& owner,
 //                                                               Physics::SCollisionParamVariant
 //                                                               shape, bool
 //                                                               isTrigger) {
-//     return createComponent<CCollisionComponent>(owner, owner.getId(),
+//     return CreateComponent<CCollisionComponent>(owner, owner.GetId(),
 //     isStatic, isTrigger, shape);
 // }
 
 CSpriteComponent&
 CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
-    return createComponent<CSpriteComponent>(owner, owner.getId());
+    return CreateComponent<CSpriteComponent>(owner, owner.GetId());
 }
 
 CTextComponent& CComponentManager::AddTextComponent(Core::CGameObject& owner) {
-    return createComponent<CTextComponent>(owner, owner.getId(), mTextRenderer);
+    return CreateComponent<CTextComponent>(owner, owner.GetId());
 }
 
 CTransformComponent&
-CComponentManager::addTransformComponent(Core::CGameObject& owner) {
-    return createComponent<CTransformComponent>(owner, owner.getId());
+CComponentManager::AddTransformComponent(Core::CGameObject& owner) {
+    return CreateComponent<CTransformComponent>(owner, owner.GetId());
 }
 
 CCameraComponent&
 CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
-    return createComponent<CCameraComponent>(owner, owner.getId());
+    return CreateComponent<CCameraComponent>(owner, owner.GetId());
 }
 
-CMeshComponent& CComponentManager::addMeshComponent(Core::CGameObject& owner) {
-    return createComponent<CMeshComponent>(owner, owner.getId(),
+CMeshComponent& CComponentManager::AddMeshComponent(Core::CGameObject& owner) {
+    return CreateComponent<CMeshComponent>(owner, owner.GetId(),
                                            mMaterialManager);
 }
 
-void CComponentManager::removeComponents(Core::GameObjectId id) {
+void CComponentManager::RemoveComponents(Core::GameObjectId id) {
     for (auto& [type, pool] : mComponentPools) {
-        removeComponent<decltype(type)>(id);
+        RemoveComponent<decltype(type)>(id);
     }
 }
 
-void CComponentManager::update(float deltaTime) {
-    updateAll<CInputComponent, CMovementComponent, CCameraComponent,
+void CComponentManager::Update(float deltaTime) {
+    UpdateAll<CInputComponent, CMovementComponent, CCameraComponent,
               CSpriteComponent>(deltaTime);
 }
 

@@ -1,8 +1,8 @@
 #pragma once
+#include "engine/component/IComponent.h"
+
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
-
-#include "engine/component/IComponent.h"
 
 namespace Component {
 class CTransformComponent;
@@ -34,7 +34,7 @@ public:
     void SetShakeOffset(const glm::vec3& shake);
     const glm::vec3& GetShakeOffset() const;
 
-    void update(float dt) override;
+    void Update(float dt) override;
 
 private:
     float mZoom;

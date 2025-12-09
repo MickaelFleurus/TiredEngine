@@ -1,9 +1,9 @@
 #include "engine/debug/MeshComponentWidget.h"
 
-#include "engine/component/MeshComponent.h"
-
 #include <imgui.h>
 #include <imgui_stdlib.h>
+
+#include "engine/component/MeshComponent.h"
 
 namespace Debug {
 CMeshComponentWidget::CMeshComponentWidget(
@@ -13,8 +13,7 @@ CMeshComponentWidget::CMeshComponentWidget(
 }
 
 void CMeshComponentWidget::Render() {
-
-    if (ImGui::ColorEdit4("Font Color", &mColor.r)) {
+    if (ImGui::ColorEdit4("Mesh Color", &mColor.r)) {
         mMeshComponent.SetColor(mColor);
     }
 }

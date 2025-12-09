@@ -1,5 +1,13 @@
 #include "engine/renderer/Window.h"
 
+#include <functional>
+#include <vector>
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_vulkan.h>
+#include <vulkan/vulkan.h>
+
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MeshComponent.h"
@@ -7,7 +15,6 @@
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextComponent.h"
 #include "engine/component/TransformComponent.h"
-#include "engine/core/Camera.h"
 #include "engine/core/DataTypes.h"
 #include "engine/core/GameObject.h"
 #include "engine/core/Mesh.h"
@@ -16,6 +23,7 @@
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/MeshRenderer.h"
+#include "engine/renderer/Renderables.h"
 #include "engine/renderer/RendererManager.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/renderer/TextRenderer.h"
@@ -27,13 +35,6 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
-
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_vulkan.h>
-#include <functional>
-#include <vector>
-#include <vulkan/vulkan.h>
 
 namespace {
 
@@ -61,37 +62,52 @@ VkRect2D GetScissor(VkViewport viewport) {
     return scissor;
 }
 
-void ExtractRenderable(Core::CGameObject& root,
-                       Component::CComponentManager& componentManager,
-                       std::vector<Renderer::SRenderable>& renderables,
-                       glm::mat4 transform = glm::mat4(1.0f)) {
+void ExtractMeshes(
+    Core::CGameObject& root, Component::CComponentManager& componentManager,
+    Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
+    Renderer::CRenderables<Renderer::STextRenderable>& textRenderables,
+    glm::mat4 transform = glm::mat4(1.0f)) {
     if (!root.IsVisible()) {
         return;
     }
-    auto gameObjectId = root.getId();
+    auto gameObjectId = root.GetId();
     auto& transformComponent =
-        *componentManager.getComponent<Component::CTransformComponent>(
-            root.getId());
+        *componentManager.GetComponent<Component::CTransformComponent>(
+            root.GetId());
 
-    if (auto* meshComponent =
-            componentManager.getComponent<Component::CMeshComponent>(
-                root.getId())) {
-        transformComponent.UpdateMatrix(transform);
-        Renderer::SRenderable renderable{};
-        renderable.id = gameObjectId;
-        renderable.transform = transform;
-        renderable.materialId =
-            meshComponent->GetMesh()->GetMaterial()->GetId();
-        renderable.meshHash = meshComponent->GetMesh()->GetHash();
-        renderable.color = meshComponent->GetColor();
-        renderable.textureIndex = meshComponent->GetTextureIndex();
-        renderables.push_back(renderable);
-    } else {
-        transformComponent.UpdateMatrix(transform);
+    transformComponent.UpdateMatrix(transform);
+    if (root.GetDirtyFlags() != Core::EDirtyType::None) {
+        if (auto* meshComponent =
+                componentManager.GetComponent<Component::CMeshComponent>(
+                    root.GetId())) {
+            Renderer::SMeshRenderable renderable{};
+            renderable.id = gameObjectId;
+            renderable.transform = transform;
+            renderable.materialId =
+                meshComponent->GetMesh()->GetMaterial()->GetId();
+            renderable.meshHash = meshComponent->GetMesh()->GetHash();
+            renderable.color = meshComponent->GetColor();
+            renderable.textureIndex = meshComponent->GetTextureIndex();
+
+            meshRenderables.AddRenderable(
+                renderable, Core::RequireReordering(root.GetDirtyFlags()));
+        }
+        if (auto* textComponent =
+                componentManager.GetComponent<Component::CTextComponent>(
+                    root.GetId())) {
+
+            Renderer::STextRenderable renderable{};
+            renderable.id = gameObjectId;
+            renderable.instancesData = textComponent->GetInstances();
+            textRenderables.AddRenderable(
+                renderable, Core::RequireReordering(root.GetDirtyFlags()));
+        }
     }
+    root.ClearDirtyFlags();
 
-    for (auto& child : root.getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables, transform);
+    for (auto& child : root.GetChildren()) {
+        ExtractMeshes(*child, componentManager, meshRenderables,
+                      textRenderables, transform);
     }
 }
 
@@ -127,21 +143,20 @@ CWindow::~CWindow() {
 
 void CWindow::Render(Scene::CAbstractScene& scene,
                      Component::CComponentManager& componentManager) {
-    auto& camera = scene.GetUICamera();
+    Renderer::CRenderables<Renderer::SMeshRenderable> meshRenderables;
+    Renderer::CRenderables<Renderer::STextRenderable> textRenderables;
 
-    std::vector<SRenderable> renderables;
-    for (auto& child : scene.GetRoot().getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables);
+    for (auto& child : scene.GetRoot().GetChildren()) {
+        ExtractMeshes(*child, componentManager, meshRenderables,
+                      textRenderables);
     }
 
-    std::sort(renderables.begin(), renderables.end());
-    mRendererManager.GenerateInstances(renderables);
-
+    mRendererManager.GenerateInstances(meshRenderables, textRenderables);
     VkCommandBuffer commandBuffer =
         mVulkanContext.GetCommandBuffer(mImageIndex.value());
     mRendererManager.Render(commandBuffer,
                             mDescriptorStorage.GetDescriptorSet(),
-                            scene.GetActiveCamera());
+                            scene.GetActiveCamera(), scene.GetUICamera());
 }
 
 bool CWindow::BeginRender() {

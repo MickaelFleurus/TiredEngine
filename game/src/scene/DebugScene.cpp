@@ -14,9 +14,9 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
     // Position camera to look at the cube
     // Camera at (0, 0, -5) looking at (0, 0, 1)
     // auto& cameraTransform =
-    //     *mComponentManager.getComponent<Component::CTransformComponent>(
-    //         mActiveCamera->mEntity.getId());
-    // cameraTransform.setPosition({0.0f, 2.0f, -5.0f});
+    //     *mComponentManager.GetComponent<Component::CTransformComponent>(
+    //         mActiveCamera->mEntity.GetId());
+    // cameraTransform.SetPosition({0.0f, 2.0f, -5.0f});
 }
 
 void CDebugScene::Update(float deltaTime) {
@@ -34,9 +34,20 @@ const char* CDebugScene::GetName() const {
 void CDebugScene::Load() {
     CreateGameObjectBuilder("Cube!")
         .Add3DCube(1.0f)
-        .SetLocalPosition({0.0f, 0.0f, 1.0f})
+        .SetLocalPosition({0.0f, 0.0f, -5.0f})
         .SetMaterialType(Material::EMaterialType::Normal)
         .Build();
+    CreateGameObjectBuilder("Cube2!")
+        .Add3DCube(3.0f)
+        .SetLocalPosition({050.0f, 0.0f, -5.0f})
+        .SetMaterialType(Material::EMaterialType::Normal)
+        .Build();
+    CreateGameObjectBuilder("Cube3!")
+        .Add3DCube(2.0f)
+        .SetLocalPosition({-50.0f, 0.0f, -5.0f})
+        .SetMaterialType(Material::EMaterialType::Normal)
+        .Build();
+    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug!", 24).Build();
 }
 
 void CDebugScene::Unload() {

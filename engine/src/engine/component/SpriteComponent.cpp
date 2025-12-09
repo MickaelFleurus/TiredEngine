@@ -1,4 +1,5 @@
 #include "engine/component/SpriteComponent.h"
+
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/core/GameObject.h"
@@ -6,7 +7,7 @@
 namespace Component {
 CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
                                    CComponentManager& componentManager)
-    : IDisplayComponent(owner, componentManager) {
+    : IDisplayComponent(owner, componentManager, Core::EDirtyType::None) {
 }
 
 CSpriteComponent::~CSpriteComponent() {
@@ -16,7 +17,7 @@ CSpriteComponent::~CSpriteComponent() {
 void CSpriteComponent::removeSprite() {
 }
 
-void CSpriteComponent::update(float) {
+void CSpriteComponent::Update(float) {
 }
 
 glm::vec2 CSpriteComponent::GetSize() {

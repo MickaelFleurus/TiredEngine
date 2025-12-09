@@ -1,5 +1,10 @@
 #include "engine/vulkan/PipelineFactory.h"
 
+#include <array>
+#include <functional>
+
+#include <vulkan/vulkan.h>
+
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/RendererUtils.h"
@@ -7,10 +12,6 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
-
-#include <array>
-#include <functional>
-#include <vulkan/vulkan.h>
 
 namespace {
 
@@ -126,7 +127,8 @@ public:
             rasterizer.depthClampEnable = VK_FALSE;
             rasterizer.rasterizerDiscardEnable = VK_FALSE;
             rasterizer.polygonMode = ConvertFillMode(config.fillMode);
-            rasterizer.cullMode = ConvertCullMode(config.cullMode);
+            rasterizer.cullMode =
+                VK_CULL_MODE_NONE; // ConvertCullMode(config.cullMode);
             rasterizer.frontFace = ConvertFrontFace(config.frontFace);
             rasterizer.lineWidth = 1.0f;
             rasterizer.depthBiasEnable = VK_FALSE;

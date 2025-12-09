@@ -13,7 +13,7 @@ public:
     ~CSpriteComponent() override;
     // void AddSprite(SDK::SpriteType type);
 
-    void update(float deltaTime) override;
+    void Update(float deltaTime) override;
     glm::vec2 GetSize() override;
 
 private:

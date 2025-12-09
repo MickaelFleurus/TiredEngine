@@ -1,13 +1,15 @@
 #pragma once
 
-#include "engine/core/DataTypes.h"
-#include "engine/renderer/IRenderer.h"
-#include "engine/utils/BufferMemoryBlocks.h"
-
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 #include <vulkan/vulkan.h>
+
+#include "engine/core/DataTypes.h"
+#include "engine/renderer/IRenderer.h"
+#include "engine/renderer/RendererUtils.h"
+#include "engine/utils/BufferMemoryBlocks.h"
 
 namespace Component {
 class CTextComponent;
@@ -20,59 +22,42 @@ class CBufferHandleWrapper;
 
 namespace Renderer {
 
+template <typename T>
+class CRenderables;
+
 class CTextRenderer : public IRenderer {
 public:
-    struct SIndirectDrawInfo {
-        uint32_t firstInstance;
-        uint32_t instanceCount;
-        uint32_t firstIndex;
-        uint32_t vertexOffset;
-    };
     explicit CTextRenderer(
-        Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
-        Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
         Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& instanceBuffer,
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
             indirectDrawBuffer);
-    void Free() override;
+    void Free() override {
+    }
     void Prepare();
     void Update() override;
-    // void DrawTextsIndirect(VkCommandBuffer commandBuffer);
-    //  void DrawTextsDirect(VkCommandBuffer commandBuffer);
 
-    void SetNeedUpdate();
+    void UpdateInstances(
+        CRenderables<STextRenderable>& renderables,
+        const std::vector<Core::GameObjectId>& destroyedGameObjects);
 
-    void UpdateInstances(const std::vector<SRenderable>& renderables) {
-        // TODO
-    }
-
-    std::unordered_map<Material::CAbstractMaterial*,
-                       std::vector<Utils::SBufferIndexRange>>
-    GenerateInstances(const std::vector<SRenderable>& renderables);
-
-    void RegisterTextComponent(Component::CTextComponent* textComponent);
-    void UnregisterTextComponent(Component::CTextComponent* textComponent);
+    const std::vector<Utils::SBufferIndexRange>& GetIndirectDrawRange() const;
 
 private:
-    void GenerateInstanceData();
+    Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mVertexBufferHandle;
+    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& mIndexesBufferHandle;
     Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& mTextInstanceBuffer;
-    std::optional<Utils::SBufferIndexRange> mTextInstanceBufferRange{
-        std::nullopt};
-
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;
-    std::optional<Utils::SBufferIndexRange> mIndirectDrawBufferRange{
-        std::nullopt};
 
-    Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBufferHandle;
-    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBufferHandle;
+    std::vector<std::vector<Core::STextInstanceData>> mInstancesData;
+    std::vector<Core::GameObjectId> mGameObjectIds;
+    std::vector<Utils::SBufferIndexRange> mTextInstanceBufferRanges;
+    std::vector<Utils::SBufferIndexRange> mIndirectDrawBufferRanges;
+
     std::optional<Utils::SBufferIndexRange> mVerticesRange{std::nullopt};
     std::optional<Utils::SBufferIndexRange> mIndexesRange{std::nullopt};
-
-    bool mNeedUpdate = true;
-
-    std::vector<SIndirectDrawInfo> mIndirectDrawInfos;
-    std::vector<Component::CTextComponent*> mRegisteredTextComponents;
 };
 
 } // namespace Renderer

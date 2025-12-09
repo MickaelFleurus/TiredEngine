@@ -7,7 +7,7 @@ namespace Component {
 CMeshComponent::CMeshComponent(Core::CGameObject& owner,
                                CComponentManager& componentManager,
                                Material::CMaterialManager& materialManager)
-    : IDisplayComponent(owner, componentManager)
+    : IDisplayComponent(owner, componentManager, Core::EDirtyType::None)
     , mMaterialManager(materialManager) {
 }
 
@@ -16,7 +16,7 @@ CMeshComponent::~CMeshComponent() = default;
 void CMeshComponent::SetMesh(Core::CMesh* mesh) {
     mMesh = mesh;
 
-    setDirty(true);
+    SetDirty(true);
 }
 
 Core::CMesh* CMeshComponent::GetMesh() const {
@@ -25,12 +25,12 @@ Core::CMesh* CMeshComponent::GetMesh() const {
 
 void CMeshComponent::SetTextureIndex(int index) {
     mTextureIndex = index;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
 }
 
 void CMeshComponent::SetColor(const glm::vec4& color) {
     mColor = color;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
 }
 
 int CMeshComponent::GetTextureIndex() const {
@@ -78,7 +78,7 @@ void CMeshComponent::SetMaterialType(Material::EMaterialType type) {
 
     auto* material = mMaterialManager.GetorCreateMaterial(type);
     mMesh->SetMaterial(material);
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::Pipeline);
 }
 
 } // namespace Component

@@ -1,18 +1,22 @@
 #pragma once
+#include <span>
+#include <unordered_map>
+#include <vector>
+
 #include "engine/core/DataTypes.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/renderer/IRenderer.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/utils/BufferMemoryBlocks.h"
 
-#include <span>
-#include <unordered_map>
-#include <vector>
-
 namespace Core {
 class CMesh;
-class CCamera;
 } // namespace Core
+
+namespace Renderer {
+template <typename T>
+class CRenderables;
+} // namespace Renderer
 
 namespace Vulkan {
 template <typename T>
@@ -41,11 +45,14 @@ public:
     ~CMeshRenderer();
 
     void RegisterMesh(const Core::CMesh* mesh);
+    void UnregisterMesh(const Core::CMesh* mesh);
 
     void Free() override;
     void Update() override;
 
-    void UpdateInstances(const std::vector<SRenderable>& renderables);
+    void UpdateInstances(
+        Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
+        const std::vector<Core::GameObjectId>& destroyedGameObjects);
 
     std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
     GetIndirectDrawRanges() const;
@@ -56,12 +63,20 @@ private:
         Utils::SBufferIndexRange indirectBufferRange;
         std::vector<Core::SInstanceData> instancesData;
         std::vector<Core::GameObjectId> gameObjectIds;
+        std::optional<std::size_t>
+        GetInstanceIndex(Core::GameObjectId id) const {
+            auto it =
+                std::find(gameObjectIds.cbegin(), gameObjectIds.cend(), id);
+            if (it != gameObjectIds.cend()) {
+                return std::distance(gameObjectIds.cbegin(), it);
+            }
+            return std::nullopt;
+        }
     };
 
     struct SMeshDrawData {
         Utils::SBufferIndexRange verticesRange{};
         Utils::SBufferIndexRange indexesRange{};
-        bool uploaded{false};
     };
 
     Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBufferHandle;

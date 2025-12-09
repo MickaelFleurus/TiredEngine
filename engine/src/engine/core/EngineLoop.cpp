@@ -1,12 +1,12 @@
 #include "engine/core/EngineLoop.h"
 
+#include <SDL3/SDL.h>
+
 #include "engine/renderer/Window.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
-
-#include <SDL3/SDL.h>
 
 namespace Core {
 
@@ -73,6 +73,7 @@ bool CEngineLoop::Run() {
             mRendererManager.FreeSceneData();
 
             mPendingScene->Load();
+            mRendererManager.Prepare();
 
             mCurrentScene.swap(mPendingScene);
             mPendingScene.reset();

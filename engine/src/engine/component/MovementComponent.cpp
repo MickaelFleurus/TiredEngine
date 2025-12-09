@@ -12,10 +12,10 @@ namespace {
 void UpdatePosition(Core::CGameObject& current,
                     Component::CComponentManager& componentManager) {
     auto spriteComponent =
-        componentManager.getComponent<Component::CSpriteComponent>(
-            current.getId());
+        componentManager.GetComponent<Component::CSpriteComponent>(
+            current.GetId());
 
-    for (const auto& child : current.getChildren()) {
+    for (const auto& child : current.GetChildren()) {
         UpdatePosition(*child, componentManager);
     }
 }
@@ -25,7 +25,8 @@ namespace Component {
 CMovementComponent::CMovementComponent(Core::CGameObject& owner,
                                        CComponentManager& componentManager,
                                        float acceleration)
-    : IComponent(owner, componentManager), mAcceleration(acceleration) {
+    : IComponent(owner, componentManager, Core::EDirtyType::None)
+    , mAcceleration(acceleration) {
 }
 
 const glm::vec3& CMovementComponent::getVelocity() const {
@@ -40,13 +41,13 @@ const glm::vec3& CMovementComponent::getDirection() const {
     return mDirection;
 }
 
-void CMovementComponent::update(float deltaTime) {
+void CMovementComponent::Update(float deltaTime) {
     if (Utils::IsZero(mDirection)) {
         return;
     }
     mVelocity = mDirection * mAcceleration * deltaTime;
 
-    auto position = mOwner.getLocalPosition();
+    auto position = mOwner.GetLocalPosition();
     position += mVelocity;
     applyPosition(position);
 }

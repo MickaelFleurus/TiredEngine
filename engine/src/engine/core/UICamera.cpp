@@ -1,8 +1,9 @@
 #include "engine/core/UICamera.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "engine/component/CameraComponent.h"
 #include "engine/component/TransformComponent.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace {
 constexpr const char* kUICameraName = "UICamera";
@@ -15,14 +16,14 @@ CUICamera::CUICamera(CGameObject& parent, CGameObjectBuilder& builder,
     mCameraComponent.SetOrthographicSize(1080.0f);
     mCameraComponent.SetAspectRatio(16.0f / 9.0f);
     mCameraComponent.SetZoom(1.0f);
-    mTransformComponent.setPosition({0.0f, 0.0f, 0.0f});
+    mTransformComponent.SetPosition({0.0f, 0.0f, 0.0f});
 }
 
 void CUICamera::EnsureUpToDate() {
-    if (!mCameraComponent.isDirty() && !mTransformComponent.isDirty())
+    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
         return;
 
-    auto position = mTransformComponent.getPosition();
+    auto position = mTransformComponent.GetPosition();
 
     // Create orthographic projection that maps (0,0) to (1920, 1080)
     // This gives us a 1:1 pixel mapping for UI
@@ -34,7 +35,7 @@ void CUICamera::EnsureUpToDate() {
     mViewMatrix = glm::translate(glm::mat4(1.0f), -position);
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
-    mCameraComponent.setDirty(false);
-    mTransformComponent.setDirty(false);
+    mCameraComponent.SetDirty(false);
+    mTransformComponent.SetDirty(false);
 }
 } // namespace Core

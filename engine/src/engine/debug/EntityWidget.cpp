@@ -1,5 +1,7 @@
 #include "engine/debug/EntityWidget.h"
 
+#include <imgui.h>
+
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MeshComponent.h"
@@ -9,8 +11,6 @@
 #include "engine/debug/MeshComponentWidget.h"
 #include "engine/debug/TextComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
-
-#include <imgui.h>
 
 namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
@@ -31,6 +31,7 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId,
     mTransformWidget.reset();
     mTextWidget.reset();
     mCameraWidget.reset();
+    mMeshWidget.reset();
 
     if (!mEntityId) {
         SetVisible(false);
@@ -39,25 +40,25 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId,
 
     SetVisible(true);
     if (auto* transformComponent =
-            mComponentManager.getComponent<Component::CTransformComponent>(
+            mComponentManager.GetComponent<Component::CTransformComponent>(
                 *mEntityId)) {
         mTransformWidget = std::make_unique<Debug::CTransformComponentWidget>(
             *transformComponent);
     }
     if (auto* textComponent =
-            mComponentManager.getComponent<Component::CTextComponent>(
+            mComponentManager.GetComponent<Component::CTextComponent>(
                 *mEntityId)) {
         mTextWidget = std::make_unique<Debug::CTextComponentWidget>(
             *textComponent, mFileHandler, mFontHandler);
     }
     if (auto* cameraComponent =
-            mComponentManager.getComponent<Component::CCameraComponent>(
+            mComponentManager.GetComponent<Component::CCameraComponent>(
                 *mEntityId)) {
         mCameraWidget =
             std::make_unique<Debug::CCameraWidget>(*cameraComponent);
     }
     if (auto* meshComponent =
-            mComponentManager.getComponent<Component::CMeshComponent>(
+            mComponentManager.GetComponent<Component::CMeshComponent>(
                 *mEntityId)) {
         mMeshWidget =
             std::make_unique<Debug::CMeshComponentWidget>(*meshComponent);

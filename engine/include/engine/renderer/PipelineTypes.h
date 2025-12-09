@@ -1,7 +1,8 @@
 #pragma once
 
-#include "engine/utils/Hashing.h"
 #include <glm/vec4.hpp>
+
+#include "engine/utils/Hashing.h"
 
 namespace Renderer {
 enum class EPrimitiveType {
@@ -31,9 +32,9 @@ enum class EFrontFace {
 };
 
 enum class EVertexLayout {
-    Simple,    /**< Position + TexCoord only (for sprites, quads) */
-    Instanced, /**< Position + TexCoord + Instance data (for text, particles) */
-    Mesh3D,    /**< Position + Normal + TexCoord (for 3D meshes) */
+    Simple, /**< Position + TexCoord only (for sprites, quads) */
+    UI,     /**< Position + TexCoord + Instance data (for text, particles) */
+    Mesh3D, /**< Position + Normal + TexCoord (for 3D meshes) */
 };
 
 struct SPipelineConfig {

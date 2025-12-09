@@ -1,17 +1,18 @@
 #pragma once
 
+#include <concepts>
+#include <cstdint>
+#include <ranges>
+#include <span>
+#include <vector>
+
+#include <glm/mat4x4.hpp>
+#include <vulkan/vulkan.h>
+
+#include "engine/core/DataTypes.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/material/AbstractMaterial.h"
 #include "engine/renderer/PipelineTypes.h"
-
-#include <concepts>
-#include <cstdint>
-#include <glm/mat4x4.hpp>
-#include <ranges>
-#include <span>
-#include <vulkan/vulkan.h>
-
-struct SDL_GPUBuffer;
 
 namespace Vulkan {
 class CVulkanContext;
@@ -21,7 +22,7 @@ class CVulkanRendering;
 namespace Renderer {
 class CMemoryAllocator;
 
-struct SRenderable {
+struct SMeshRenderable {
     Core::GameObjectId id;
     glm::mat4 transform;
     uint32_t materialId;
@@ -29,16 +30,14 @@ struct SRenderable {
     std::size_t meshHash;
     glm::vec4 color;
     uint32_t textureIndex;
-    bool operator<(const SRenderable& other) const {
+    bool operator<(const SMeshRenderable& other) const {
         return materialId < other.materialId;
     }
+};
 
-    bool operator==(const SRenderable& other) const {
-        return transform == other.transform && materialId == other.materialId &&
-               depth == other.depth && meshHash == other.meshHash &&
-               color == other.color && textureIndex == other.textureIndex;
-        ;
-    }
+struct STextRenderable {
+    Core::GameObjectId id;
+    std::vector<Core::STextInstanceData> instancesData;
 };
 
 struct VulkanImage {
@@ -50,10 +49,6 @@ struct VertexLayoutInfo {
     std::vector<VkVertexInputAttributeDescription> attributes;
     std::vector<VkVertexInputBindingDescription> bufferDescriptions;
 };
-
-VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context);
-void EndSingleTimeCommands(VkCommandBuffer commandBuffer,
-                           const Vulkan::CVulkanContext& context);
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);
 

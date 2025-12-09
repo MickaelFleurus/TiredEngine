@@ -1,10 +1,10 @@
 #pragma once
 
-#include "engine/material/MaterialTypes.h"
-#include "engine/vulkan/PipelineFactory.h"
-
 #include <memory>
 #include <string>
+
+#include "engine/material/MaterialTypes.h"
+#include "engine/vulkan/PipelineFactory.h"
 
 namespace Vulkan {
 class CVulkanContext;
@@ -32,12 +32,6 @@ public:
     ~CMaterialFactory();
 
     std::unique_ptr<CAbstractMaterial> GetMaterial(EMaterialType type);
-
-    // // Pre-defined material types
-    // std::unique_ptr<CAbstractMaterial>
-    // CreateUnlitMaterial(SDL_GPUTexture* texture);
-    // std::unique_ptr<CAbstractMaterial>
-    // CreateSpriteMaterial(SDL_GPUTexture* sprite);
 
 private:
     std::unique_ptr<CAbstractMaterial>

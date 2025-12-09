@@ -84,7 +84,7 @@ bool CBufferMemoryBlocks::Contains(const SBufferRange& block) const {
 }
 
 std::optional<SBufferRange>
-CBufferMemoryBlocks::TryResize(const SBufferRange& block, std::size_t newSize) {
+CBufferMemoryBlocks::TryResize(const SBufferRange& block, uint64_t newSize) {
     auto it =
         std::find_if(mBlocks.begin(), mBlocks.end(), [&](const BufferBlock& b) {
             return b.offset == block.offset && b.size == block.size && !b.free;

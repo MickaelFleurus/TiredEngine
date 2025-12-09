@@ -1,10 +1,10 @@
 #include "engine/core/MeshFactory.h"
 
+#include <array>
+
 #include "engine/core/DataTypes.h"
 #include "engine/core/MeshManager.h"
 #include "engine/utils/Hashing.h"
-
-#include <array>
 
 namespace {
 
@@ -109,7 +109,8 @@ namespace Core {
 
 CMeshFactory::CMeshFactory() = default;
 
-CMesh CMeshFactory::CreateTriangle() {
+CMesh CMeshFactory::CreateTriangle(std::size_t hash,
+                                   Renderer::CMeshRenderer& meshRenderer) {
     std::array<Core::SVertex, 3> triangleVertices{
         Core::SVertex{.position{0.0f, 0.5f, 0.0f},
                       .texCoord{0.5f, 1.0f},
@@ -123,22 +124,37 @@ CMesh CMeshFactory::CreateTriangle() {
 
     std::array<uint32_t, 3> triangleIndices{0, 2, 1};
 
-    return CMesh{EMeshBaseType::Triangle, EMeshDynamicType::Static,
-                 triangleVertices, triangleIndices};
+    return CMesh{meshRenderer,
+                 hash,
+                 EMeshBaseType::Triangle,
+                 EMeshDynamicType::Static,
+                 triangleVertices,
+                 triangleIndices};
 }
 
-CMesh CMeshFactory::CreateCube(float size) {
+CMesh CMeshFactory::CreateCube(float size, std::size_t hash,
+                               Renderer::CMeshRenderer& meshRenderer) {
     auto vertices = GenerateCubeVertices(size);
     return CMesh{
-        EMeshBaseType::Cube, EMeshDynamicType::Static, vertices,
+        meshRenderer,
+        hash,
+        EMeshBaseType::Cube,
+        EMeshDynamicType::Static,
+        vertices,
         std::span<const uint32_t>(kCubeIndices.data(), kCubeIndices.size())};
 }
 
-CMesh CMeshFactory::CreateQuad(float width, float height, float depth) {
+CMesh CMeshFactory::CreateQuad(float width, float height, float depth,
+                               std::size_t hash,
+                               Renderer::CMeshRenderer& meshRenderer) {
     auto vertices = Generate3DRectangleVertices(width, height, depth);
 
     return CMesh{
-        EMeshBaseType::Cube, EMeshDynamicType::Static, vertices,
+        meshRenderer,
+        hash,
+        EMeshBaseType::Cube,
+        EMeshDynamicType::Static,
+        vertices,
         std::span<const uint32_t>(kCubeIndices.data(), kCubeIndices.size())};
 }
 

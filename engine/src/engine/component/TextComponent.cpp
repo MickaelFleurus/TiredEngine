@@ -1,13 +1,13 @@
 #include "engine/component/TextComponent.h"
-#include "engine/component/ComponentManager.h"
-#include "engine/component/MovementComponent.h"
-#include "engine/core/GameObject.h"
-
-#include "engine/core/DataTypes.h"
-#include "engine/font/Police.h"
-#include "engine/renderer/TextRenderer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "engine/component/ComponentManager.h"
+#include "engine/component/MovementComponent.h"
+#include "engine/core/DataTypes.h"
+#include "engine/core/GameObject.h"
+#include "engine/font/Police.h"
+#include "engine/renderer/TextRenderer.h"
 
 namespace {
 constexpr size_t kMaxCharacters = 64;
@@ -15,24 +15,22 @@ constexpr size_t kMaxCharacters = 64;
 
 namespace Component {
 CTextComponent::CTextComponent(Core::CGameObject& owner,
-                               CComponentManager& componentManager,
-                               Renderer::CTextRenderer& textRenderer)
-    : IDisplayComponent(owner, componentManager), mTextRenderer(textRenderer) {
-    mTextRenderer.RegisterTextComponent(this);
+                               CComponentManager& componentManager)
+    : IDisplayComponent(owner, componentManager,
+                        Core::EDirtyType::TextInstanceProperties) {
 }
 
 CTextComponent::~CTextComponent() {
-    mTextRenderer.UnregisterTextComponent(this);
 }
 
 void CTextComponent::setText(const std::string& text) {
     mText = text;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 void CTextComponent::setPolice(Font::CPolice* police) {
     mPolice = police;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 Font::CPolice* CTextComponent::getPolice() const {
@@ -49,7 +47,7 @@ int CTextComponent::GetFontSize() const {
 
 void CTextComponent::SetFontSize(int size) {
     mFontSize = size;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 const glm::vec4& CTextComponent::GetColor() const {
@@ -58,7 +56,7 @@ const glm::vec4& CTextComponent::GetColor() const {
 
 void CTextComponent::SetColor(const glm::vec4& color) {
     mColor = color;
-    setDirty(true);
+    AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
 }
 
 void CTextComponent::GenerateInstances() {
@@ -71,7 +69,7 @@ void CTextComponent::GenerateInstances() {
     float cursorX = 0.0f;
     float cursorY = 0.0f;
 
-    auto modelMatrix = mOwner.getModelMatrix();
+    auto modelMatrix = mOwner.GetModelMatrix();
 
     for (char c : mText) {
         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
@@ -106,11 +104,11 @@ void CTextComponent::GenerateInstances() {
         cursorX += glyph.advance * mFontSize;
     }
 
-    setDirty(false);
+    SetDirty(false);
 }
 
 glm::vec2 CTextComponent::GetSize() {
-    if (!isDirty()) {
+    if (!IsDirty()) {
         return mSize;
     }
 
@@ -138,17 +136,10 @@ glm::vec2 CTextComponent::GetSize() {
 }
 
 const std::vector<Core::STextInstanceData>& CTextComponent::GetInstances() {
-    if (isDirty()) {
+    if (IsDirty()) {
         GenerateInstances();
     }
     return mInstances;
-}
-
-void CTextComponent::setDirty(bool dirty) {
-    IComponent::setDirty(dirty);
-    if (dirty) {
-        mTextRenderer.SetNeedUpdate();
-    }
 }
 
 } // namespace Component

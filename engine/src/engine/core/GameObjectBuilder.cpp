@@ -100,8 +100,8 @@ CGameObjectBuilder::CBuilder::AddCameraComponent() {
 // CGameObjectBuilder::CBuilder::addCollisionCallback(
 //     std::function<void(Physics::SCollisionInfo)> callback) {
 //     auto* collisionComponent =
-//         mComponentManager.getComponent<Component::CCollisionComponent>(
-//             mGameObject->getId());
+//         mComponentManager.GetComponent<Component::CCollisionComponent>(
+//             mGameObject->GetId());
 //     if (collisionComponent) {
 //         collisionComponent->setCollisionCallback(std::move(callback));
 //     }
@@ -110,13 +110,13 @@ CGameObjectBuilder::CBuilder::AddCameraComponent() {
 
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::AddMovementData(float acceleration) {
-    mComponentManager.addMovementComponent(*mGameObject, acceleration);
+    mComponentManager.AddMovementComponent(*mGameObject, acceleration);
     return *this;
 }
 
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::AddInputInfo(CInputCallbacks callbacks) {
-    mComponentManager.addInputComponent(*mGameObject, callbacks.onSpacePressed,
+    mComponentManager.AddInputComponent(*mGameObject, callbacks.onSpacePressed,
                                         callbacks.onLeftPressed,
                                         callbacks.onRightPressed);
     return *this;
@@ -125,15 +125,15 @@ CGameObjectBuilder::CBuilder::AddInputInfo(CInputCallbacks callbacks) {
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::SetLocalPosition(const glm::vec3& position) {
     mComponentManager
-        .getComponent<Component::CTransformComponent>(mGameObject->getId())
-        ->setPosition(position);
+        .GetComponent<Component::CTransformComponent>(mGameObject->GetId())
+        ->SetPosition(position);
     return *this;
 }
 
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::SetAnchor(Utils::EAnchors anchor) {
     mComponentManager
-        .getComponent<Component::CTransformComponent>(mGameObject->getId())
+        .GetComponent<Component::CTransformComponent>(mGameObject->GetId())
         ->SetAnchor(anchor);
     return *this;
 }
@@ -141,7 +141,7 @@ CGameObjectBuilder::CBuilder::SetAnchor(Utils::EAnchors anchor) {
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::Add3DCube(float size) {
     auto* cube = mMeshManager.CreateCube(size);
-    auto& meshComponent = mComponentManager.addMeshComponent(*mGameObject);
+    auto& meshComponent = mComponentManager.AddMeshComponent(*mGameObject);
     meshComponent.SetMesh(cube);
 
     return *this;
@@ -158,8 +158,8 @@ CGameObjectBuilder::CBuilder::Add3DQuad(float width, float height,
 CGameObjectBuilder::CBuilder&
 CGameObjectBuilder::CBuilder::SetMaterialType(Material::EMaterialType type) {
     auto* meshComponent =
-        mComponentManager.getComponent<Component::CMeshComponent>(
-            mGameObject->getId());
+        mComponentManager.GetComponent<Component::CMeshComponent>(
+            mGameObject->GetId());
     if (meshComponent) {
         meshComponent->SetMaterialType(type);
     }
@@ -168,7 +168,7 @@ CGameObjectBuilder::CBuilder::SetMaterialType(Material::EMaterialType type) {
 
 CGameObject* CGameObjectBuilder::CBuilder::Build() {
     auto* rawPtr = mGameObject.get();
-    mParent.addChild(std::move(mGameObject));
+    mParent.AddChild(std::move(mGameObject));
 
     return rawPtr;
 }

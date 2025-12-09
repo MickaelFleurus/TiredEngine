@@ -1,11 +1,11 @@
 #include "engine/debug/TransformComponentWidget.h"
 
-#include "engine/component/TransformComponent.h"
-#include "engine/utils/Anchors.h"
-
 #include <glm/gtc/constants.hpp>
 #include <imgui.h>
 #include <magic_enum/magic_enum.hpp>
+
+#include "engine/component/TransformComponent.h"
+#include "engine/utils/Anchors.h"
 
 namespace Debug {
 CTransformComponentWidget::CTransformComponentWidget(
@@ -16,22 +16,22 @@ CTransformComponentWidget::CTransformComponentWidget(
 
 void CTransformComponentWidget::Render() {
 
-    auto pos = mTransformComponent.getPosition();
+    auto pos = mTransformComponent.GetPosition();
     if (ImGui::DragFloat3("Position", &pos.x, 0.1f, -FLT_MAX, FLT_MAX,
                           "%.3f")) {
-        mTransformComponent.setPosition(pos);
+        mTransformComponent.SetPosition(pos);
     }
 
-    auto rot = mTransformComponent.getRotation();
+    auto rot = mTransformComponent.GetRotation();
     if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f, -360.0f, 360.0f, "%.1f°")) {
-        mTransformComponent.setRotation(rot);
+        mTransformComponent.SetRotation(rot);
     }
 
-    auto scale = mTransformComponent.getScale();
+    auto scale = mTransformComponent.GetScale();
     if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.0f, FLT_MAX, "%.3f")) {
-        mTransformComponent.setScale(scale);
+        mTransformComponent.SetScale(scale);
     }
-    int currentAnchor = static_cast<int>(mTransformComponent.getAnchor());
+    int currentAnchor = static_cast<int>(mTransformComponent.GetAnchor());
     auto anchorNames = magic_enum::enum_names<Utils::EAnchors>();
 
     if (ImGui::BeginCombo("Anchor", anchorNames[currentAnchor].data())) {

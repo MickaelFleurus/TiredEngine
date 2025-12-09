@@ -8,6 +8,7 @@
 namespace Core {
 
 using IndexType = uint32_t;
+using TextIndexType = uint32_t;
 
 struct SVertex {
     glm::vec3 position;
@@ -16,6 +17,13 @@ struct SVertex {
     float padding2[2];
     glm::vec3 normal;
     float padding3;
+};
+
+struct SUIVertex {
+    glm::vec3 position;
+    float padding1;
+    glm::vec2 texCoord;
+    float padding2[2];
 };
 
 struct SInstanceData {

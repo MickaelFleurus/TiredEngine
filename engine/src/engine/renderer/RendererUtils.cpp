@@ -34,7 +34,7 @@ Renderer::VertexLayoutInfo CreateSimpleVertexLayout() {
     return info;
 }
 
-Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
+Renderer::VertexLayoutInfo CreateUIVertexLayout() {
     Renderer::VertexLayoutInfo info;
 
     // Buffer 0: Position + TexCoord (per-vertex)
@@ -48,7 +48,7 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     vertexUV.binding = 0;
     vertexUV.format = VK_FORMAT_R32G32_SFLOAT;
     vertexUV.location = 1;
-    vertexUV.offset = sizeof(float) * 3;
+    vertexUV.offset = sizeof(float) * 4;
 
     // Buffer 1: Instance data
     // Model matrix (4 vec4)
@@ -82,17 +82,23 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
     color.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     color.offset = sizeof(float) * 16;
 
-    VkVertexInputAttributeDescription materialId{};
-    materialId.location = 7;
-    materialId.binding = 1;
-    materialId.format = VK_FORMAT_R32_UINT;
-    materialId.offset = sizeof(float) * 20;
+    VkVertexInputAttributeDescription uvRect{};
+    uvRect.location = 7;
+    uvRect.binding = 1;
+    uvRect.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    uvRect.offset = sizeof(float) * 20;
 
     VkVertexInputAttributeDescription texId{};
     texId.location = 8;
     texId.binding = 1;
     texId.format = VK_FORMAT_R32_UINT;
-    texId.offset = sizeof(float) * 20 + sizeof(uint32_t);
+    texId.offset = sizeof(float) * 24;
+
+    VkVertexInputAttributeDescription materialId{};
+    materialId.location = 9;
+    materialId.binding = 1;
+    materialId.format = VK_FORMAT_R32_UINT;
+    materialId.offset = sizeof(float) * 24 + sizeof(uint32_t);
 
     info.attributes = {vertexPosition,
                        vertexUV,
@@ -101,8 +107,9 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
                        modelMatrixPart2,
                        modelMatrixPart3,
                        color,
-                       materialId,
-                       texId};
+                       uvRect,
+                       texId,
+                       materialId};
 
     VkVertexInputBindingDescription vertexBufferDesc{};
     vertexBufferDesc.binding = 0;
@@ -111,8 +118,7 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
 
     VkVertexInputBindingDescription instanceBufferDesc{};
     instanceBufferDesc.binding = 1;
-    instanceBufferDesc.stride =
-        sizeof(float) * 20 + sizeof(uint32_t) * 2; // 4x vec4 + vec4 + 2 ushorts
+    instanceBufferDesc.stride = sizeof(Core::STextInstanceData);
     instanceBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     info.bufferDescriptions = {vertexBufferDesc, instanceBufferDesc};
@@ -123,7 +129,7 @@ Renderer::VertexLayoutInfo CreateInstancedVertexLayout() {
 Renderer::VertexLayoutInfo CreateMeshVertexLayout() {
     Renderer::VertexLayoutInfo info;
 
-    // Buffer 0: Position + TexCoord (per-vertex)
+    // Buffer 0:
     VkVertexInputAttributeDescription vertexPosition{};
     vertexPosition.binding = 0;
     vertexPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -219,8 +225,8 @@ VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType) {
     switch (layoutType) {
     case Renderer::EVertexLayout::Simple:
         return CreateSimpleVertexLayout();
-    case Renderer::EVertexLayout::Instanced:
-        return CreateInstancedVertexLayout();
+    case Renderer::EVertexLayout::UI:
+        return CreateUIVertexLayout();
     case Renderer::EVertexLayout::Mesh3D:
         return CreateMeshVertexLayout();
     default:

@@ -12,7 +12,7 @@ class CAbstractMaterial;
 } // namespace Material
 
 namespace Renderer {
-struct SRenderable;
+struct SMeshRenderable;
 class IRenderer {
 public:
     virtual ~IRenderer() = default;

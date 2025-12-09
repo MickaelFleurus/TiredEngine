@@ -20,7 +20,7 @@
 //     void setCollisionCallback(std::function<void(Physics::SCollisionInfo)>
 //     callback);
 
-//     void update(float deltaTime) override;
+//     void Update(float deltaTime) override;
 
 // private:
 //     static std::vector<std::reference_wrapper<CCollisionComponent>>

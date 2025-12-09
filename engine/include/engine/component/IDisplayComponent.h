@@ -8,8 +8,9 @@ namespace Component {
 class IDisplayComponent : public IComponent {
 public:
     explicit IDisplayComponent(Core::CGameObject& owner,
-                               CComponentManager& componentManager)
-        : IComponent(owner, componentManager) {
+                               CComponentManager& componentManager,
+                               Core::EDirtyType dirtyType)
+        : IComponent(owner, componentManager, dirtyType) {
     }
     ~IDisplayComponent() override = default;
 

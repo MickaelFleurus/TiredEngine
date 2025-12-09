@@ -43,8 +43,8 @@ public:
                       Material::CMaterialManager& materialManager);
 
     template <typename T>
-    T* getComponent(int entityId) {
-        auto& pool = getComponentPool<T>();
+    T* GetComponent(int entityId) {
+        auto& pool = GetComponentPool<T>();
         auto it = pool.mEntityToIndex.find(entityId);
         if (it != pool.mEntityToIndex.end()) {
             return static_cast<T*>(pool.mComponents[it->second].get());
@@ -53,14 +53,14 @@ public:
     }
 
     template <typename T>
-    bool hasComponent(int entityId) {
-        auto& pool = getComponentPool<T>();
+    bool HasComponent(int entityId) {
+        auto& pool = GetComponentPool<T>();
         return pool.mEntityToIndex.contains(entityId);
     }
 
     template <typename T>
-    void removeComponent(Core::GameObjectId id) {
-        auto& pool = getComponentPool<T>();
+    void RemoveComponent(Core::GameObjectId id) {
+        auto& pool = GetComponentPool<T>();
         auto it = pool.mEntityToIndex.find(id);
         if (it == pool.mEntityToIndex.end()) {
             return;
@@ -84,15 +84,15 @@ public:
         pool.mEntityToIndex.erase(id);
     }
 
-    void removeComponents(Core::GameObjectId id);
+    void RemoveComponents(Core::GameObjectId id);
 
     CInputComponent&
-    addInputComponent(Core::CGameObject& owner,
+    AddInputComponent(Core::CGameObject& owner,
                       std::optional<Input::InputFunc> onFirePressed,
                       std::optional<Input::InputFunc> onLeftPressed,
                       std::optional<Input::InputFunc> onRightPressed);
 
-    CMovementComponent& addMovementComponent(Core::CGameObject& owner,
+    CMovementComponent& AddMovementComponent(Core::CGameObject& owner,
                                              float acceleration);
 
     CTextComponent& AddTextComponent(Core::CGameObject& owner);
@@ -106,10 +106,10 @@ public:
 
     CSpriteComponent& AddSpriteComponent(Core::CGameObject& owner);
 
-    CTransformComponent& addTransformComponent(Core::CGameObject& owner);
-    CMeshComponent& addMeshComponent(Core::CGameObject& owner);
+    CTransformComponent& AddTransformComponent(Core::CGameObject& owner);
+    CMeshComponent& AddMeshComponent(Core::CGameObject& owner);
 
-    void update(float deltaTime);
+    void Update(float deltaTime);
 
 private:
     struct ComponentPool {
@@ -119,14 +119,14 @@ private:
     };
 
     template <typename T>
-    ComponentPool& getComponentPool() {
+    ComponentPool& GetComponentPool() {
         return mComponentPools[std::type_index(typeid(T))];
     }
 
     template <typename T, typename... Args>
-    T& createComponent(Core::CGameObject& owner, Core::GameObjectId id,
+    T& CreateComponent(Core::CGameObject& owner, Core::GameObjectId id,
                        Args&&... args) {
-        auto& pool = getComponentPool<T>();
+        auto& pool = GetComponentPool<T>();
         auto component =
             std::make_unique<T>(owner, *this, std::forward<Args>(args)...);
         T* rawPtr = component.get();
@@ -139,15 +139,15 @@ private:
     }
 
     template <typename... Args>
-    void updateAll(float deltaTime) {
-        (update<Args>(deltaTime), ...);
+    void UpdateAll(float deltaTime) {
+        (Update<Args>(deltaTime), ...);
     }
 
     template <typename T>
-    void update(float deltaTime) {
+    void Update(float deltaTime) {
         auto& pool = mComponentPools[typeid(T)];
         for (auto& component : pool.mComponents) {
-            component->update(deltaTime);
+            component->Update(deltaTime);
         }
     }
 

@@ -1,15 +1,16 @@
 #include "engine/debug/Overlord.h"
 
-#include "engine/debug/IOverlordItem.h"
-#include "engine/vulkan/VulkanContext.h"
-#include "engine/vulkan/VulkanRendering.h"
+#include <chrono>
 
 #include <SDL3/SDL_events.h>
-#include <chrono>
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
 #include <magic_enum/magic_enum.hpp>
+
+#include "engine/debug/IOverlordItem.h"
+#include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanRendering.h"
 
 namespace Debug {
 CGuardedContainer<IOverlordItem> COverlord::mWidgets;

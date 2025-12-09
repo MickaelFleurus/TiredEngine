@@ -24,7 +24,7 @@ C3DCamera::C3DCamera(CGameObject& parent, CGameObjectBuilder& builder,
 
 void C3DCamera::SetFOV(float fovDegrees) {
     mFOV = fovDegrees;
-    mCameraComponent.setDirty(true);
+    mCameraComponent.SetDirty(true);
 }
 
 float C3DCamera::GetFOV() const {
@@ -32,11 +32,11 @@ float C3DCamera::GetFOV() const {
 }
 
 void C3DCamera::EnsureUpToDate() {
-    if (!mCameraComponent.isDirty() && !mTransformComponent.isDirty())
+    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
         return;
 
-    auto position = mTransformComponent.getPosition();
-    auto rotation = mTransformComponent.getRotation();
+    auto position = mTransformComponent.GetPosition();
+    auto rotation = mTransformComponent.GetRotation();
 
     // Create perspective projection matrix
     float aspectRatio = mCameraComponent.GetAspectRatio();
@@ -61,8 +61,8 @@ void C3DCamera::EnsureUpToDate() {
 
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
-    mCameraComponent.setDirty(false);
-    mTransformComponent.setDirty(false);
+    mCameraComponent.SetDirty(false);
+    mTransformComponent.SetDirty(false);
 }
 
 } // namespace Core

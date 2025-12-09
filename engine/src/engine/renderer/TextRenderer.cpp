@@ -1,24 +1,28 @@
 #include "engine/renderer/TextRenderer.h"
 
+#include <array>
+#include <cstring>
+
 #include "engine/component/TextComponent.h"
 #include "engine/core/DataTypes.h"
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
+#include "engine/renderer/Renderables.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
-
-#include <array>
-#include <cstring>
 
 namespace {
 constexpr size_t kMaxCharacters = 500;
 
 std::optional<Utils::SBufferIndexRange> CreateVertices(
-    Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle) {
-    std::vector<Core::SVertex> vertices;
-    Core::SVertex topLeft{.position{0.0f, 0.0f, 0.0f}};
-    Core::SVertex topRight{.position{1.0f, 0.0f, 0.0f}};
-    Core::SVertex bottomRight{.position{1.0f, 1.0f, 0.0f}};
-    Core::SVertex bottomLeft{.position{0.0f, 1.0f, 0.0f}};
+    Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle) {
+    std::vector<Core::SUIVertex> vertices;
+    Core::SUIVertex topLeft{.position{0.0f, 0.0f, 0.0f}, .texCoord{0.0f, 0.0f}};
+    Core::SUIVertex topRight{.position{1.0f, 0.0f, 0.0f},
+                             .texCoord{1.0f, 0.0f}};
+    Core::SUIVertex bottomRight{.position{1.0f, 1.0f, 0.0f},
+                                .texCoord{1.0f, 1.0f}};
+    Core::SUIVertex bottomLeft{.position{0.0f, 1.0f, 0.0f},
+                               .texCoord{0.0f, 1.0f}};
 
     vertices.reserve(4);
     vertices.push_back(topLeft);
@@ -33,21 +37,21 @@ std::optional<Utils::SBufferIndexRange> CreateVertices(
 }
 
 std::optional<Utils::SBufferIndexRange> CreateIndexes(
-    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
     const std::optional<Utils::SBufferIndexRange>& vertexBufferRange) {
     if (!vertexBufferRange.has_value()) {
         LOG_ERROR("Vertex buffer range is not valid!");
         return std::nullopt;
     }
 
-    std::vector<uint32_t> indexes;
+    std::vector<Core::TextIndexType> indexes;
     indexes.reserve(6);
     indexes.push_back(vertexBufferRange->first + 0);
     indexes.push_back(vertexBufferRange->first + 1);
     indexes.push_back(vertexBufferRange->first + 2);
 
+    indexes.push_back(vertexBufferRange->first + 0);
     indexes.push_back(vertexBufferRange->first + 2);
-    indexes.push_back(vertexBufferRange->first + 1);
     indexes.push_back(vertexBufferRange->first + 3);
 
     Utils::SBufferIndexRange range;
@@ -57,13 +61,23 @@ std::optional<Utils::SBufferIndexRange> CreateIndexes(
     return std::nullopt;
 }
 
+std::optional<std::size_t>
+GetInstanceIndex(const std::vector<Core::GameObjectId>& gameObjectIds,
+                 Core::GameObjectId id) {
+    auto it = std::find(gameObjectIds.cbegin(), gameObjectIds.cend(), id);
+    if (it != gameObjectIds.cend()) {
+        return std::distance(gameObjectIds.cbegin(), it);
+    }
+    return std::nullopt;
+}
+
 } // namespace
 
 namespace Renderer {
 
 CTextRenderer::CTextRenderer(
-    Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
-    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
     Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& textInstanceBuffer,
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         indirectDrawBuffer)
@@ -73,106 +87,95 @@ CTextRenderer::CTextRenderer(
     , mIndexesBufferHandle(indexesBufferHandle) {
 }
 
-void CTextRenderer::Free() {
-    mIndexesRange.reset();
-    mVerticesRange.reset();
-}
-
 void CTextRenderer::Prepare() {
     mVerticesRange = CreateVertices(mVertexBufferHandle);
     mIndexesRange = CreateIndexes(mIndexesBufferHandle, mVerticesRange);
-}
 
-std::unordered_map<Material::CAbstractMaterial*,
-                   std::vector<Utils::SBufferIndexRange>>
-CTextRenderer::GenerateInstances(const std::vector<SRenderable>&) {
-    if (mNeedUpdate) {
-        if (!mVerticesRange.has_value() || !mIndexesRange.has_value()) {
-            LOG_ERROR("Vertex or Index buffer not initialized!");
-            return {};
-        }
-        GenerateInstanceData();
-        mNeedUpdate = false;
+    LOG_INFO("Text vertices range: first={}, count={}", mVerticesRange->first,
+             mVerticesRange->count);
+    LOG_INFO("Text indexes range: first={}, count={}", mIndexesRange->first,
+             mIndexesRange->count);
+
+    // Add this:
+    if (mVerticesRange && mIndexesRange) {
+        LOG_INFO("Text vertex buffer prepared successfully");
+        LOG_INFO("  Vertex stride: {}", sizeof(Core::SUIVertex));
+        LOG_INFO("  Index stride: {}", sizeof(uint32_t));
     }
-    return {};
 }
 
 void CTextRenderer::Update() {
     // Implementation for updating text data goes here
 }
 
-void CTextRenderer::GenerateInstanceData() {
+void CTextRenderer::UpdateInstances(
+    Renderer::CRenderables<Renderer::STextRenderable>& renderables,
+    const std::vector<Core::GameObjectId>& destroyedGameObjects) {
+    std::vector<std::size_t> requireInstanceUpdate;
+    std::vector<std::size_t> requireIndirectUpdate;
 
-    std::unordered_map<Font::SFont, std::vector<Core::STextInstanceData>,
-                       Font::SFontHash>
-        instancesMap;
-
-    for (auto* textComponent : mRegisteredTextComponents) {
-        const auto& instances = textComponent->GetInstances();
-        if (instances.empty()) {
-            continue;
+    for (auto& renderable : renderables.GetUpdateRenderables()) {
+        auto instanceIndex = GetInstanceIndex(mGameObjectIds, renderable.id);
+        if (instanceIndex.has_value()) {
+            requireInstanceUpdate.push_back(*instanceIndex);
+            mInstancesData[*instanceIndex].swap(renderable.instancesData);
+        } else {
+            LOG_WARNING("Renderable with id {} not found in instance cache.",
+                        renderable.id);
         }
-        for (char c : textComponent->getText()) {
-            Font::SFont fontKey{textComponent->getPolice()->GetName(), c};
-            instancesMap[fontKey].insert(instancesMap[fontKey].end(),
-                                         instances.begin(), instances.end());
+    }
+
+    for (const auto& destroyedId : destroyedGameObjects) {
+        if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, destroyedId);
+            instanceIndex.has_value()) {
+            requireIndirectUpdate.push_back(*instanceIndex);
+            mInstancesData.erase(mInstancesData.begin() + *instanceIndex);
+            mGameObjectIds.erase(mGameObjectIds.begin() + *instanceIndex);
         }
     }
 
-    std::vector<Core::STextInstanceData> allInstances;
-    for (const auto& [font, instances] : instancesMap) {
-        SIndirectDrawInfo info{};
-        info.firstIndex = mIndexesRange->first;
-        info.vertexOffset = mVerticesRange->first;
-        info.firstInstance = static_cast<uint32_t>(mIndirectDrawInfos.size());
-        info.instanceCount = static_cast<uint32_t>(instances.size());
-        mIndirectDrawInfos.push_back(info);
-        allInstances.insert(allInstances.end(), instances.begin(),
-                            instances.end());
-    }
-    Utils::SBufferIndexRange textInstanceRange;
-    if (!mTextInstanceBuffer.PrepareData(textInstanceRange, allInstances)) {
-        LOG_ERROR("Failed to prepare text instance buffer!");
-        return;
+    for (auto& renderable : renderables.GetReorderRenderables()) {
+        if (auto instanceIndex =
+                GetInstanceIndex(mGameObjectIds, renderable.id);
+            instanceIndex.has_value()) {
+            requireIndirectUpdate.push_back(*instanceIndex);
+            requireInstanceUpdate.push_back(*instanceIndex);
+            mInstancesData[*instanceIndex].swap(renderable.instancesData);
+        } else {
+            requireIndirectUpdate.push_back(mInstancesData.size());
+            requireInstanceUpdate.push_back(mInstancesData.size());
+            mInstancesData.push_back(renderable.instancesData);
+            mGameObjectIds.push_back(renderable.id);
+            mTextInstanceBufferRanges.push_back(Utils::SBufferIndexRange{0, 0});
+            mIndirectDrawBufferRanges.push_back(Utils::SBufferIndexRange{0, 0});
+        }
     }
 
-    std::vector<Core::SIndirectDrawCommand> indirectCommands;
-    for (const auto& r : mIndirectDrawInfos) {
+    for (const auto& key : requireInstanceUpdate) {
+        if (!mTextInstanceBuffer.PrepareData(mTextInstanceBufferRanges[key],
+                                             mInstancesData[key])) {
+            LOG_WARNING("Failed to prepare instance data!");
+        }
+    }
+
+    for (const auto& key : requireIndirectUpdate) {
         Core::SIndirectDrawCommand cmd{};
-        cmd.indexCount = 6;
-        cmd.instanceCount = r.instanceCount;
-        cmd.firstIndex = r.firstIndex;
-        cmd.vertexOffset = r.vertexOffset;
-        cmd.firstInstance = r.firstInstance;
-        indirectCommands.push_back(cmd);
+        cmd.indexCount = static_cast<uint32_t>(mIndexesRange->count);
+        cmd.instanceCount = static_cast<uint32_t>(mInstancesData[key].size());
+        cmd.firstIndex = static_cast<uint32_t>(mIndexesRange->first);
+        cmd.vertexOffset = static_cast<int32_t>(mVerticesRange->first);
+        cmd.firstInstance =
+            static_cast<uint32_t>(mTextInstanceBufferRanges[key].first);
+        if (!mIndirectDrawBuffer.PrepareData(mIndirectDrawBufferRanges[key],
+                                             cmd)) {
+            LOG_WARNING("Failed to prepare indirect draw command!");
+        }
     }
-
-    Utils::SBufferIndexRange range;
-    if (!mIndirectDrawBuffer.PrepareData(range, indirectCommands)) {
-        LOG_ERROR("Failed to prepare indirect draw buffer!");
-        return;
-    }
-    LOG_INFO("Generated {} text instances for rendering.", allInstances.size());
 }
 
-void CTextRenderer::SetNeedUpdate() {
-    mNeedUpdate = true;
-}
-
-void CTextRenderer::RegisterTextComponent(
-    Component::CTextComponent* textComponent) {
-    mRegisteredTextComponents.push_back(textComponent);
-    mNeedUpdate = true;
-}
-
-void CTextRenderer::UnregisterTextComponent(
-    Component::CTextComponent* textComponent) {
-    auto it = std::find(mRegisteredTextComponents.begin(),
-                        mRegisteredTextComponents.end(), textComponent);
-    if (it != mRegisteredTextComponents.end()) {
-        mRegisteredTextComponents.erase(it);
-        mNeedUpdate = true;
-    }
+const std::vector<Utils::SBufferIndexRange>&
+CTextRenderer::GetIndirectDrawRange() const {
+    return mIndirectDrawBufferRanges;
 }
 
 } // namespace Renderer

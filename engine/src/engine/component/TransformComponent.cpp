@@ -7,49 +7,49 @@
 namespace Component {
 CTransformComponent::CTransformComponent(Core::CGameObject& owner,
                                          CComponentManager& componentManager)
-    : IComponent(owner, componentManager) {
+    : IComponent(owner, componentManager, Core::EDirtyType::Transform) {
 }
 
-void CTransformComponent::update(float deltaTime) {
+void CTransformComponent::Update(float deltaTime) {
     // Update logic can be implemented here if needed
 }
 
-void CTransformComponent::setPosition(const glm::vec3& position) {
+void CTransformComponent::SetPosition(const glm::vec3& position) {
     mPosition = position;
-    mIsDirty = true;
+    SetDirty(true);
 }
 
-const glm::vec3& CTransformComponent::getPosition() const {
+const glm::vec3& CTransformComponent::GetPosition() const {
     return mPosition;
 }
 
-void CTransformComponent::setRotation(const glm::vec3& rotation) {
+void CTransformComponent::SetRotation(const glm::vec3& rotation) {
     mRotation = rotation;
     glm::vec3 radians = glm::radians(rotation);
     mRotationQuat =
         glm::quat(glm::eulerAngleYXZ(radians.y, radians.x, radians.z));
-    mIsDirty = true;
+    SetDirty(true);
 }
 
-glm::vec3 CTransformComponent::getRotation() const {
+glm::vec3 CTransformComponent::GetRotation() const {
     return mRotation;
 }
 
-void CTransformComponent::setScale(const glm::vec3& scale) {
+void CTransformComponent::SetScale(const glm::vec3& scale) {
     mScale = scale;
-    mIsDirty = true;
+    SetDirty(true);
 }
 
-const glm::vec3& CTransformComponent::getScale() const {
+const glm::vec3& CTransformComponent::GetScale() const {
     return mScale;
 }
 
 void CTransformComponent::SetAnchor(Utils::EAnchors anchor) {
     mAnchor = anchor;
-    mIsDirty = true;
+    SetDirty(true);
 }
 
-Utils::EAnchors CTransformComponent::getAnchor() const {
+Utils::EAnchors CTransformComponent::GetAnchor() const {
     return mAnchor;
 }
 

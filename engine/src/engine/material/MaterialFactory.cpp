@@ -49,36 +49,11 @@ std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateTextMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "TextShader";
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
-    config.vertexLayout = Renderer::EVertexLayout::Instanced;
+    config.vertexLayout = Renderer::EVertexLayout::UI;
     config.enableBlending = true;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
     return material;
 }
-
-// std::shared_ptr<CAbstractMaterial>
-// CMaterialFactory::CreateUnlitMaterial(SDL_GPUTexture* texture) {
-
-//     MaterialCreateInfo info;
-//     info.type = EMaterialType::Unlit;
-//     info.shaderPath = "assets/shaders/unlit";
-//     info.texture = texture;
-//     info.enableBlending = true;
-
-//     return CreateMaterial(info);
-// }
-
-// std::shared_ptr<CAbstractMaterial>
-// CMaterialFactory::CreateTextMaterial(SDL_GPUTexture* fontAtlas) {
-
-//     MaterialCreateInfo info;
-//     info.type = EMaterialType::Text;
-//     info.shaderPath = "assets/shaders/text";
-//     info.texture = fontAtlas;
-//     info.enableBlending = true;
-//     info.blendMode = SDL_GPU_BLENDMODE_BLEND;
-
-//     return CreateMaterial(info);
-// }
 
 } // namespace Material

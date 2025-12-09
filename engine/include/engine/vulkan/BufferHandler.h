@@ -1,11 +1,11 @@
 #pragma once
 
-#include "engine/core/DataTypes.h"
-#include "engine/vulkan/BufferHandleWrapper.h"
-
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
+
+#include "engine/core/DataTypes.h"
+#include "engine/vulkan/BufferHandleWrapper.h"
 
 namespace Renderer {
 class CMemoryAllocator;
@@ -24,8 +24,8 @@ public:
     void Upload();
 
     template <typename T>
-    CBufferHandleWrapper<T>& Get() {
-        auto* wrapper = mBufferWrappers[typeid(T)].get();
+    CBufferHandleWrapper<T>& Get(int index) {
+        auto* wrapper = mBufferWrappers[index].get();
         auto* typedWrapper = static_cast<CBufferHandleWrapper<T>*>(wrapper);
         return *typedWrapper;
     }
@@ -39,7 +39,7 @@ private:
     const Vulkan::CVulkanContext& mVulkanContext;
     Renderer::CMemoryAllocator& mMemoryAllocator;
 
-    std::unordered_map<std::type_index, std::unique_ptr<IBufferHandleWrapper>>
+    std::unordered_map<int, std::unique_ptr<IBufferHandleWrapper>>
         mBufferWrappers;
 };
 } // namespace Vulkan
