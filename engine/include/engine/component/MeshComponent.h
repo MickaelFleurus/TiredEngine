@@ -1,9 +1,13 @@
 #pragma once
 #include "engine/component/IDisplayComponent.h"
-
 #include "engine/core/MeshTypes.h"
+#include "engine/material/MaterialTypes.h"
 
 #include <glm/vec4.hpp>
+
+namespace Material {
+class CMaterialManager;
+} // namespace Material
 
 namespace Core {
 class CMesh;
@@ -17,7 +21,8 @@ namespace Component {
 class CMeshComponent : public IDisplayComponent {
 public:
     explicit CMeshComponent(Core::CGameObject& owner,
-                            CComponentManager& componentManager);
+                            CComponentManager& componentManager,
+                            Material::CMaterialManager& materialManager);
     ~CMeshComponent() override;
 
     void SetTextureIndex(int index);
@@ -31,9 +36,12 @@ public:
 
     glm::vec2 GetSize() override;
 
+    void SetMaterialType(Material::EMaterialType type);
+
 private:
+    Material::CMaterialManager& mMaterialManager;
     Core::CMesh* mMesh{nullptr};
-    glm::vec4 mColor{1.0f, 1.0f, 1.0f, 1.0f};
+    glm::vec4 mColor{1.0f, 0.0f, 1.0f, 1.0f};
     int mTextureIndex{-1};
 };
 } // namespace Component

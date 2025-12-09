@@ -9,20 +9,15 @@ class CTransformComponent;
 } // namespace Component
 
 namespace Core {
+
 class CGameObjectBuilder;
 class CGameObject;
+
 class CCamera {
 public:
-    struct SMatrices {
-        glm::mat4 projection;
-        glm::mat4 view;
-        glm::mat4 model;
-    };
     CCamera(CGameObject& parent, CGameObjectBuilder& builder,
             Component::CComponentManager& componentManager,
             std::string cameraName = "Camera");
-
-    SMatrices GetMatrices();
 
     const glm::mat4& GetViewMatrix();
     const glm::mat4& GetProjectionMatrix();

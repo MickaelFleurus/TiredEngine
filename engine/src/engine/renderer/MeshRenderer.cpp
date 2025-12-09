@@ -3,6 +3,8 @@
 #include "engine/core/Mesh.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 
 namespace Renderer {
 CMeshRenderer::CMeshRenderer(
@@ -54,54 +56,116 @@ void CMeshRenderer::RegisterMesh(const Core::CMesh* mesh) {
 
 void CMeshRenderer::UpdateInstances(
     const std::vector<SRenderable>& renderables) {
-    std::unordered_map<std::pair<std::size_t, std::size_t>, SMeshPipelineGroup,
-                       SPairHash>
-        instancesAddedOrModified;
+
+    if (renderables.empty()) {
+        LOG_WARNING("No renderables to process!");
+        return;
+    }
+
+    // Build map of current renderables by key
+    std::unordered_map<std::pair<std::size_t, std::size_t>,
+                       std::vector<Core::SInstanceData>, SPairHash>
+        newInstancesByKey;
+    std::unordered_map<std::pair<std::size_t, std::size_t>,
+                       std::vector<Core::GameObjectId>, SPairHash>
+        newGameObjectsByKey;
+
     for (const auto& renderable : renderables) {
-        auto key =
-            std::make_pair(renderable.meshHash, renderable.material->GetId());
-        instancesAddedOrModified[key].instancesData.push_back(
-            Core::SInstanceData{
-                .modelMatrix = renderable.transform,
-                .color = renderable.color,
-                .materialId = static_cast<int>(renderable.material->GetId()),
-                .textureId = renderable.textureIndex,
-            });
+        auto key = std::make_pair(renderable.meshHash, renderable.materialId);
+        newInstancesByKey[key].push_back(Core::SInstanceData{
+            .modelMatrix = renderable.transform,
+            .color = renderable.color,
+            .materialId = renderable.materialId,
+            .textureId = renderable.textureIndex,
+        });
+        newGameObjectsByKey[key].push_back(renderable.id);
     }
 
-    for (auto& [key, pipelineGroup] : instancesAddedOrModified) {
-        auto& alreadyUploaded = mInstanceCache[key];
-        const auto uploadedSize = alreadyUploaded.instancesData.size();
-        const auto newSize = pipelineGroup.instancesData.size();
+    // Find removed instances by comparing old and new
+    // for (auto it = mInstanceCache.begin(); it != mInstanceCache.end();) {
+    //     const auto& key = it->first;
+    //     auto& cachedGroup = it->second;
 
-        if (uploadedSize == newSize) {
-            alreadyUploaded.instancesData.swap(pipelineGroup.instancesData);
-        } else {
-            alreadyUploaded.instanceBufferRange.count = newSize;
-            alreadyUploaded.instancesData.swap(pipelineGroup.instancesData);
-        }
+    //     if (newGameObjectsByKey.find(key) == newGameObjectsByKey.end()) {
+    //         // Entire group was removed
+    //         mInstancesBuffer.FreeRange(cachedGroup.instanceBufferRange);
+    //         mIndirectDrawBuffer.FreeRange(cachedGroup.indirectBufferRange);
+    //         it = mInstanceCache.erase(it);
+    //     } else {
+    //         // Check if specific instances were removed
+    //         const auto& newGameObjects = newGameObjectsByKey[key];
+    //         const auto& oldGameObjects = cachedGroup.gameObjectIds;
 
-        if (!mInstancesBuffer.PrepareData(alreadyUploaded.instanceBufferRange,
-                                          alreadyUploaded.instancesData)) {
-            LOG_WARNING("Failed to prepare instance data for mesh renderer!");
-        }
+    //         bool hasRemovals = false;
+    //         for (const auto& oldId : oldGameObjects) {
+    //             if (std::find(newGameObjects.begin(), newGameObjects.end(),
+    //                           oldId) == newGameObjects.end()) {
+    //                 LOG_INFO("GameObjectId {} removed from rendering",
+    //                 oldId); hasRemovals = true; break;
+    //             }
+    //         }
 
-        Core::SIndirectDrawCommand indirectCommand{};
-        indirectCommand.indexCount = static_cast<uint32_t>(
-            mMeshDrawRanges[key.first].indexesRange.count);
-        indirectCommand.instanceCount = newSize;
-        indirectCommand.firstIndex = static_cast<uint32_t>(
-            mMeshDrawRanges[key.first].indexesRange.first);
-        indirectCommand.vertexOffset = static_cast<int32_t>(
-            mMeshDrawRanges[key.first].verticesRange.first);
-        indirectCommand.firstInstance =
-            static_cast<uint32_t>(alreadyUploaded.instanceBufferRange.first);
-        if (!mIndirectDrawBuffer.PrepareData(
-                alreadyUploaded.indirectBufferRange, indirectCommand)) {
-            LOG_WARNING("Failed to prepare indirect draw command for mesh "
-                        "renderer!");
+    //         // If removals detected, free old buffer ranges
+    //         if (hasRemovals) {
+    //             mInstancesBuffer.FreeRange(cachedGroup.instanceBufferRange);
+    //             mIndirectDrawBuffer.FreeRange(cachedGroup.indirectBufferRange);
+    //             cachedGroup.instanceBufferRange = {};
+    //             cachedGroup.indirectBufferRange = {};
+    //         }
+
+    //         ++it;
+    //     }
+    // }
+
+    // Update cache with new instances
+    for (auto& [key, instancesData] : newInstancesByKey) {
+        auto& cachedGroup = mInstanceCache[key];
+        cachedGroup.gameObjectIds = newGameObjectsByKey[key];
+
+        const auto oldSize = cachedGroup.instancesData.size();
+        const auto newSize = instancesData.size();
+        bool dataChanged = (oldSize != newSize) ||
+                           (cachedGroup.instancesData != instancesData);
+
+        if (dataChanged) {
+            cachedGroup.instancesData = std::move(instancesData);
+
+            if (!mInstancesBuffer.PrepareData(cachedGroup.instanceBufferRange,
+                                              cachedGroup.instancesData)) {
+                LOG_WARNING("Failed to prepare instance data!");
+            }
+
+            if (oldSize != newSize) {
+                Core::SIndirectDrawCommand cmd{};
+                cmd.indexCount = static_cast<uint32_t>(
+                    mMeshDrawRanges[key.first].indexesRange.count);
+                cmd.instanceCount = newSize;
+                cmd.firstIndex = static_cast<uint32_t>(
+                    mMeshDrawRanges[key.first].indexesRange.first);
+                cmd.vertexOffset = static_cast<int32_t>(
+                    mMeshDrawRanges[key.first].verticesRange.first);
+                cmd.firstInstance = static_cast<uint32_t>(
+                    cachedGroup.instanceBufferRange.first);
+
+                if (!mIndirectDrawBuffer.PrepareData(
+                        cachedGroup.indirectBufferRange, cmd)) {
+                    LOG_WARNING("Failed to prepare "
+                                "indirect draw "
+                                "command!");
+                }
+            }
         }
     }
+}
+
+std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
+CMeshRenderer::GetIndirectDrawRanges() const {
+    std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
+        drawRanges;
+    for (const auto& [key, group] : mInstanceCache) {
+        drawRanges[key.second].push_back(group.indirectBufferRange);
+    }
+    return drawRanges;
 }
 
 } // namespace Renderer

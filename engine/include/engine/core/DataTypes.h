@@ -21,8 +21,8 @@ struct SVertex {
 struct SInstanceData {
     glm::mat4 modelMatrix;
     glm::vec4 color;
-    int materialId;
-    int textureId;
+    uint32_t materialId;
+    uint32_t textureId;
     float padding[2];
 };
 
@@ -47,5 +47,14 @@ struct SPushConstantData {
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;
 };
+
+inline bool operator==(const SInstanceData& lhs, const SInstanceData& rhs) {
+    return lhs.modelMatrix == rhs.modelMatrix && lhs.color == rhs.color &&
+           lhs.materialId == rhs.materialId && lhs.textureId == rhs.textureId;
+}
+
+inline bool operator!=(const SInstanceData& lhs, const SInstanceData& rhs) {
+    return !(lhs == rhs);
+}
 
 } // namespace Core

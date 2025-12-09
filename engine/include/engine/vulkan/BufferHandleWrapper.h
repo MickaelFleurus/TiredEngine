@@ -20,7 +20,7 @@ public:
                          Renderer::CMemoryAllocator& memoryAllocator)
         : mMemoryAllocator(memoryAllocator)
         , mVulkanContext(vulkanContext)
-        , mDataSize(memoryAllocator.AlignSize(sizeof(T))) {
+        , mDataSize(sizeof(T)) {
     }
 
     ~CBufferHandleWrapper() override {
@@ -35,6 +35,7 @@ public:
             Destroy();
         }
         mUsage = usage;
+        bufferSize = mMemoryAllocator.AlignSize(bufferSize);
         mMemoryBlocks.Init(bufferSize);
 
         VkBufferCreateInfo bufferInfo{};
@@ -68,28 +69,33 @@ public:
     bool PrepareData(Utils::SBufferIndexRange& previousIndexRange,
                      const std::vector<T>& data) {
 
-        const auto newDataSize = data.size() * mDataSize;
+        const auto newDataSize =
+            mMemoryAllocator.AlignSize(data.size() * mDataSize);
         const auto previousDataRange =
             Utils::SBufferRange{.offset = previousIndexRange.first * mDataSize,
-                                .size = previousIndexRange.count * mDataSize};
+                                .size = mMemoryAllocator.AlignSize(
+                                    previousIndexRange.count * mDataSize)};
 
         if (previousIndexRange.first + previousIndexRange.count == 0) {
-            LOG_INFO("Data range not uploaded yet, reserving a space for "
-                     "it and uploading it on next upload call.");
+            LOG_INFO(
+                "Data range not uploaded yet, reserving a space for it...");
 
             auto reservedRange = Reserve(data.size() * mDataSize);
             if (!reservedRange.has_value()) {
-                LOG_FATAL("Not enough space to reserve data in data "
-                          "buffer! Buffer needs to be resized.");
-                // TODO: Fatal for now, implement buffer resizing later
+                LOG_FATAL("Not enough space to reserve data in data buffer!");
                 return false;
             }
+
+            LOG_INFO("Reserved range: offset={}, size={}",
+                     reservedRange->offset, reservedRange->size);
+
             previousIndexRange = Utils::SBufferIndexRange{
                 .first = reservedRange->offset / mDataSize,
                 .count = data.size()};
-        } else if ((previousIndexRange.first + previousIndexRange.count) *
-                       mDataSize <
-                   newDataSize) {
+
+            LOG_INFO("Converted to index range: first={}, count={}",
+                     previousIndexRange.first, previousIndexRange.count);
+        } else if (previousDataRange.size < newDataSize) {
             LOG_INFO("Data size has changed, resizing and uploading new data "
                      "on next upload call.");
             auto resizedRange =
@@ -116,7 +122,6 @@ public:
 
     bool Upload() override {
         if (mToUpdate.empty()) {
-            LOG_INFO("No data to upload or range not prepared!");
             return true;
         }
         VkDeviceSize minOffset = UINT64_MAX;
@@ -127,10 +132,10 @@ public:
             maxOffset = std::max(maxOffset, range.offset + range.size);
         }
 
-        if (PrepareUpdate(minOffset, maxOffset - minOffset)) {
+        if (void* mapped = PrepareUpdate(minOffset, maxOffset - minOffset)) {
             for (auto& [range, data] : mToUpdate) {
                 range.offset -= minOffset;
-                Update(&data, range);
+                Update(mapped, data.data(), range);
             }
         } else {
             LOG_ERROR("Failed to prepare buffer for update!");
@@ -140,6 +145,12 @@ public:
 
         mToUpdate.clear();
         return true;
+    }
+
+    void FreeRange(const Utils::SBufferIndexRange& range) {
+        Utils::SBufferRange bufferRange{.offset = range.first * mDataSize,
+                                        .size = range.count * mDataSize};
+        mMemoryBlocks.Free(bufferRange);
     }
 
     bool Clear() override {
@@ -180,8 +191,10 @@ private:
         return mappedData;
     }
 
-    void Update(void* data, const Utils::SBufferRange& range) {
-        memcpy(static_cast<uint8_t*>(data) + range.offset, data, range.size);
+    void Update(void* mappedData, void* sourceData,
+                const Utils::SBufferRange& range) {
+        memcpy(static_cast<uint8_t*>(mappedData) + range.offset, sourceData,
+               range.size);
     }
 
     bool FinalizeUpdate() {

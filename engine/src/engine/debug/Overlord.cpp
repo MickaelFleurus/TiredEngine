@@ -1,14 +1,14 @@
 #include "engine/debug/Overlord.h"
-#include "engine/debug/IOverlordItem.h"
 
+#include "engine/debug/IOverlordItem.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+
+#include <SDL3/SDL_events.h>
+#include <chrono>
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
-
-#include <SDL3/SDL_events.h>
-
 #include <magic_enum/magic_enum.hpp>
 
 namespace Debug {
@@ -88,6 +88,20 @@ bool COverlord::PrepareRender(SDL_Window* window) {
     ImGui_ImplSDL3_NewFrame();
 
     ImGui::NewFrame();
+    // Update FPS counter
+    static auto lastTime = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::high_resolution_clock::now();
+    mFrameTime =
+        std::chrono::duration<float, std::chrono::milliseconds::period>(
+            now - lastTime)
+            .count();
+    lastTime = now;
+
+    mFPSUpdateTime += mFrameTime;
+    if (mFPSUpdateTime >= 1000.0f) { // Update every second
+        mFPS = static_cast<int>(1000.0f / mFrameTime);
+        mFPSUpdateTime = 0.0f;
+    }
 
     RenderMenuBar();
     RenderWidgets();
@@ -128,6 +142,10 @@ void COverlord::RenderMenuBar() {
             }
             ImGui::EndMenu();
         }
+        // Add FPS display
+        ImGui::SameLine(ImGui::GetWindowWidth() - 120.0f);
+        ImGui::Text("FPS: %d (%.2f ms)", mFPS, mFrameTime);
+
         ImGui::EndMainMenuBar();
     }
 }

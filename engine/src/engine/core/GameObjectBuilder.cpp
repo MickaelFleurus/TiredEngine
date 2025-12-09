@@ -155,6 +155,17 @@ CGameObjectBuilder::CBuilder::Add3DQuad(float width, float height,
     return *this;
 }
 
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::SetMaterialType(Material::EMaterialType type) {
+    auto* meshComponent =
+        mComponentManager.getComponent<Component::CMeshComponent>(
+            mGameObject->getId());
+    if (meshComponent) {
+        meshComponent->SetMaterialType(type);
+    }
+    return *this;
+}
+
 CGameObject* CGameObjectBuilder::CBuilder::Build() {
     auto* rawPtr = mGameObject.get();
     mParent.addChild(std::move(mGameObject));

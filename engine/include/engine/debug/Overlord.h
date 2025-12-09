@@ -41,5 +41,9 @@ private:
     const Vulkan::CVulkanRendering& mRendering;
 
     VkDescriptorPool mImguiPool = VK_NULL_HANDLE;
+
+    float mFrameTime = 0.0f;
+    int mFPS = 0;
+    float mFPSUpdateTime = 0.0f;
 };
 } // namespace Debug

@@ -1,10 +1,14 @@
 #include "engine/component/MeshComponent.h"
+
 #include "engine/core/Mesh.h"
+#include "engine/material/MaterialManager.h"
 
 namespace Component {
 CMeshComponent::CMeshComponent(Core::CGameObject& owner,
-                               CComponentManager& componentManager)
-    : IDisplayComponent(owner, componentManager) {
+                               CComponentManager& componentManager,
+                               Material::CMaterialManager& materialManager)
+    : IDisplayComponent(owner, componentManager)
+    , mMaterialManager(materialManager) {
 }
 
 CMeshComponent::~CMeshComponent() = default;
@@ -65,6 +69,16 @@ glm::vec2 CMeshComponent::GetSize() {
     }
 
     return glm::vec2(maxX - minX, maxY - minY);
+}
+
+void CMeshComponent::SetMaterialType(Material::EMaterialType type) {
+    if (mMesh == nullptr) {
+        return;
+    }
+
+    auto* material = mMaterialManager.GetorCreateMaterial(type);
+    mMesh->SetMaterial(material);
+    setDirty(true);
 }
 
 } // namespace Component

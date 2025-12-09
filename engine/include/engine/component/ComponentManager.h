@@ -1,19 +1,22 @@
 #pragma once
+#include "engine/component/IComponent.h"
+#include "engine/core/GameObjectId.h"
+#include "engine/input/InputCallback.h"
+
 #include <functional>
 #include <memory>
 #include <optional>
 #include <typeindex>
 #include <unordered_map>
-
-#include "engine/component/IComponent.h"
-
-#include "engine/core/GameObjectId.h"
-#include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
 
 namespace Core {
 class CGameObject;
 } // namespace Core
+
+namespace Material {
+class CMaterialManager;
+} // namespace Material
 
 namespace Font {
 class CFontHandler;
@@ -36,7 +39,8 @@ class CTransformComponent;
 class CComponentManager {
 public:
     CComponentManager(Font::CFontHandler& fontHandler,
-                      Renderer::CTextRenderer& textRenderer);
+                      Renderer::CTextRenderer& textRenderer,
+                      Material::CMaterialManager& materialManager);
 
     template <typename T>
     T* getComponent(int entityId) {
@@ -149,6 +153,7 @@ private:
 
     Font::CFontHandler& mFontHandler;
     Renderer::CTextRenderer& mTextRenderer;
+    Material::CMaterialManager& mMaterialManager;
     std::unordered_map<std::type_index, ComponentPool> mComponentPools;
 };
 } // namespace Component

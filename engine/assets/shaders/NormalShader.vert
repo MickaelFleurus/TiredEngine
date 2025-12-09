@@ -22,10 +22,10 @@ layout(location = 2) out vec3 fragNormal;
 
 void main() {
     gl_Position = pc.projection * pc.view * modelMatrix * vec4(vertexPosition, 1.0);
-    
+            
     // Transform normal by inverse transpose of model matrix
     fragNormal = normalize(mat3(transpose(inverse(modelMatrix))) * vertexNormal);
     
-    fragColor = instanceColor;
+    fragColor = vec4(fragNormal * 0.5 + 0.5, 1.0); 
     fragUV = vertexUV;
 }

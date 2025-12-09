@@ -1,6 +1,8 @@
 #include "engine/component/TransformComponent.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 
 namespace Component {
 CTransformComponent::CTransformComponent(Core::CGameObject& owner,
@@ -23,7 +25,9 @@ const glm::vec3& CTransformComponent::getPosition() const {
 
 void CTransformComponent::setRotation(const glm::vec3& rotation) {
     mRotation = rotation;
-    mRotationQuat = glm::quat(rotation);
+    glm::vec3 radians = glm::radians(rotation);
+    mRotationQuat =
+        glm::quat(glm::eulerAngleYXZ(radians.y, radians.x, radians.z));
     mIsDirty = true;
 }
 

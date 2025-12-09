@@ -26,4 +26,14 @@ CAbstractMaterial* CMaterialManager::GetorCreateMaterial(EMaterialType type) {
     mMaterials.emplace(type, std::move(material));
     return materialPtr;
 }
+
+CAbstractMaterial*
+CMaterialManager::GetMaterialById(std::size_t materialId) const {
+    for (const auto& [type, material] : mMaterials) {
+        if (material->GetId() == materialId) {
+            return material.get();
+        }
+    }
+    return nullptr;
+}
 } // namespace Material

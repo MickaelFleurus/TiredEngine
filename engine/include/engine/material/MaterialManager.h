@@ -30,6 +30,7 @@ public:
     ~CMaterialManager();
 
     CAbstractMaterial* GetorCreateMaterial(EMaterialType type);
+    CAbstractMaterial* GetMaterialById(std::size_t materialId) const;
 
 private:
     CMaterialFactory mMaterialFactory;

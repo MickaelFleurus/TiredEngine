@@ -27,7 +27,8 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
-    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer())
+    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
+                        mMaterialManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
@@ -73,7 +74,6 @@ bool CEngineLoop::Run() {
 
             mPendingScene->Load();
 
-            mRendererManager.UploadSceneData();
             mCurrentScene.swap(mPendingScene);
             mPendingScene.reset();
         }

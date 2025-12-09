@@ -11,9 +11,12 @@
 #include "engine/core/GameObject.h"
 
 namespace Component {
-CComponentManager::CComponentManager(Font::CFontHandler& fontHandler,
-                                     Renderer::CTextRenderer& textRenderer)
-    : mFontHandler(fontHandler), mTextRenderer(textRenderer) {
+CComponentManager::CComponentManager(
+    Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
+    Material::CMaterialManager& materialManager)
+    : mFontHandler(fontHandler)
+    , mTextRenderer(textRenderer)
+    , mMaterialManager(materialManager) {
 }
 
 CInputComponent& CComponentManager::addInputComponent(
@@ -61,7 +64,8 @@ CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
 }
 
 CMeshComponent& CComponentManager::addMeshComponent(Core::CGameObject& owner) {
-    return createComponent<CMeshComponent>(owner, owner.getId());
+    return createComponent<CMeshComponent>(owner, owner.getId(),
+                                           mMaterialManager);
 }
 
 void CComponentManager::removeComponents(Core::GameObjectId id) {

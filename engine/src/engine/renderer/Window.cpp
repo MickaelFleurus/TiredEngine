@@ -61,12 +61,10 @@ VkRect2D GetScissor(VkViewport viewport) {
     return scissor;
 }
 
-void ExtractRenderable(
-    Core::CGameObject& root, Component::CComponentManager& componentManager,
-    std::vector<Renderer::SRenderable>& renderables,
-    const std::unordered_map<Core::GameObjectId, Renderer::SRenderable>&
-        previousRenderables,
-    glm::mat4 transform = glm::mat4(1.0f)) {
+void ExtractRenderable(Core::CGameObject& root,
+                       Component::CComponentManager& componentManager,
+                       std::vector<Renderer::SRenderable>& renderables,
+                       glm::mat4 transform = glm::mat4(1.0f)) {
     if (!root.IsVisible()) {
         return;
     }
@@ -82,21 +80,18 @@ void ExtractRenderable(
         Renderer::SRenderable renderable{};
         renderable.id = gameObjectId;
         renderable.transform = transform;
-        renderable.material = meshComponent->GetMesh()->GetMaterial();
+        renderable.materialId =
+            meshComponent->GetMesh()->GetMaterial()->GetId();
         renderable.meshHash = meshComponent->GetMesh()->GetHash();
         renderable.color = meshComponent->GetColor();
         renderable.textureIndex = meshComponent->GetTextureIndex();
-        if (!previousRenderables.contains(gameObjectId) ||
-            previousRenderables.at(gameObjectId) != renderable) {
-            renderables.push_back(renderable);
-        }
+        renderables.push_back(renderable);
     } else {
         transformComponent.UpdateMatrix(transform);
     }
 
     for (auto& child : root.getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables,
-                          previousRenderables, transform);
+        ExtractRenderable(*child, componentManager, renderables, transform);
     }
 }
 
@@ -136,18 +131,11 @@ void CWindow::Render(Scene::CAbstractScene& scene,
 
     std::vector<SRenderable> renderables;
     for (auto& child : scene.GetRoot().getChildren()) {
-        ExtractRenderable(*child, componentManager, renderables, mRenderables);
+        ExtractRenderable(*child, componentManager, renderables);
     }
 
     std::sort(renderables.begin(), renderables.end());
-    if (mRenderables.empty()) {
-        mRendererManager.GenerateInstances(renderables);
-    } else if (!renderables.empty()) {
-        mRendererManager.UpdateInstances(renderables);
-    }
-    for (const auto& renderable : renderables) {
-        mRenderables[renderable.id] = renderable;
-    }
+    mRendererManager.GenerateInstances(renderables);
 
     VkCommandBuffer commandBuffer =
         mVulkanContext.GetCommandBuffer(mImageIndex.value());

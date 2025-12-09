@@ -4,6 +4,7 @@
 #include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionInfo.h"
 #include "engine/core/MeshTypes.h"
+#include "engine/material/MaterialTypes.h"
 #include "engine/utils/Anchors.h"
 
 #include <functional>
@@ -62,6 +63,7 @@ public:
         CBuilder& SetAnchor(Utils::EAnchors anchor);
         CBuilder& Add3DCube(float size);
         CBuilder& Add3DQuad(float width, float height, float depth);
+        CBuilder& SetMaterialType(Material::EMaterialType type);
         CGameObject* Build();
 
     private:

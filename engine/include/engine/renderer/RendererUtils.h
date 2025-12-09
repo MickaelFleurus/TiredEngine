@@ -24,18 +24,17 @@ class CMemoryAllocator;
 struct SRenderable {
     Core::GameObjectId id;
     glm::mat4 transform;
-    Material::CAbstractMaterial* material;
+    uint32_t materialId;
     float depth;
     std::size_t meshHash;
     glm::vec4 color;
-    int textureIndex;
-
+    uint32_t textureIndex;
     bool operator<(const SRenderable& other) const {
-        return material->GetPipeline() < other.material->GetPipeline();
+        return materialId < other.materialId;
     }
 
     bool operator==(const SRenderable& other) const {
-        return transform == other.transform && material == other.material &&
+        return transform == other.transform && materialId == other.materialId &&
                depth == other.depth && meshHash == other.meshHash &&
                color == other.color && textureIndex == other.textureIndex;
         ;

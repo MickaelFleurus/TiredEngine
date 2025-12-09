@@ -47,11 +47,15 @@ public:
 
     void UpdateInstances(const std::vector<SRenderable>& renderables);
 
+    std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
+    GetIndirectDrawRanges() const;
+
 private:
     struct SMeshPipelineGroup {
         Utils::SBufferIndexRange instanceBufferRange;
         Utils::SBufferIndexRange indirectBufferRange;
         std::vector<Core::SInstanceData> instancesData;
+        std::vector<Core::GameObjectId> gameObjectIds;
     };
 
     struct SMeshDrawData {

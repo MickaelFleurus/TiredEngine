@@ -42,15 +42,6 @@ const glm::mat4& CCamera::GetViewProjection() {
     return mViewProjMatrix;
 }
 
-CCamera::SMatrices CCamera::GetMatrices() {
-    EnsureUpToDate();
-    SMatrices mats;
-    mats.projection = mProjMatrix;
-    mats.view = mViewMatrix;
-    mats.model = glm::mat4(1.0f);
-    return mats;
-}
-
 void CCamera::EnsureUpToDate() {
     if (!mCameraComponent.isDirty() && !mTransformComponent.isDirty())
         return;

@@ -22,6 +22,7 @@ namespace Debug {
 class CTransformComponentWidget;
 class CTextComponentWidget;
 class CCameraWidget;
+class CMeshComponentWidget;
 
 class CEntityWidget : public IOverlordItem {
 public:
@@ -48,5 +49,6 @@ private:
     std::unique_ptr<CTransformComponentWidget> mTransformWidget;
     std::unique_ptr<CTextComponentWidget> mTextWidget;
     std::unique_ptr<CCameraWidget> mCameraWidget;
+    std::unique_ptr<CMeshComponentWidget> mMeshWidget;
 };
 } // namespace Debug

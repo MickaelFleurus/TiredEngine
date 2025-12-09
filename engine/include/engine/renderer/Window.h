@@ -69,7 +69,6 @@ private:
     CRendererManager& mRendererManager;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;
-    std::unordered_map<Core::GameObjectId, Renderer::SRenderable> mRenderables;
 
     VkViewport mViewport;
     VkRect2D mScissor;

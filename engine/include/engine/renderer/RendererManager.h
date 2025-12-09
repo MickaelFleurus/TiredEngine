@@ -19,23 +19,23 @@ public:
     ~CRendererManager();
 
     void FreeSceneData();
-    void UploadSceneData();
 
     CMeshRenderer& GetMeshRenderer();
     CTextRenderer& GetTextRenderer();
     void GenerateInstances(const std::vector<SRenderable>& renderables);
-    void UpdateInstances(const std::vector<SRenderable>& renderables);
-
     void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
                 Core::CCamera& camera);
 
 private:
-    Vulkan::CBufferHandler& mBufferHandler;
+    Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBuffer;
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBuffer;
+    Vulkan::CBufferHandleWrapper<Core::SInstanceData>& mInstanceBuffer;
+    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+        mIndirectDrawBuffer;
+    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& mTextInstanceBuffer;
+
     Material::CMaterialManager& mMaterialManager;
     CMeshRenderer mMeshRenderer;
     CTextRenderer mTextRenderer;
-    std::unordered_map<Material::CAbstractMaterial*,
-                       std::vector<Utils::SBufferIndexRange>>
-        mMeshInstanceRanges;
 };
 } // namespace Renderer
