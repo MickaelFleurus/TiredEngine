@@ -1,15 +1,16 @@
 #pragma once
 
+#include <optional>
+#include <vector>
+
+#include <vulkan/vulkan.h>
+
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/utils/BufferMemoryBlocks.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/IBufferHandleWrapper.h"
 #include "engine/vulkan/VulkanContext.h"
-
-#include <optional>
-#include <vector>
-#include <vulkan/vulkan.h>
 
 namespace Vulkan {
 
@@ -134,6 +135,9 @@ public:
 
         if (void* mapped = PrepareUpdate(minOffset, maxOffset - minOffset)) {
             for (auto& [range, data] : mToUpdate) {
+                if (data.empty()) {
+                    continue;
+                }
                 range.offset -= minOffset;
                 Update(mapped, data.data(), range);
             }

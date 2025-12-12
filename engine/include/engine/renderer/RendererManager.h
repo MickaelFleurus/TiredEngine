@@ -33,7 +33,7 @@ public:
     void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
                 Core::CCamera& camera, Core::CCamera& uiCamera);
 
-    static void NotifyGameObjectDestroyed(Core::GameObjectId id);
+    static void NotifyGameObjectHidden(Core::GameObjectId id);
 
 private:
     Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBuffer;
@@ -41,7 +41,7 @@ private:
     Vulkan::CBufferHandleWrapper<Core::SInstanceData>& mInstanceBuffer;
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;
-    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& mTextInstanceBuffer;
+    Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mUIVertexBuffer;
     Vulkan::CBufferHandleWrapper<Core::TextIndexType>& mIndexesUIBuffer;
 
@@ -49,6 +49,6 @@ private:
     CMeshRenderer mMeshRenderer;
     CTextRenderer mTextRenderer;
 
-    static std::vector<Core::GameObjectId> mDestroyedGameObjects;
+    static std::vector<Core::GameObjectId> mHiddenGameObjects;
 };
 } // namespace Renderer

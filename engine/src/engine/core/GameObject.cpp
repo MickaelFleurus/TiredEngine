@@ -31,7 +31,7 @@ CGameObject::~CGameObject() {
     }
 
     mChildren.clear();
-    Renderer::CRendererManager::NotifyGameObjectDestroyed(mId);
+    Renderer::CRendererManager::NotifyGameObjectHidden(mId);
 }
 
 void CGameObject::DestroySelf() {

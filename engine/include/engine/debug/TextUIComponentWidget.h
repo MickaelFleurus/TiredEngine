@@ -1,13 +1,14 @@
 #pragma once
 
-#include <glm/vec4.hpp>
 #include <string>
 #include <vector>
+
+#include <glm/vec4.hpp>
 
 #include "engine/debug/IOverlordItem.h"
 
 namespace Component {
-class CTextComponent;
+class CTextUIComponent;
 }
 
 namespace Utils {
@@ -19,16 +20,16 @@ class CFontHandler;
 }
 
 namespace Debug {
-class CTextComponentWidget : public IOverlordItem {
+class CTextUIComponentWidget : public IOverlordItem {
 public:
-    CTextComponentWidget(Component::CTextComponent& textComponent,
-                         Utils::CFileHandler& fileHandler,
-                         Font::CFontHandler& fontHandler);
+    CTextUIComponentWidget(Component::CTextUIComponent& textComponent,
+                           Utils::CFileHandler& fileHandler,
+                           Font::CFontHandler& fontHandler);
     void Render() override;
     const char* GetName() const override;
 
 private:
-    Component::CTextComponent& mTextComponent;
+    Component::CTextUIComponent& mTextComponent;
     Font::CFontHandler& mFontHandler;
     const std::vector<std::string> mAvailableFonts;
 

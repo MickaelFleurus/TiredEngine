@@ -1,7 +1,7 @@
 #version 450
 
 
-layout(location = 0) in vec3 vertexPosition;
+layout(location = 0) in vec2 vertexPosition;
 layout(location = 1) in vec2 vertexUV;
 
 
@@ -22,11 +22,10 @@ layout(location = 2) out flat uint fragTextureIndex;
 layout(location = 3) out flat uint fragMaterialIndex;
 
 void main() {
-    // Directly output quad corners in NDC space
-    vec2 ndcPos = vertexPosition.xy * 2.0 - 1.0;  // Convert 0-1 to -1 to 1
-    gl_Position = vec4(ndcPos, 0.0, 1.0);
     
-    fragTexCoord = vertexUV;
+    vec4 worldPos = modelMatrix * vec4(vertexPosition, 0.0, 1.0);
+    gl_Position = pc.projection * pc.view * worldPos;
+    fragTexCoord = vec2(vertexUV.x, 1.0 - vertexUV.y) * instanceUVRect.zw + instanceUVRect.xy;
     fragColor = instanceColor;
     fragTextureIndex = instanceTextureIndex;
     fragMaterialIndex = instanceMaterialIndex;

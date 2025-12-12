@@ -1,9 +1,12 @@
 #include "engine/renderer/MeshRenderer.h"
 
+#include <set>
+
 #include "engine/core/Mesh.h"
 #include "engine/renderer/Renderables.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
@@ -67,14 +70,14 @@ void CMeshRenderer::UnregisterMesh(const Core::CMesh* mesh) {
 
 void CMeshRenderer::UpdateInstances(
     Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
-    const std::vector<Core::GameObjectId>& destroyedGameObjects) {
+    const std::vector<Core::GameObjectId>& hidden) {
 
-    std::vector<std::pair<std::size_t, std::size_t>> requireInstanceUpdate;
-    std::vector<std::pair<std::size_t, std::size_t>> requireIndirectUpdate;
+    std::set<std::pair<std::size_t, std::size_t>> requireInstanceUpdate;
+    std::set<std::pair<std::size_t, std::size_t>> requireIndirectUpdate;
 
     for (const auto& renderable : renderables.GetUpdateRenderables()) {
         auto key = std::make_pair(renderable.meshHash, renderable.materialId);
-        requireInstanceUpdate.push_back(key);
+        requireInstanceUpdate.emplace(key);
         auto instanceIndex =
             mInstanceCache[key].GetInstanceIndex(renderable.id);
         if (instanceIndex.has_value()) {
@@ -90,11 +93,11 @@ void CMeshRenderer::UpdateInstances(
         }
     }
 
-    for (const auto& destroyedId : destroyedGameObjects) {
+    for (const auto& id : hidden) {
         for (auto& [key, group] : mInstanceCache) {
-            auto instanceIndex = group.GetInstanceIndex(destroyedId);
+            auto instanceIndex = group.GetInstanceIndex(id);
             if (instanceIndex.has_value()) {
-                requireIndirectUpdate.push_back(key);
+                requireIndirectUpdate.emplace(key);
                 group.instancesData.erase(group.instancesData.begin() +
                                           *instanceIndex);
                 group.gameObjectIds.erase(group.gameObjectIds.begin() +
@@ -105,8 +108,8 @@ void CMeshRenderer::UpdateInstances(
 
     for (const auto& renderable : renderables.GetReorderRenderables()) {
         auto key = std::make_pair(renderable.meshHash, renderable.materialId);
-        requireInstanceUpdate.push_back(key);
-        requireIndirectUpdate.push_back(key);
+        requireInstanceUpdate.emplace(key);
+        requireIndirectUpdate.emplace(key);
 
         auto& group = mInstanceCache[key];
         Core::SInstanceData instanceData{};

@@ -47,6 +47,7 @@ struct SPipelineConfig {
     std::string shaderPath;
 
     bool enableBlending = false;
+    bool enableDepthTest = true;
 
     EVertexLayout vertexLayout = EVertexLayout::Simple;
 

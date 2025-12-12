@@ -12,7 +12,7 @@
 #include "engine/utils/BufferMemoryBlocks.h"
 
 namespace Component {
-class CTextComponent;
+class CTextUIComponent;
 }
 
 namespace Vulkan {
@@ -30,7 +30,7 @@ public:
     explicit CTextRenderer(
         Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
         Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
-        Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& instanceBuffer,
+        Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& instanceBuffer,
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
             indirectDrawBuffer);
     void Free() override {
@@ -38,20 +38,19 @@ public:
     void Prepare();
     void Update() override;
 
-    void UpdateInstances(
-        CRenderables<STextRenderable>& renderables,
-        const std::vector<Core::GameObjectId>& destroyedGameObjects);
+    void UpdateInstances(CRenderables<STextRenderable>& renderables,
+                         const std::vector<Core::GameObjectId>& hidden);
 
     const std::vector<Utils::SBufferIndexRange>& GetIndirectDrawRange() const;
 
 private:
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mVertexBufferHandle;
     Vulkan::CBufferHandleWrapper<Core::TextIndexType>& mIndexesBufferHandle;
-    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& mTextInstanceBuffer;
+    Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;
 
-    std::vector<std::vector<Core::STextInstanceData>> mInstancesData;
+    std::vector<std::vector<Core::SUIInstanceData>> mInstancesData;
     std::vector<Core::GameObjectId> mGameObjectIds;
     std::vector<Utils::SBufferIndexRange> mTextInstanceBufferRanges;
     std::vector<Utils::SBufferIndexRange> mIndirectDrawBufferRanges;

@@ -1,13 +1,13 @@
 #pragma once
-#include "engine/component/IComponent.h"
-#include "engine/core/GameObjectId.h"
-#include "engine/input/InputCallback.h"
-
 #include <functional>
 #include <memory>
 #include <optional>
 #include <typeindex>
 #include <unordered_map>
+
+#include "engine/component/IComponent.h"
+#include "engine/core/GameObjectId.h"
+#include "engine/input/InputCallback.h"
 // #include "engine/physics/CollisionType.h"
 
 namespace Core {
@@ -31,7 +31,7 @@ namespace Component {
 class CSpriteComponent;
 class CInputComponent;
 class CCameraComponent;
-class CTextComponent;
+class CTextUIComponent;
 class CMovementComponent;
 class CMeshComponent;
 class CTransformComponent;
@@ -95,7 +95,7 @@ public:
     CMovementComponent& AddMovementComponent(Core::CGameObject& owner,
                                              float acceleration);
 
-    CTextComponent& AddTextComponent(Core::CGameObject& owner);
+    CTextUIComponent& AddTextComponent(Core::CGameObject& owner);
     CCameraComponent& AddCameraComponent(Core::CGameObject& owner);
 
     // CCollisionComponent& addCollisionComponent(Core::CGameObject& owner, bool

@@ -57,7 +57,7 @@ void CTransformComponent::UpdateMatrix(glm::mat4& parentTransform,
                                        const glm::vec2& size) const {
     glm::vec2 anchorOffset = Utils::GetAnchorOffset(mAnchor);
     glm::vec3 adjustedPosition =
-        mPosition - glm::vec3(anchorOffset * size, 0.0f);
+        mPosition + glm::vec3(anchorOffset * size, 0.0f);
     parentTransform = glm::translate(parentTransform, adjustedPosition);
     parentTransform *= glm::mat4_cast(mRotationQuat);
     parentTransform = glm::scale(parentTransform, mScale);

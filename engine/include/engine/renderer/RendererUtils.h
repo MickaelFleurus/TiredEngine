@@ -37,7 +37,7 @@ struct SMeshRenderable {
 
 struct STextRenderable {
     Core::GameObjectId id;
-    std::vector<Core::STextInstanceData> instancesData;
+    std::vector<Core::SUIInstanceData> instancesData;
 };
 
 struct VulkanImage {

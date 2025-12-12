@@ -3,6 +3,7 @@
 #include <array>
 #include <ctime>
 #include <filesystem>
+
 #include <vulkan/vulkan.h>
 
 namespace {
@@ -31,7 +32,7 @@ std::string FormatTimeFilename() {
     return std::format("/{}.txt", std::string(buf));
 }
 
-constexpr std::array<std::string_view, 5> kLevelStrs{"TRACE", "INFO ", "WARN ",
+constexpr std::array<std::string_view, 5> kLevelStrs{"TRACE", "INFO", "WARN",
                                                      "ERROR", "FATAL"};
 
 } // namespace

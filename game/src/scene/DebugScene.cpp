@@ -47,7 +47,7 @@ void CDebugScene::Load() {
         .SetLocalPosition({-50.0f, 0.0f, -5.0f})
         .SetMaterialType(Material::EMaterialType::Normal)
         .Build();
-    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug!", 24).Build();
+    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug! \nYo", 60).Build();
 }
 
 void CDebugScene::Unload() {

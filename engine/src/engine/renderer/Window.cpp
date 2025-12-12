@@ -13,7 +13,7 @@
 #include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/DataTypes.h"
 #include "engine/core/GameObject.h"
@@ -74,8 +74,7 @@ void ExtractMeshes(
     auto& transformComponent =
         *componentManager.GetComponent<Component::CTransformComponent>(
             root.GetId());
-
-    transformComponent.UpdateMatrix(transform);
+    bool alreadyUpdated = false;
     if (root.GetDirtyFlags() != Core::EDirtyType::None) {
         if (auto* meshComponent =
                 componentManager.GetComponent<Component::CMeshComponent>(
@@ -91,17 +90,30 @@ void ExtractMeshes(
 
             meshRenderables.AddRenderable(
                 renderable, Core::RequireReordering(root.GetDirtyFlags()));
+            transformComponent.UpdateMatrix(transform,
+                                            meshComponent->GetSize());
+            alreadyUpdated = true;
         }
         if (auto* textComponent =
-                componentManager.GetComponent<Component::CTextComponent>(
+                componentManager.GetComponent<Component::CTextUIComponent>(
                     root.GetId())) {
 
             Renderer::STextRenderable renderable{};
             renderable.id = gameObjectId;
             renderable.instancesData = textComponent->GetInstances();
+
+            transformComponent.UpdateMatrix(transform,
+                                            textComponent->GetSize());
+            for (auto& instance : renderable.instancesData) {
+                instance.modelMatrix = transform * instance.modelMatrix;
+            }
             textRenderables.AddRenderable(
                 renderable, Core::RequireReordering(root.GetDirtyFlags()));
+            alreadyUpdated = true;
         }
+    }
+    if (!alreadyUpdated) {
+        transformComponent.UpdateMatrix(transform);
     }
     root.ClearDirtyFlags();
 

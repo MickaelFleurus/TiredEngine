@@ -5,11 +5,11 @@
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MeshComponent.h"
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/debug/CameraWidget.h"
 #include "engine/debug/MeshComponentWidget.h"
-#include "engine/debug/TextComponentWidget.h"
+#include "engine/debug/TextUIComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
 
 namespace Debug {
@@ -46,9 +46,9 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId,
             *transformComponent);
     }
     if (auto* textComponent =
-            mComponentManager.GetComponent<Component::CTextComponent>(
+            mComponentManager.GetComponent<Component::CTextUIComponent>(
                 *mEntityId)) {
-        mTextWidget = std::make_unique<Debug::CTextComponentWidget>(
+        mTextWidget = std::make_unique<Debug::CTextUIComponentWidget>(
             *textComponent, mFileHandler, mFontHandler);
     }
     if (auto* cameraComponent =

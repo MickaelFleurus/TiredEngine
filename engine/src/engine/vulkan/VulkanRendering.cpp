@@ -159,9 +159,8 @@ void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
     VkCommandBuffer commandBuffer = mVulkanContext.GetCommandBuffer(index);
     vkResetCommandBuffer(commandBuffer, 0);
 
-    VkClearColorValue red{0.0f, 0.0f, 0.0f, 0.0f};
     VkClearValue clearColor{};
-    clearColor.color = red;
+    clearColor.color = {0.1f, 0.1f, 0.1f, 0.0f};
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = mVulkanContext.GetRenderPass();

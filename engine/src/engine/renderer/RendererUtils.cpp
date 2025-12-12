@@ -40,7 +40,7 @@ Renderer::VertexLayoutInfo CreateUIVertexLayout() {
     // Buffer 0: Position + TexCoord (per-vertex)
     VkVertexInputAttributeDescription vertexPosition{};
     vertexPosition.binding = 0;
-    vertexPosition.format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertexPosition.format = VK_FORMAT_R32G32_SFLOAT;
     vertexPosition.location = 0;
     vertexPosition.offset = 0;
 
@@ -48,7 +48,7 @@ Renderer::VertexLayoutInfo CreateUIVertexLayout() {
     vertexUV.binding = 0;
     vertexUV.format = VK_FORMAT_R32G32_SFLOAT;
     vertexUV.location = 1;
-    vertexUV.offset = sizeof(float) * 4;
+    vertexUV.offset = sizeof(float) * 2;
 
     // Buffer 1: Instance data
     // Model matrix (4 vec4)
@@ -113,12 +113,12 @@ Renderer::VertexLayoutInfo CreateUIVertexLayout() {
 
     VkVertexInputBindingDescription vertexBufferDesc{};
     vertexBufferDesc.binding = 0;
-    vertexBufferDesc.stride = sizeof(float) * 5;
+    vertexBufferDesc.stride = sizeof(Core::SUIVertex);
     vertexBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputBindingDescription instanceBufferDesc{};
     instanceBufferDesc.binding = 1;
-    instanceBufferDesc.stride = sizeof(Core::STextInstanceData);
+    instanceBufferDesc.stride = sizeof(Core::SUIInstanceData);
     instanceBufferDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     info.bufferDescriptions = {vertexBufferDesc, instanceBufferDesc};

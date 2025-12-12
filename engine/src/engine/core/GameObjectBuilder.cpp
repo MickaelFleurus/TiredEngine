@@ -7,7 +7,7 @@
 #include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/MeshManager.h"
 #include "engine/font/FontHandler.h"
@@ -56,9 +56,9 @@ CGameObjectBuilder::CBuilder::AddText(const std::string& text,
                                       unsigned int size, std::string fontName) {
     auto& component{mComponentManager.AddTextComponent(*mGameObject)};
 
-    component.setText(text);
+    component.SetText(text);
     component.SetFontSize(size);
-    component.setPolice(&mFontHandler.GetPolice(fontName));
+    component.SetPolice(&mFontHandler.GetPolice(fontName));
     return *this;
 }
 

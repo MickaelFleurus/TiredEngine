@@ -9,7 +9,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 namespace Renderer {
-std::vector<Core::GameObjectId> CRendererManager::mDestroyedGameObjects;
+std::vector<Core::GameObjectId> CRendererManager::mHiddenGameObjects;
 
 CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
                                    Material::CMaterialManager& materialManager)
@@ -21,7 +21,7 @@ CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
           bufferHandler.Get<Core::SInstanceData>(Vulkan::kInstanceBufferIndex))
     , mIndirectDrawBuffer(bufferHandler.Get<Core::SIndirectDrawCommand>(
           Vulkan::kInstanceInfoBufferIndex))
-    , mTextInstanceBuffer(bufferHandler.Get<Core::STextInstanceData>(
+    , mTextInstanceBuffer(bufferHandler.Get<Core::SUIInstanceData>(
           Vulkan::kTextInstanceBufferIndex))
     , mUIVertexBuffer(
           bufferHandler.Get<Core::SUIVertex>(Vulkan::kUIVerticesBufferIndex))
@@ -57,18 +57,16 @@ void CRendererManager::GenerateInstances(
     Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
     Renderer::CRenderables<Renderer::STextRenderable>& textRenderables) {
     if (!meshRenderables.IsEmpty()) {
-        mMeshRenderer.UpdateInstances(meshRenderables, mDestroyedGameObjects);
+        mMeshRenderer.UpdateInstances(meshRenderables, mHiddenGameObjects);
     }
     if (!textRenderables.IsEmpty()) {
-        mTextRenderer.UpdateInstances(textRenderables, mDestroyedGameObjects);
+        mTextRenderer.UpdateInstances(textRenderables, mHiddenGameObjects);
     }
 }
 
 void CRendererManager::Render(VkCommandBuffer commandBuffer,
                               VkDescriptorSet descriptorSet,
                               Core::CCamera& camera, Core::CCamera& uiCamera) {
-    LOG_INFO("=== RENDERER MANAGER RENDER START ===");
-
     mVertexBuffer.Upload();
     mIndexesBuffer.Upload();
     mInstanceBuffer.Upload();
@@ -103,10 +101,9 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
         pushConstantData.viewMatrix = camera.GetViewMatrix();
         pushConstantData.projectionMatrix = camera.GetProjectionMatrix();
         vkCmdPushConstants(
-            commandBuffer, currentMaterial->GetPipelineLayout(),
+            commandBuffer, pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
             sizeof(Core::SPushConstantData), &pushConstantData);
-        // mMeshRenderer.Draw(commandBuffer);
 
         for (const auto& instanceRange : instanceRanges) {
             for (std::size_t i = 0; i < instanceRange.count; ++i) {
@@ -120,25 +117,8 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
     }
 
     const auto& textIndirectDrawRanges = mTextRenderer.GetIndirectDrawRange();
-    LOG_INFO("Text indirect draw ranges size: {}",
-             textIndirectDrawRanges.size());
-    for (size_t i = 0; i < textIndirectDrawRanges.size(); ++i) {
-        LOG_INFO("  Range {}: first={}, count={}", i,
-                 textIndirectDrawRanges[i].first,
-                 textIndirectDrawRanges[i].count);
-    }
 
     if (!textIndirectDrawRanges.empty()) {
-        LOG_INFO("=== TEXT RENDERING START ===");
-        LOG_INFO("UIVertexBuffer: {}",
-                 reinterpret_cast<uint64_t>(mUIVertexBuffer.GetBuffer()));
-        LOG_INFO("TextInstanceBuffer: {}",
-                 reinterpret_cast<uint64_t>(mTextInstanceBuffer.GetBuffer()));
-        LOG_INFO("IndexesBuffer: {}",
-                 reinterpret_cast<uint64_t>(mIndexesBuffer.GetBuffer()));
-        LOG_INFO("IndirectDrawBuffer: {}",
-                 reinterpret_cast<uint64_t>(mIndirectDrawBuffer.GetBuffer()));
-
         VkBuffer textVertexBuffers[] = {mUIVertexBuffer.GetBuffer(),
                                         mTextInstanceBuffer.GetBuffer()};
         vkCmdBindVertexBuffers(commandBuffer, 0, 2, textVertexBuffers, offsets);
@@ -146,7 +126,7 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
                              VK_INDEX_TYPE_UINT32);
 
         currentMaterial =
-            mMaterialManager.GetorCreateMaterial(Material::EMaterialType::Text);
+            mMaterialManager.GetorCreateMaterial(Material::EMaterialType::UI);
         if (!currentMaterial) {
             LOG_ERROR("Failed to get/create Text material!");
             return;
@@ -156,8 +136,6 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
             LOG_ERROR("Text material has no pipeline!");
             return;
         }
-        LOG_INFO("Text pipeline obtained: {}",
-                 reinterpret_cast<uint64_t>(pipeline));
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                           pipeline);
@@ -169,8 +147,9 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
         Core::SPushConstantData pushConstantData{};
         pushConstantData.viewMatrix = uiCamera.GetViewMatrix();
         pushConstantData.projectionMatrix = uiCamera.GetProjectionMatrix();
+
         vkCmdPushConstants(
-            commandBuffer, currentMaterial->GetPipelineLayout(),
+            commandBuffer, pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
             sizeof(Core::SPushConstantData), &pushConstantData);
 
@@ -178,36 +157,16 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
             for (std::size_t i = 0; i < instanceRange.count; ++i) {
                 uint64_t indirectOffset = (instanceRange.first + i) *
                                           sizeof(Core::SIndirectDrawCommand);
-
-                // Read the indirect command from GPU buffer (this is hacky but
-                // diagnostic)
-                auto* indirectData = static_cast<Core::SIndirectDrawCommand*>(
-                    mIndirectDrawBuffer.GetMappedMemory());
-                if (indirectData) {
-                    Core::SIndirectDrawCommand cmd =
-                        indirectData[instanceRange.first + i];
-                    LOG_INFO("Indirect command data at index {}:",
-                             instanceRange.first + i);
-                    LOG_INFO("  indexCount: {}", cmd.indexCount);
-                    LOG_INFO("  instanceCount: {}", cmd.instanceCount);
-                    LOG_INFO("  firstIndex: {}", cmd.firstIndex);
-                    LOG_INFO("  vertexOffset: {}", cmd.vertexOffset);
-                    LOG_INFO("  firstInstance: {}", cmd.firstInstance);
-                }
-
                 vkCmdDrawIndexedIndirect(
                     commandBuffer, mIndirectDrawBuffer.GetBuffer(),
                     indirectOffset, 1, sizeof(Core::SIndirectDrawCommand));
             }
         }
     }
-
-    LOG_INFO("mUIVertexBuffer buffer size: {} bytes",
-             mUIVertexBuffer.GetBuffer() ? 1 : 0); // Just verify it exists
 }
 
-void CRendererManager::NotifyGameObjectDestroyed(Core::GameObjectId id) {
-    mDestroyedGameObjects.push_back(id);
+void CRendererManager::NotifyGameObjectHidden(Core::GameObjectId id) {
+    mHiddenGameObjects.push_back(id);
 }
 
 } // namespace Renderer

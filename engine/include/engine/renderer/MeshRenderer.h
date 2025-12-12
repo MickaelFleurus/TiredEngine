@@ -52,7 +52,7 @@ public:
 
     void UpdateInstances(
         Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
-        const std::vector<Core::GameObjectId>& destroyedGameObjects);
+        const std::vector<Core::GameObjectId>& hidden);
 
     std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
     GetIndirectDrawRanges() const;

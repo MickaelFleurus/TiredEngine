@@ -38,19 +38,23 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
                       .shaderName = "NormalShader",
                       .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
                       .vertexLayout = Renderer::EVertexLayout::Mesh3D});
-    case EMaterialType::Text:
-        return CreateTextMaterial();
+    case EMaterialType::UI:
+        return CreateUIMaterial();
     default:
         return nullptr;
     }
 }
 
-std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateTextMaterial() {
+std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
     Renderer::SPipelineConfig config;
-    config.shaderName = "TextShader";
+    config.shaderName = "UIShader";
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
     config.vertexLayout = Renderer::EVertexLayout::UI;
+    config.cullMode = Renderer::ECullMode::None;
+    config.primitiveType = Renderer::EPrimitiveType::TriangleList;
+    config.frontFace = Renderer::EFrontFace::Clockwise;
     config.enableBlending = true;
+    config.enableDepthTest = false;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
     return material;

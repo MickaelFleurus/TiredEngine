@@ -1,13 +1,13 @@
 #include "engine/font/FontHandler.h"
 
+#include <SDL3/SDL_surface.h>
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
+
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
-
-#include <SDL3/SDL_surface.h>
-#include <msdf-atlas-gen/msdf-atlas-gen.h>
 
 namespace {
 
@@ -77,7 +77,7 @@ JsonToGlyphs(const nlohmann::json& jsonData) {
             }
 
             const auto& size = glyphJson["size"];
-            if (offset.contains("x") && offset.contains("y")) {
+            if (size.contains("x") && size.contains("y")) {
                 info.size.x = size["x"];
                 info.size.y = size["y"];
             }
@@ -258,12 +258,11 @@ CPolice& CFontHandler::GetPolice(std::string name) {
 
     SDL_DestroySurface(fontData.surface);
     auto [emplaced_it, inserted] = mPolices.try_emplace(
-        name, name.c_str(),
-        mMaterialManager.GetorCreateMaterial(Material::EMaterialType::Text),
-        textureIndex, fontData.glyphInfos,
+        name, name.c_str(), textureIndex, fontData.glyphInfos,
         CPolice::SMetrics{
-            fontData.fontMetrics.ascenderY, fontData.fontMetrics.descenderY,
-            fontData.fontMetrics.lineHeight, fontData.fontMetrics.underlineY,
+            fontData.fontMetrics.emSize, fontData.fontMetrics.ascenderY,
+            fontData.fontMetrics.descenderY, fontData.fontMetrics.lineHeight,
+            fontData.fontMetrics.underlineY,
             fontData.fontMetrics.underlineThickness});
     return emplaced_it->second;
 }

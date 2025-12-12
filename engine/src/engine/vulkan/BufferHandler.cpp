@@ -30,7 +30,7 @@ constexpr int kInstanceInfoBufferDefaultSize =
 constexpr auto kInstanceInfoBufferUsage =
     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-constexpr auto kTextInstanceStructSize = sizeof(Core::STextInstanceData);
+constexpr auto kTextInstanceStructSize = sizeof(Core::SUIInstanceData);
 constexpr int kTextInstanceBufferDefaultSize =
     Vulkan::kTextInstanceAmountPerBuffer * kTextInstanceStructSize;
 constexpr auto kTextInstanceBufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
@@ -81,7 +81,7 @@ CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
         kInstanceInfoBufferDefaultSize, kInstanceInfoBufferUsage);
 
     mBufferWrappers[kTextInstanceBufferIndex] =
-        std::make_unique<CBufferHandleWrapper<Core::STextInstanceData>>(
+        std::make_unique<CBufferHandleWrapper<Core::SUIInstanceData>>(
             mVulkanContext, mMemoryAllocator);
     mBufferWrappers[kTextInstanceBufferIndex]->Init(
         kTextInstanceBufferDefaultSize, kTextInstanceBufferUsage);

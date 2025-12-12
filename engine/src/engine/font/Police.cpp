@@ -3,12 +3,10 @@
 #include "engine/material/AbstractMaterial.h"
 
 namespace Font {
-CPolice::CPolice(const char* name, Material::CAbstractMaterial* material,
-                 int textureIndex,
+CPolice::CPolice(const char* name, int textureIndex,
                  std::unordered_map<std::string, Font::GlyphInfo> glyphs,
                  CPolice::SMetrics fontMetrics)
     : mName(name)
-    , mMaterial(material)
     , mTextureIndex(textureIndex)
     , mGlyphs(std::move(glyphs))
     , mFontMetrics(fontMetrics) {
@@ -27,10 +25,6 @@ const Font::GlyphInfo& CPolice::GetGlyphInfo(char c) const {
 
 const CPolice::SMetrics& CPolice::GetFontMetrics() const {
     return mFontMetrics;
-}
-
-Material::CAbstractMaterial* CPolice::GetMaterial() {
-    return mMaterial;
 }
 
 int CPolice::GetTextureIndex() const {

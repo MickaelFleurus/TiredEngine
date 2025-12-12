@@ -10,30 +10,30 @@ class CPolice;
 }
 
 namespace Component {
-class CTextComponent : public IDisplayComponent {
+class CTextUIComponent : public IDisplayComponent {
 public:
-    explicit CTextComponent(Core::CGameObject& owner,
-                            CComponentManager& componentManager);
-    ~CTextComponent() override;
+    explicit CTextUIComponent(Core::CGameObject& owner,
+                              CComponentManager& componentManager);
+    ~CTextUIComponent() override;
 
-    void setText(const std::string& text);
-    void setPolice(Font::CPolice* police);
+    void SetText(const std::string& text);
+    void SetPolice(Font::CPolice* police);
 
-    Font::CPolice* getPolice() const;
+    Font::CPolice* GetPolice() const;
     int GetFontSize() const;
     void SetFontSize(int size);
     const glm::vec4& GetColor() const;
     void SetColor(const glm::vec4& color);
-    const std::string& getText() const;
+    const std::string& GetText() const;
 
     glm::vec2 GetSize() override;
 
-    const std::vector<Core::STextInstanceData>& GetInstances();
+    const std::vector<Core::SUIInstanceData>& GetInstances();
 
 private:
     void GenerateInstances();
 
-    std::vector<Core::STextInstanceData> mInstances;
+    std::vector<Core::SUIInstanceData> mInstances;
 
     std::string mText;
     Font::CPolice* mPolice = nullptr;

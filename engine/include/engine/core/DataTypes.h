@@ -20,10 +20,8 @@ struct SVertex {
 };
 
 struct SUIVertex {
-    glm::vec3 position;
-    float padding1;
+    glm::vec2 position;
     glm::vec2 texCoord;
-    float padding2[2];
 };
 
 struct SInstanceData {
@@ -42,12 +40,12 @@ struct SIndirectDrawCommand {
     uint32_t firstInstance;
 };
 
-struct STextInstanceData {
+struct SUIInstanceData {
     glm::mat4 modelMatrix;
     glm::vec4 color;
     glm::vec4 uvRect;
-    uint32_t materialId;
     uint32_t textureId;
+    uint32_t materialId;
     float padding[2];
 };
 

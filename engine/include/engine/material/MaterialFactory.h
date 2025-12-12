@@ -37,7 +37,7 @@ private:
     std::unique_ptr<CAbstractMaterial>
     CreateMaterial(EMaterialType type, const Renderer::SPipelineConfig& info);
 
-    std::unique_ptr<CAbstractMaterial> CreateTextMaterial();
+    std::unique_ptr<CAbstractMaterial> CreateUIMaterial();
 
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;

@@ -6,7 +6,7 @@
 #include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
 
@@ -49,8 +49,9 @@ CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
     return CreateComponent<CSpriteComponent>(owner, owner.GetId());
 }
 
-CTextComponent& CComponentManager::AddTextComponent(Core::CGameObject& owner) {
-    return CreateComponent<CTextComponent>(owner, owner.GetId());
+CTextUIComponent&
+CComponentManager::AddTextComponent(Core::CGameObject& owner) {
+    return CreateComponent<CTextUIComponent>(owner, owner.GetId());
 }
 
 CTransformComponent&

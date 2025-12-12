@@ -3,12 +3,14 @@
 #include <array>
 #include <cstring>
 
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
 #include "engine/core/DataTypes.h"
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
 #include "engine/renderer/Renderables.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 
 namespace {
 constexpr size_t kMaxCharacters = 500;
@@ -16,13 +18,10 @@ constexpr size_t kMaxCharacters = 500;
 std::optional<Utils::SBufferIndexRange> CreateVertices(
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle) {
     std::vector<Core::SUIVertex> vertices;
-    Core::SUIVertex topLeft{.position{0.0f, 0.0f, 0.0f}, .texCoord{0.0f, 0.0f}};
-    Core::SUIVertex topRight{.position{1.0f, 0.0f, 0.0f},
-                             .texCoord{1.0f, 0.0f}};
-    Core::SUIVertex bottomRight{.position{1.0f, 1.0f, 0.0f},
-                                .texCoord{1.0f, 1.0f}};
-    Core::SUIVertex bottomLeft{.position{0.0f, 1.0f, 0.0f},
-                               .texCoord{0.0f, 1.0f}};
+    Core::SUIVertex topLeft{.position{0.0f, 0.0f}, .texCoord{0.0f, 0.0f}};
+    Core::SUIVertex topRight{.position{1.0f, 0.0f}, .texCoord{1.0f, 0.0f}};
+    Core::SUIVertex bottomRight{.position{1.0f, 1.0f}, .texCoord{1.0f, 1.0f}};
+    Core::SUIVertex bottomLeft{.position{0.0f, 1.0f}, .texCoord{0.0f, 1.0f}};
 
     vertices.reserve(4);
     vertices.push_back(topLeft);
@@ -50,9 +49,9 @@ std::optional<Utils::SBufferIndexRange> CreateIndexes(
     indexes.push_back(vertexBufferRange->first + 1);
     indexes.push_back(vertexBufferRange->first + 2);
 
-    indexes.push_back(vertexBufferRange->first + 0);
     indexes.push_back(vertexBufferRange->first + 2);
     indexes.push_back(vertexBufferRange->first + 3);
+    indexes.push_back(vertexBufferRange->first + 0);
 
     Utils::SBufferIndexRange range;
     if (indexesBufferHandle.PrepareData(range, indexes)) {
@@ -78,7 +77,7 @@ namespace Renderer {
 CTextRenderer::CTextRenderer(
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
     Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
-    Vulkan::CBufferHandleWrapper<Core::STextInstanceData>& textInstanceBuffer,
+    Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& textInstanceBuffer,
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         indirectDrawBuffer)
     : mTextInstanceBuffer(textInstanceBuffer)
@@ -90,18 +89,6 @@ CTextRenderer::CTextRenderer(
 void CTextRenderer::Prepare() {
     mVerticesRange = CreateVertices(mVertexBufferHandle);
     mIndexesRange = CreateIndexes(mIndexesBufferHandle, mVerticesRange);
-
-    LOG_INFO("Text vertices range: first={}, count={}", mVerticesRange->first,
-             mVerticesRange->count);
-    LOG_INFO("Text indexes range: first={}, count={}", mIndexesRange->first,
-             mIndexesRange->count);
-
-    // Add this:
-    if (mVerticesRange && mIndexesRange) {
-        LOG_INFO("Text vertex buffer prepared successfully");
-        LOG_INFO("  Vertex stride: {}", sizeof(Core::SUIVertex));
-        LOG_INFO("  Index stride: {}", sizeof(uint32_t));
-    }
 }
 
 void CTextRenderer::Update() {
@@ -110,7 +97,7 @@ void CTextRenderer::Update() {
 
 void CTextRenderer::UpdateInstances(
     Renderer::CRenderables<Renderer::STextRenderable>& renderables,
-    const std::vector<Core::GameObjectId>& destroyedGameObjects) {
+    const std::vector<Core::GameObjectId>& hidden) {
     std::vector<std::size_t> requireInstanceUpdate;
     std::vector<std::size_t> requireIndirectUpdate;
 
@@ -125,8 +112,8 @@ void CTextRenderer::UpdateInstances(
         }
     }
 
-    for (const auto& destroyedId : destroyedGameObjects) {
-        if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, destroyedId);
+    for (const auto& id : hidden) {
+        if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, id);
             instanceIndex.has_value()) {
             requireIndirectUpdate.push_back(*instanceIndex);
             mInstancesData.erase(mInstancesData.begin() + *instanceIndex);

@@ -1,9 +1,10 @@
 #include "engine/debug/BufferWidget.h"
 
-#include "engine/vulkan/BufferHandler.h"
+#include <string>
 
 #include <imgui.h>
-#include <string>
+
+#include "engine/vulkan/BufferHandler.h"
 
 namespace {
 constexpr int kBufferCount = 5;
@@ -158,7 +159,7 @@ constexpr std::array<const char*, kBufferCount> kBufferNamesStr{
 // }
 
 // void DisplayTextInstanceBufferContent(Vulkan::CBufferHandler& handler) {
-//     auto& buffer = handler.GetWrapper<Core::STextInstanceData>();
+//     auto& buffer = handler.GetWrapper<Core::SUIInstanceData>();
 //     ImGui::Text("Buffer: %s", "Text Instance Buffer");
 // }
 

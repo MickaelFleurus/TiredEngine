@@ -127,8 +127,7 @@ public:
             rasterizer.depthClampEnable = VK_FALSE;
             rasterizer.rasterizerDiscardEnable = VK_FALSE;
             rasterizer.polygonMode = ConvertFillMode(config.fillMode);
-            rasterizer.cullMode =
-                VK_CULL_MODE_NONE; // ConvertCullMode(config.cullMode);
+            rasterizer.cullMode = ConvertCullMode(config.cullMode);
             rasterizer.frontFace = ConvertFrontFace(config.frontFace);
             rasterizer.lineWidth = 1.0f;
             rasterizer.depthBiasEnable = VK_FALSE;
@@ -166,6 +165,31 @@ public:
                     VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                     VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
             }
+
+            VkPipelineDepthStencilStateCreateInfo depthStencil{};
+            if (config.enableDepthTest) {
+                VkPipelineDepthStencilStateCreateInfo depthStencil{};
+                depthStencil.sType =
+                    VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                depthStencil.depthTestEnable = VK_TRUE; // Enable depth testing
+                depthStencil.depthWriteEnable =
+                    VK_TRUE; // Write to depth buffer
+                depthStencil.depthCompareOp =
+                    VK_COMPARE_OP_LESS; // Standard: closer fragments win
+                depthStencil.depthBoundsTestEnable = VK_FALSE;
+                depthStencil.stencilTestEnable = VK_FALSE;
+            } else {
+                depthStencil.sType =
+                    VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                depthStencil.depthTestEnable =
+                    VK_FALSE; // Disable depth testing
+                depthStencil.depthWriteEnable =
+                    VK_FALSE; // Do not write to depth buffer
+                depthStencil.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+                depthStencil.depthBoundsTestEnable = VK_FALSE;
+                depthStencil.stencilTestEnable = VK_FALSE;
+            }
+
             VkPipelineColorBlendStateCreateInfo colorBlending{};
             colorBlending.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -248,6 +272,7 @@ public:
             pipelineInfo.pMultisampleState = &multisampling;
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
+            pipelineInfo.pDepthStencilState = &depthStencil;
             pipelineInfo.layout = pipelineLayout;
             pipelineInfo.renderPass = mContextGetter.GetRenderPass();
             pipelineInfo.subpass = 0;
