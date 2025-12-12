@@ -134,17 +134,18 @@ void CVulkanRendering::Present(uint32_t imageIndex) {
     presentInfo.pSwapchains = &swapchain;
     presentInfo.pImageIndices = &imageIndex;
 
-    if (vkQueuePresentKHR(mQueue, &presentInfo) != VK_SUCCESS) {
-        LOG_FATAL("Failed to present swapchain image!");
+    VkResult result = vkQueuePresentKHR(mQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        mVulkanContext.RecreateSwapchainResources();
+    } else if (result != VK_SUCCESS) {
+        LOG_FATAL("Failed to present swapchain image: {}",
+                  static_cast<int>(result));
     }
 }
 
 void CVulkanRendering::WaitIdle() const {
     vkQueueWaitIdle(mQueue);
-}
-
-VkQueue CVulkanRendering::GetHandle() const {
-    return mQueue;
 }
 
 void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,

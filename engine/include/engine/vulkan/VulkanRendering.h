@@ -1,10 +1,11 @@
 #pragma once
 
-#include "engine/vulkan/VulkanContext.h"
-
 #include <optional>
 #include <vector>
+
 #include <vulkan/vulkan.h>
+
+#include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
 class CVulkanRendering {
@@ -20,7 +21,6 @@ public:
     void Present(uint32_t imageIndex);
     void WaitIdle() const;
 
-    VkQueue GetHandle() const;
     uint32_t GetFamilyIndex() const;
 
     void BeginRenderPass(uint32_t index, VkViewport viewport, VkRect2D scissor);
