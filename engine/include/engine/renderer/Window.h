@@ -1,10 +1,11 @@
 #pragma once
-#include "engine/core/GameObjectId.h"
-#include "engine/renderer/RendererUtils.h"
-
 #include <optional>
 #include <vector>
+
 #include <vulkan/vulkan.h>
+
+#include "engine/core/GameObjectId.h"
+#include "engine/renderer/RendererUtils.h"
 
 struct SDL_Window;
 
@@ -51,12 +52,8 @@ public:
                 Component::CComponentManager& componentManager);
     void EndRender();
 
-    std::optional<uint32_t> GetImageIndex() const {
-        return mImageIndex;
-    }
-    SDL_Window* GetSDLWindow() const {
-        return mSDLWindow;
-    }
+    std::optional<uint32_t> GetImageIndex() const;
+    SDL_Window* GetSDLWindow() const;
 
 private:
     const System::CSystem& mSystem;

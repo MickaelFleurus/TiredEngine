@@ -1,6 +1,6 @@
 #include "scene/DebugScene.h"
 
-#include "engine/core/3DCamera.h"
+#include "engine/core/Camera3D.h"
 
 namespace Scene {
 CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
@@ -8,7 +8,7 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          Core::CMeshManager& meshManager,
                          const System::CSystem& system)
     : CAbstractScene(componentManager, fontHandler, meshManager, system) {
-    mActiveCamera = std::make_unique<Core::C3DCamera>(
+    mActiveCamera = std::make_unique<Core::CCamera3D>(
         *mSceneRoot, mGameObjectBuilder, mComponentManager);
 
     // Position camera to look at the cube

@@ -7,7 +7,7 @@
 namespace Component {
 CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
                                    CComponentManager& componentManager)
-    : IDisplayComponent(owner, componentManager, Core::EDirtyType::None) {
+    : IComponent(owner, componentManager, Core::EDirtyType::None) {
 }
 
 CSpriteComponent::~CSpriteComponent() {
@@ -20,7 +20,7 @@ void CSpriteComponent::removeSprite() {
 void CSpriteComponent::Update(float) {
 }
 
-glm::vec2 CSpriteComponent::GetSize() {
+glm::vec2 CSpriteComponent::GetSize() const {
     return glm::vec2(1.0f, 1.0f);
 }
 

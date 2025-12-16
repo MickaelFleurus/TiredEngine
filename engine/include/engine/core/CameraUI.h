@@ -2,9 +2,9 @@
 #include "engine/core/Camera.h"
 
 namespace Core {
-class CUICamera : public CCamera {
+class CCameraUI : public CCamera {
 public:
-    CUICamera(CGameObject& parent, CGameObjectBuilder& builder,
+    CCameraUI(CGameObject& parent, CGameObjectBuilder& builder,
               Component::CComponentManager& componentManager);
 
 protected:

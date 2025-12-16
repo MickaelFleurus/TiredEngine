@@ -157,20 +157,6 @@ public:
         mMemoryBlocks.Free(bufferRange);
     }
 
-    bool Clear() override {
-        // if (mCurrentRange.has_value()) {
-        //     mBufferHandle->FreeRange(mCurrentRange.value());
-        //     mCurrentRange = std::nullopt;
-        // }
-        // mStorage.clear();
-        // mIsUploaded = false;
-        return true;
-    }
-
-    // const std::vector<T>& GetData() const {
-    //     return mStorage;
-    // }
-
 private:
     void Destroy() {
         if (mBuffer != VK_NULL_HANDLE) {
@@ -192,6 +178,11 @@ private:
         void* mappedData{nullptr};
         auto result = vkMapMemory(mVulkanContext.GetDevice(), mMemory, offset,
                                   size, 0, &mappedData);
+        if (result != VK_SUCCESS) {
+            LOG_ERROR("Failed to map buffer memory for update! VkResult={}",
+                      static_cast<int>(result));
+            return nullptr;
+        }
         return mappedData;
     }
 

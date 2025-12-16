@@ -1,18 +1,6 @@
 #pragma once
 
-#include <unordered_map>
-#include <vector>
-
-namespace Utils {
-struct SBufferIndexRange;
-}
-
-namespace Material {
-class CAbstractMaterial;
-} // namespace Material
-
 namespace Renderer {
-struct SMeshRenderable;
 class IRenderer {
 public:
     virtual ~IRenderer() = default;

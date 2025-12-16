@@ -17,6 +17,10 @@ constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
     }
 };
 
+uint32_t GetBytesPerPixel(SDL_PixelFormat format) {
+    return SDL_BYTESPERPIXEL(format);
+}
+
 } // namespace
 
 namespace Renderer {
@@ -67,8 +71,8 @@ int CTextureManager::LoadTextureFromSurface(const std::string& filename,
 
     int width = surface->w;
     int height = surface->h;
-    uint64_t imageSize =
-        width * height * sizeof(float); // Assuming SDL_PIXELFORMAT_RGBA32
+    uint64_t imageSize = static_cast<uint64_t>(width) * height *
+                         GetBytesPerPixel(surface->format);
     std::vector<uint8_t> pixelData(static_cast<uint8_t*>(surface->pixels),
                                    static_cast<uint8_t*>(surface->pixels) +
                                        imageSize);
@@ -82,31 +86,35 @@ int CTextureManager::LoadTextureFromSurface(const std::string& filename,
     bufferHandle->PrepareData(range, pixelData);
     bufferHandle->Upload();
 
-    // 2. Create Vulkan image
-    VulkanImage image = CreateImage(
-        mContext, mMemoryAllocator, width, height, VK_FORMAT_R8G8B8A8_UNORM,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkFormat format = SDLPixelFormatToVulkanFormat(surface->format);
+    VulkanImage image = CreateImage(mContext, mMemoryAllocator, width, height,
+                                    format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                        VK_IMAGE_USAGE_SAMPLED_BIT,
+                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // 3. Transition image layout and copy buffer to image
-    TransitionImageLayout(
-        image.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext, mRenderer);
+    TransitionImageLayout(image.image, format, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext,
+                          mRenderer);
     CopyBufferToImage(bufferHandle->GetBuffer(), image.image, width, height,
                       mContext, mRenderer);
-    TransitionImageLayout(image.image, VK_FORMAT_R8G8B8A8_UNORM,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mContext,
-                          mRenderer);
+    TransitionImageLayout(
+        image.image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mContext, mRenderer);
 
     // 4. Create image view and sampler
     VkImageView imageView;
-    CreateImageView(device, image.image, VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_IMAGE_ASPECT_COLOR_BIT, imageView);
+    CreateImageView(device, image.image, format, VK_IMAGE_ASPECT_COLOR_BIT,
+                    imageView);
     VkSampler sampler = CreateSampler(device);
 
-    VulkanTexture texture{image.image, image.memory, imageView, sampler};
+    VulkanTexture texture{image.image,
+                          image.memory,
+                          imageView,
+                          sampler,
+                          static_cast<uint32_t>(width),
+                          static_cast<uint32_t>(height)};
     int index = static_cast<int>(mLoadedTextures.size());
     mLoadedTextures.push_back(texture);
     mLoadedTexturesIndices[filename] = index;
@@ -135,6 +143,9 @@ CTextureManager::GetTextureIndex(const std::string& filename) const {
 }
 
 const VulkanTexture& CTextureManager::GetTexture(int index) const {
+    if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
+        LOG_FATAL("Texture index out of bounds: %d", index);
+    }
     return mLoadedTextures.at(index);
 }
 
@@ -176,13 +187,14 @@ void CTextureManager::UnloadTexture(int index) {
     vkDestroySampler(device, texture.sampler, nullptr);
     vkDestroyImage(device, texture.image, nullptr);
     vkFreeMemory(device, texture.memory, nullptr);
+    auto it = std::find_if(
+        mLoadedTexturesIndices.begin(), mLoadedTexturesIndices.end(),
+        [index](const auto& pair) { return pair.second == index; });
+    if (it != mLoadedTexturesIndices.end()) {
+        // Erase the filename entry
+        mLoadedTexturesIndices.erase(it);
+    }
 
-    // Remove from loaded textures and indices map
-    mLoadedTexturesIndices.erase(
-        std::find_if(mLoadedTexturesIndices.begin(),
-                     mLoadedTexturesIndices.end(),
-                     [index](const auto& pair) { return pair.second == index; })
-            ->first);
     mLoadedTextures[index] = VulkanTexture{}; // Mark as unloaded
 }
 

@@ -1,4 +1,4 @@
-#include "engine/core/3DCamera.h"
+#include "engine/core/Camera3D.h"
 
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
@@ -17,21 +17,21 @@ Core::CGameObject& BuildEntity(Core::CGameObjectBuilder::CBuilder builder,
 } // namespace
 
 namespace Core {
-C3DCamera::C3DCamera(CGameObject& parent, CGameObjectBuilder& builder,
+CCamera3D::CCamera3D(CGameObject& parent, CGameObjectBuilder& builder,
                      Component::CComponentManager& componentManager)
     : CCamera(parent, builder, componentManager, "Camera3D") {
 }
 
-void C3DCamera::SetFOV(float fovDegrees) {
+void CCamera3D::SetFOV(float fovDegrees) {
     mFOV = fovDegrees;
     mCameraComponent.SetDirty(true);
 }
 
-float C3DCamera::GetFOV() const {
+float CCamera3D::GetFOV() const {
     return mFOV;
 }
 
-void C3DCamera::EnsureUpToDate() {
+void CCamera3D::EnsureUpToDate() {
     if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
         return;
 

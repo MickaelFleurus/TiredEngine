@@ -3,7 +3,6 @@
 #include <memory>
 #include <string>
 
-#include "engine/renderer/MaterialStructures.h"
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {

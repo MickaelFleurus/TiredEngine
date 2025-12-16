@@ -3,10 +3,10 @@
 #include <string>
 #include <variant>
 
-#include "engine/component/IDisplayComponent.h"
+#include "engine/component/IComponent.h"
 
 namespace Component {
-class CSpriteComponent : public IDisplayComponent {
+class CSpriteComponent : public IComponent {
 public:
     explicit CSpriteComponent(Core::CGameObject& owner,
                               CComponentManager& componentManager);
@@ -14,7 +14,7 @@ public:
     // void AddSprite(SDK::SpriteType type);
 
     void Update(float deltaTime) override;
-    glm::vec2 GetSize() override;
+    glm::vec2 GetSize() const;
 
 private:
     void removeSprite();

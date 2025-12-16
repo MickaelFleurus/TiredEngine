@@ -1,8 +1,8 @@
 #pragma once
-#include "engine/scene/ISceneHandler.h"
-
 #include <memory>
 #include <span>
+
+#include "engine/scene/ISceneHandler.h"
 
 namespace System {
 class CSystem;
@@ -10,10 +10,6 @@ class CSystem;
 
 namespace Component {
 class CComponentManager;
-}
-
-namespace Renderer {
-class CMeshRenderer;
 }
 
 namespace Core {

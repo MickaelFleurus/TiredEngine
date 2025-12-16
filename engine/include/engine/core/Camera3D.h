@@ -2,9 +2,9 @@
 #include "engine/core/Camera.h"
 
 namespace Core {
-class C3DCamera : public CCamera {
+class CCamera3D : public CCamera {
 public:
-    C3DCamera(CGameObject& parent, CGameObjectBuilder& builder,
+    CCamera3D(CGameObject& parent, CGameObjectBuilder& builder,
               Component::CComponentManager& componentManager);
 
     void SetFOV(float fovDegrees);

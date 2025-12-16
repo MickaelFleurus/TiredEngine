@@ -7,7 +7,7 @@ namespace Component {
 CMeshComponent::CMeshComponent(Core::CGameObject& owner,
                                CComponentManager& componentManager,
                                Material::CMaterialManager& materialManager)
-    : IDisplayComponent(owner, componentManager, Core::EDirtyType::None)
+    : IComponent(owner, componentManager, Core::EDirtyType::None)
     , mMaterialManager(materialManager) {
 }
 
@@ -42,6 +42,10 @@ glm::vec4 CMeshComponent::GetColor() const {
 }
 
 glm::vec2 CMeshComponent::GetSize() {
+    if (mSize != glm::vec2(0.0f)) {
+        return mSize;
+    }
+
     if (mMesh == nullptr) {
         return glm::vec2(0.0f);
     }
@@ -67,8 +71,8 @@ glm::vec2 CMeshComponent::GetSize() {
         if (vertex.position.y > maxY)
             maxY = vertex.position.y;
     }
-
-    return glm::vec2(maxX - minX, maxY - minY);
+    mSize = glm::vec2(maxX - minX, maxY - minY);
+    return mSize;
 }
 
 void CMeshComponent::SetMaterialType(Material::EMaterialType type) {

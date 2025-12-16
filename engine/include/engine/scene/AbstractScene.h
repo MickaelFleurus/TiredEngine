@@ -13,7 +13,7 @@ class CSystem;
 namespace Core {
 class CGameObject;
 class CCamera;
-class CUICamera;
+class CCameraUI;
 class CMeshManager;
 } // namespace Core
 
@@ -51,7 +51,7 @@ public:
 protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;
     std::unique_ptr<Core::CCamera> mActiveCamera;
-    std::unique_ptr<Core::CUICamera> mUICamera;
+    std::unique_ptr<Core::CCameraUI> mUICamera;
     Component::CComponentManager& mComponentManager;
     const System::CSystem& mSystem;
     const Input::CInputWatcher mInputWatcher;

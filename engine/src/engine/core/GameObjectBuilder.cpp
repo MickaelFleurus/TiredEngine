@@ -32,9 +32,10 @@ CGameObjectBuilder::CreateBuilder(const std::string& name,
                     parent);
 }
 
-CGameObject*
+std::unique_ptr<CGameObject>
 CGameObjectBuilder::CreateRoot(Component::CComponentManager& componentManager) {
-    return new CGameObject("Root", componentManager, nullptr, mNextId++);
+    return std::unique_ptr<CGameObject>(
+        new CGameObject("Root", componentManager, nullptr, mNextId++));
 }
 
 // CGameObjectBuilder::CBuilder implementation

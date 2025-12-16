@@ -1,9 +1,8 @@
 #pragma once
+#include <unordered_map>
+
 #include "engine/material/MaterialFactory.h"
 #include "engine/material/MaterialTypes.h"
-
-#include <memory>
-#include <unordered_map>
 
 namespace Vulkan {
 class CVulkanContext;

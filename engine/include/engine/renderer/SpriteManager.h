@@ -1,5 +1,8 @@
 #pragma once
-#include
+#include <string>
+#include <unordered_map>
+
+#include "engine/core/Sprite.h"
 
 namespace Renderer {
 

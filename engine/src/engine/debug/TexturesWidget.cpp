@@ -1,9 +1,8 @@
 #include "engine/debug/TexturesWidget.h"
 
-#include "engine/renderer/TextureManager.h"
-
-#include <imgui.h>
 #include <imgui_impl_vulkan.h>
+
+#include "engine/renderer/TextureManager.h"
 
 namespace Debug {
 CTexturesWidget::CTexturesWidget(Renderer::CTextureManager& textureManager)

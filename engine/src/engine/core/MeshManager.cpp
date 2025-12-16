@@ -11,6 +11,7 @@ CMeshManager::CMeshManager(Renderer::CMeshRenderer& meshRenderer)
 }
 
 CMeshManager::~CMeshManager() = default;
+
 bool CMeshManager::HasMesh(std::size_t meshHash) const {
     return mMeshes.contains(meshHash);
 }

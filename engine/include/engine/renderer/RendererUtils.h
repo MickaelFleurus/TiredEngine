@@ -6,6 +6,7 @@
 #include <span>
 #include <vector>
 
+#include <SDL3/SDL_pixels.h>
 #include <glm/mat4x4.hpp>
 #include <vulkan/vulkan.h>
 
@@ -71,5 +72,7 @@ void CreateImageView(VkDevice device, VkImage image, VkFormat format,
                      VkImageAspectFlags aspectFlags, VkImageView& imageView);
 
 VkSampler CreateSampler(VkDevice device);
+
+VkFormat SDLPixelFormatToVulkanFormat(SDL_PixelFormat sdlFormat);
 
 } // namespace Renderer

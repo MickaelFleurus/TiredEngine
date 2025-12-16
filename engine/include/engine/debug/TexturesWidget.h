@@ -1,8 +1,10 @@
 #pragma once
 
-#include "engine/debug/IOverlordItem.h"
-#include <imgui.h>
 #include <unordered_map>
+
+#include <imgui.h>
+
+#include "engine/debug/IOverlordItem.h"
 
 namespace Renderer {
 class CTextureManager;

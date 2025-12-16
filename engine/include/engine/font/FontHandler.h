@@ -1,10 +1,9 @@
 #pragma once
 
-#include "engine/font/Police.h"
-#include "engine/renderer/RendererUtils.h"
-
 #include <string>
 #include <unordered_map>
+
+#include "engine/font/Police.h"
 
 namespace Utils {
 class CFileHandler;

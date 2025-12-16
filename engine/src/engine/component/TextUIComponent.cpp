@@ -1,8 +1,6 @@
 #include "engine/component/TextUIComponent.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MovementComponent.h"
@@ -12,27 +10,32 @@
 #include "engine/renderer/TextRenderer.h"
 #include "engine/utils/Logger.h"
 
-namespace {
-constexpr size_t kMaxCharacters = 64;
-}
-
 namespace Component {
 CTextUIComponent::CTextUIComponent(Core::CGameObject& owner,
                                    CComponentManager& componentManager)
-    : IDisplayComponent(owner, componentManager,
-                        Core::EDirtyType::TextInstanceProperties) {
+    : IComponent(owner, componentManager,
+                 Core::EDirtyType::TextInstanceProperties) {
 }
 
-CTextUIComponent::~CTextUIComponent() {
-}
+CTextUIComponent::~CTextUIComponent() = default;
 
 void CTextUIComponent::SetText(const std::string& text) {
+    if (text == mText) {
+        return;
+    }
+
     mText = text;
+    ResolveSize();
     AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 void CTextUIComponent::SetPolice(Font::CPolice* police) {
+    if (police == mPolice) {
+        return;
+    }
+
     mPolice = police;
+    ResolveSize();
     AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
@@ -49,7 +52,12 @@ int CTextUIComponent::GetFontSize() const {
 }
 
 void CTextUIComponent::SetFontSize(int size) {
+    if (size == mFontSize) {
+        return;
+    }
+
     mFontSize = size;
+    ResolveSize();
     AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
@@ -58,6 +66,10 @@ const glm::vec4& CTextUIComponent::GetColor() const {
 }
 
 void CTextUIComponent::SetColor(const glm::vec4& color) {
+    if (color == mColor) {
+        return;
+    }
+
     mColor = color;
     AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
 }
@@ -115,9 +127,10 @@ void CTextUIComponent::GenerateInstances() {
     SetDirty(false);
 }
 
-glm::vec2 CTextUIComponent::GetSize() {
-    if (!IsDirty() && mSize != glm::vec2(0.0f)) {
-        return mSize;
+void CTextUIComponent::ResolveSize() {
+    if (!mPolice || mText.empty()) {
+        mSize = glm::vec2(0.0f, 0.0f);
+        return;
     }
 
     float scale = mFontSize / mPolice->GetFontMetrics().emSize;
@@ -141,6 +154,9 @@ glm::vec2 CTextUIComponent::GetSize() {
     maxWidth = std::max(maxWidth, cursorX);
 
     mSize = glm::vec2(maxWidth, totalHeight);
+}
+
+glm::vec2 CTextUIComponent::GetSize() const {
     return mSize;
 }
 

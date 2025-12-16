@@ -1,19 +1,11 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
 #include <vector>
-
-#include <vulkan/vulkan.h>
 
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/IRenderer.h"
 #include "engine/renderer/RendererUtils.h"
 #include "engine/utils/BufferMemoryBlocks.h"
-
-namespace Component {
-class CTextUIComponent;
-}
 
 namespace Vulkan {
 template <typename T>

@@ -1,7 +1,7 @@
 #include "engine/scene/AbstractScene.h"
 
 #include "engine/component/CameraComponent.h"
-#include "engine/core/UICamera.h"
+#include "engine/core/CameraUI.h"
 #include "engine/system/System.h"
 
 namespace Scene {
@@ -14,10 +14,9 @@ CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
     , mSystem(system)
     , mGameObjectBuilder(componentManager, fontHandler, meshManager) {
     const auto& windowData = mSystem.GetDisplayParameters();
-    mSceneRoot = std::unique_ptr<Core::CGameObject>(
-        Core::CGameObjectBuilder::CreateRoot(componentManager));
+    mSceneRoot = Core::CGameObjectBuilder::CreateRoot(componentManager);
 
-    mUICamera = std::make_unique<Core::CUICamera>(
+    mUICamera = std::make_unique<Core::CCameraUI>(
         *mSceneRoot, mGameObjectBuilder, mComponentManager);
 }
 

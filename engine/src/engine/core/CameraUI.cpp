@@ -1,4 +1,4 @@
-#include "engine/core/UICamera.h"
+#include "engine/core/CameraUI.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -11,7 +11,7 @@ constexpr const char* kUICameraName = "UI Canvas";
 }
 
 namespace Core {
-CUICamera::CUICamera(CGameObject& parent, CGameObjectBuilder& builder,
+CCameraUI::CCameraUI(CGameObject& parent, CGameObjectBuilder& builder,
                      Component::CComponentManager& componentManager)
     : CCamera(parent, builder, componentManager, kUICameraName) {
     mCameraComponent.SetOrthographicSize(1080.0f);
@@ -21,7 +21,7 @@ CUICamera::CUICamera(CGameObject& parent, CGameObjectBuilder& builder,
     mTransformComponent.SetPosition({0.0f, 0.0f, 0.1f});
 }
 
-void CUICamera::EnsureUpToDate() {
+void CCameraUI::EnsureUpToDate() {
     if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
         return;
 

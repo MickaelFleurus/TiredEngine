@@ -1,13 +1,11 @@
 #pragma once
 
-#include "engine/core/GameObject.h"
-#include "engine/input/InputCallback.h"
-// #include "engine/physics/CollisionInfo.h"
 #include <functional>
 #include <optional>
 #include <string>
 
-#include "engine/core/MeshTypes.h"
+#include "engine/core/GameObject.h"
+#include "engine/input/InputCallback.h"
 #include "engine/material/MaterialTypes.h"
 #include "engine/utils/Anchors.h"
 
@@ -21,10 +19,6 @@ class CAbstractScene;
 
 namespace Font {
 class CFontHandler;
-}
-
-namespace Renderer {
-class CMeshRenderer;
 }
 
 namespace Core {
@@ -80,7 +74,7 @@ public:
     CBuilder CreateBuilder(const std::string& name, CGameObject& parent);
 
 private:
-    static CGameObject*
+    static std::unique_ptr<CGameObject>
     CreateRoot(Component::CComponentManager& componentManager);
 
     static GameObjectId mNextId;

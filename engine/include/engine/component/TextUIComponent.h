@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "engine/component/IDisplayComponent.h"
+#include "engine/component/IComponent.h"
 #include "engine/core/DataTypes.h"
 
 namespace Font {
@@ -10,7 +10,7 @@ class CPolice;
 }
 
 namespace Component {
-class CTextUIComponent : public IDisplayComponent {
+class CTextUIComponent : public IComponent {
 public:
     explicit CTextUIComponent(Core::CGameObject& owner,
                               CComponentManager& componentManager);
@@ -26,12 +26,13 @@ public:
     void SetColor(const glm::vec4& color);
     const std::string& GetText() const;
 
-    glm::vec2 GetSize() override;
+    glm::vec2 GetSize() const;
 
     const std::vector<Core::SUIInstanceData>& GetInstances();
 
 private:
     void GenerateInstances();
+    void ResolveSize();
 
     std::vector<Core::SUIInstanceData> mInstances;
 

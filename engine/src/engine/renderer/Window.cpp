@@ -194,4 +194,12 @@ void CWindow::EndRender() {
     }
 }
 
+std::optional<uint32_t> CWindow::GetImageIndex() const {
+    return mImageIndex;
+}
+
+SDL_Window* CWindow::GetSDLWindow() const {
+    return mSDLWindow;
+}
+
 } // namespace Renderer

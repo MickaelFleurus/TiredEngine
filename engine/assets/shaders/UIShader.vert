@@ -1,9 +1,7 @@
 #version 450
 
-
 layout(location = 0) in vec2 vertexPosition;
 layout(location = 1) in vec2 vertexUV;
-
 
 layout(location = 2) in mat4 modelMatrix;
 layout(location = 6) in vec4 instanceColor;
