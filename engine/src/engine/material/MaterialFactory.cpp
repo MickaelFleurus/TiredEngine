@@ -37,7 +37,9 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
             type, Renderer::SPipelineConfig{
                       .shaderName = "NormalShader",
                       .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
-                      .vertexLayout = Renderer::EVertexLayout::Mesh3D});
+                      .vertexLayout = Renderer::EVertexLayout::Mesh3D,
+                      .frontFace = Renderer::EFrontFace::Clockwise,
+                      .cullMode = Renderer::ECullMode::Back});
     case EMaterialType::UI:
         return CreateUIMaterial();
     default:
@@ -51,8 +53,6 @@ std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
     config.vertexLayout = Renderer::EVertexLayout::UI;
     config.cullMode = Renderer::ECullMode::None;
-    config.primitiveType = Renderer::EPrimitiveType::TriangleList;
-    config.frontFace = Renderer::EFrontFace::Clockwise;
     config.enableBlending = true;
     config.enableDepthTest = false;
 

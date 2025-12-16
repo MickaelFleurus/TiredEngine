@@ -1,5 +1,7 @@
 #include "engine/renderer/TextureManager.h"
 
+#include <SDL3/SDL_surface.h>
+
 #include "engine/renderer/RendererUtils.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
@@ -7,8 +9,6 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
-
-#include <SDL3/SDL_surface.h>
 
 namespace {
 constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
@@ -162,6 +162,28 @@ void CTextureManager::UpdateDescriptor(int index) {
     write.pImageInfo = &imageInfo;
 
     vkUpdateDescriptorSets(mContext.GetDevice(), 1, &write, 0, nullptr);
+}
+
+void CTextureManager::UnloadTexture(int index) {
+    if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
+        return;
+    }
+
+    VkDevice device = mContext.GetDevice();
+    VulkanTexture& texture = mLoadedTextures[index];
+
+    vkDestroyImageView(device, texture.imageView, nullptr);
+    vkDestroySampler(device, texture.sampler, nullptr);
+    vkDestroyImage(device, texture.image, nullptr);
+    vkFreeMemory(device, texture.memory, nullptr);
+
+    // Remove from loaded textures and indices map
+    mLoadedTexturesIndices.erase(
+        std::find_if(mLoadedTexturesIndices.begin(),
+                     mLoadedTexturesIndices.end(),
+                     [index](const auto& pair) { return pair.second == index; })
+            ->first);
+    mLoadedTextures[index] = VulkanTexture{}; // Mark as unloaded
 }
 
 } // namespace Renderer

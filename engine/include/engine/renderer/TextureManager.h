@@ -52,6 +52,8 @@ public:
     const VulkanTexture& GetTexture(int index) const;
     const std::unordered_map<std::string, int>& GetAllTextureIndices() const;
 
+    void UnloadTexture(int index);
+
 private:
     void UpdateDescriptor(int index);
 

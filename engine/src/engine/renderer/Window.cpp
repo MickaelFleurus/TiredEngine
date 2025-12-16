@@ -79,6 +79,8 @@ void ExtractMeshes(
         if (auto* meshComponent =
                 componentManager.GetComponent<Component::CMeshComponent>(
                     root.GetId())) {
+            transformComponent.UpdateMatrix(transform,
+                                            meshComponent->GetSize());
             Renderer::SMeshRenderable renderable{};
             renderable.id = gameObjectId;
             renderable.transform = transform;
@@ -90,8 +92,6 @@ void ExtractMeshes(
 
             meshRenderables.AddRenderable(
                 renderable, Core::RequireReordering(root.GetDirtyFlags()));
-            transformComponent.UpdateMatrix(transform,
-                                            meshComponent->GetSize());
             alreadyUpdated = true;
         }
         if (auto* textComponent =

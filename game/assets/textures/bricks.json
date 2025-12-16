@@ -1,0 +1,193 @@
+{
+    "sprites": {
+        "GreySlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 7
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GreySlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 7
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GreySlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 7
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GreenSlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 23
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GreenSlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 23
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GreenSlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 23
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GoldSlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 39
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GoldSlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 39
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "GoldSlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 39
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "OrangeSlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 55
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "OrangeSlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 55
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "OrangeSlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 55
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "RedSlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 96
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "RedSlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 96
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "RedSlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 96
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "PurpleSlim": {
+            "topLeft": {
+                "x": 0,
+                "y": 87
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "PurpleSlimCracked": {
+            "topLeft": {
+                "x": 32,
+                "y": 87
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        },
+        "PurpleSlimBroken": {
+            "topLeft": {
+                "x": 64,
+                "y": 87
+            },
+            "size": {
+                "w": 31,
+                "h": 9
+            }
+        }
+    },
+    "meta": {
+        "version": "1.0",
+        "image": "bricks.png",
+        "size": {
+            "w": 256,
+            "h": 96
+        },
+        "scale": "1"
+    }
+}

@@ -1,9 +1,9 @@
 #pragma once
-#include "engine/component/IDisplayComponent.h"
-
 #include <optional>
 #include <string>
 #include <variant>
+
+#include "engine/component/IDisplayComponent.h"
 
 namespace Component {
 class CSpriteComponent : public IDisplayComponent {

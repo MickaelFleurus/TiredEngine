@@ -7,7 +7,7 @@
 #include "engine/utils/Logger.h"
 
 namespace {
-constexpr const char* kUICameraName = "UICamera";
+constexpr const char* kUICameraName = "UI Canvas";
 }
 
 namespace Core {
