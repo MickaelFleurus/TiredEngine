@@ -15,9 +15,14 @@ include(msdfgen)
 include(msdf-atlas-gen)
 include(CompileShaders)
 include(AssetsCopy)
+include(Vulkan)
+include(SPIRV-Reflect)
+include(yaml-cpp)
 
 function(setup_dependencies)
     # Base dependencies first (no external deps)
+    setup_vulkan()
+    setup_spirv_reflect()
     setup_zlib()
     setup_pnglib() 
     setup_brotli()
@@ -25,6 +30,7 @@ function(setup_dependencies)
     setup_magicenum()
     setup_nlohmann_json()
     setup_gtest()
+    setup_yaml_cpp()
     
     # Libraries that depend on base libraries
     setup_freetype()    # depends on zlib, brotli

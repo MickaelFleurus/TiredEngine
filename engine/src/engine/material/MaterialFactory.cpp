@@ -1,71 +1,63 @@
 #include "engine/material/MaterialFactory.h"
 
+#include "engine/material/AbstractMaterial.h"
 #include "engine/material/Material.h"
 #include "engine/renderer/PipelineTypes.h"
 #include "engine/renderer/TextureManager.h"
-
 #include "engine/utils/FileHandler.h"
 
 namespace Material {
 
-CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
-                                   Utils::CFileHandler& fileHandler,
-                                   const Renderer::CWindow& window)
+CMaterialFactory::CMaterialFactory(
+    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
+    const Vulkan::CVulkanContext& contextGetter,
+    Vulkan::CDescriptorStorage& descriptorStorage)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mWindow(window)
-    , mPipelineFactory(window) {
+    , mPipelineFactory(contextGetter)
+    , mDescriptorStorage(descriptorStorage) {
 }
 
-std::unique_ptr<AbstractMaterial>
+CMaterialFactory::~CMaterialFactory() = default;
+
+std::unique_ptr<CAbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
-    // Get or create pipeline
-    SDL_GPUGraphicsPipeline* pipeline =
-        mPipelineFactory.CreateGraphicsPipeline(info);
-    return std::make_unique<CMaterial>(type, pipeline);
+    auto pipeline =
+        mPipelineFactory.GetOrCreateGraphicsPipeline(info, mDescriptorStorage);
+    return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
 }
 
-std::unique_ptr<AbstractMaterial>
-CMaterialFactory::CreateTextMaterial(std::string fontAtlasName) {
-    Renderer::SPipelineConfig config;
-    config.shaderName = "TextShader";
-    config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
-    config.vertexLayout = Renderer::EVertexLayout::Instanced;
-    config.enableBlending = true;
+std::unique_ptr<CAbstractMaterial>
+CMaterialFactory::GetMaterial(EMaterialType type) {
+    switch (type) {
+    case EMaterialType::Normal:
+        return CreateMaterial(
+            type, Renderer::SPipelineConfig{
+                      .shaderName = "NormalShader",
+                      .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
+                      .vertexLayout = Renderer::EVertexLayout::Mesh3D,
+                      .frontFace = Renderer::EFrontFace::Clockwise,
+                      .cullMode = Renderer::ECullMode::Back});
+    case EMaterialType::UI:
+        return CreateUIMaterial();
+    default:
+        return nullptr;
+    }
+}
 
-    config.vertexResources.numUniformBuffers = 1;
-    config.fragmentResources.numSamplers = 1;
+std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
+    Renderer::SPipelineConfig config;
+    config.shaderName = "UIShader";
+    config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
+    config.vertexLayout = Renderer::EVertexLayout::UI;
+    config.cullMode = Renderer::ECullMode::None;
+    config.enableBlending = true;
+    config.enableDepthTest = false;
 
     auto material = CreateMaterial(EMaterialType::Text, config);
-    material->SetTexture(mTextureManager.GetTexture(fontAtlasName));
     return material;
 }
-
-// std::shared_ptr<AbstractMaterial>
-// CMaterialFactory::CreateUnlitMaterial(SDL_GPUTexture* texture) {
-
-//     MaterialCreateInfo info;
-//     info.type = EMaterialType::Unlit;
-//     info.shaderPath = "assets/shaders/unlit";
-//     info.texture = texture;
-//     info.enableBlending = true;
-
-//     return CreateMaterial(info);
-// }
-
-// std::shared_ptr<AbstractMaterial>
-// CMaterialFactory::CreateTextMaterial(SDL_GPUTexture* fontAtlas) {
-
-//     MaterialCreateInfo info;
-//     info.type = EMaterialType::Text;
-//     info.shaderPath = "assets/shaders/text";
-//     info.texture = fontAtlas;
-//     info.enableBlending = true;
-//     info.blendMode = SDL_GPU_BLENDMODE_BLEND;
-
-//     return CreateMaterial(info);
-// }
 
 } // namespace Material

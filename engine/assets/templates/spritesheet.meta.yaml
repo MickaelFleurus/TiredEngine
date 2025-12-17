@@ -1,0 +1,10 @@
+name: "name"
+version: 1
+path: "paths/to/texture.png"
+type: "image/png"
+sprites:
+  - name: "SpriteName"
+    x: 0
+    y: 7
+    width: 31
+    height: 9

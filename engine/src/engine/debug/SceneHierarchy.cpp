@@ -1,9 +1,10 @@
 #include "engine/debug/SceneHierarchy.h"
-#include "engine/core/EngineLoop.h"
-#include "engine/scene/AbstractScene.h"
 
+#include "engine/core/EngineLoop.h"
 #include "engine/debug/EntityWidget.h"
+#include "engine/scene/AbstractScene.h"
 #include "engine/scene/ISceneHandler.h"
+
 #include <imgui.h>
 
 namespace {} // namespace
@@ -33,25 +34,25 @@ void CSceneHierarchy::DrawNodeRecursive(const Core::CGameObject& obj) {
         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
     // Highlight if this is the selected entity
-    if (mEntityWidget.GetEntityId() == obj.getId()) {
+    if (mEntityWidget.GetEntityId() == obj.GetId()) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
     // Add leaf flag if no children
-    if (obj.getChildren().empty()) {
+    if (obj.GetChildren().empty()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
-    bool nodeOpen = ImGui::TreeNodeEx(obj.getName().c_str(), flags);
+    bool nodeOpen = ImGui::TreeNodeEx(obj.GetName().c_str(), flags);
 
     // Left-click to select
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-        mEntityWidget.OnItemClicked(obj.getId(), obj.getName());
+        mEntityWidget.OnItemClicked(obj.GetId(), obj.GetName());
     }
 
     // Draw children only if node is open AND has children
-    if (nodeOpen && !obj.getChildren().empty()) {
-        for (const auto& child : obj.getChildren()) {
+    if (nodeOpen && !obj.GetChildren().empty()) {
+        for (const auto& child : obj.GetChildren()) {
             DrawNodeRecursive(*child);
         }
         ImGui::TreePop();

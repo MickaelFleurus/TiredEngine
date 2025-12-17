@@ -1,10 +1,11 @@
 #include "engine/utils/FileHandler.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_surface.h>
 #include <filesystem>
 #include <format>
 #include <fstream>
+
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_surface.h>
 
 namespace {
 constexpr const char* kCompanyName = "PotatoThunder";
@@ -99,6 +100,11 @@ nlohmann::json CFileHandler::LoadJson(const std::string& filePath) {
         return nlohmann::json{};
     }
     return nlohmann::json::parse(fileStream);
+}
+
+YAML::Node CFileHandler::LoadYAML(const std::string& filePath) {
+    const auto completePath = filePath + ".yaml";
+    return YAML::LoadFile(completePath);
 }
 
 SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filePath) {

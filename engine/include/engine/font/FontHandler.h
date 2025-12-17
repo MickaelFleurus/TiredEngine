@@ -1,17 +1,16 @@
 #pragma once
 
-#include "engine/font/Font.h"
-#include "engine/font/Police.h"
+#include <string>
 #include <unordered_map>
 
-struct SDL_GPUDevice;
+#include "engine/font/Police.h"
 
 namespace Utils {
 class CFileHandler;
 }
 
 namespace Material {
-class CMaterialFactory;
+class CMaterialManager;
 }
 
 namespace Renderer {
@@ -23,15 +22,15 @@ class CFontHandler {
 public:
     CFontHandler(Renderer::CTextureManager& textureManager,
                  Utils::CFileHandler& fileHandler,
-                 Material::CMaterialFactory& materialFactory);
+                 Material::CMaterialManager& materialManager);
     ~CFontHandler();
 
-    CPolice& GetPolice(const char* name, unsigned int size);
+    CPolice& GetPolice(std::string name);
 
 private:
-    std::unordered_map<SFont, CPolice, SFontHash> mPolices;
+    std::unordered_map<std::string, CPolice> mPolices;
     Renderer::CTextureManager& mTextureManager;
-    Material::CMaterialFactory& mMaterialFactory;
     Utils::CFileHandler& mFileHandler;
+    Material::CMaterialManager& mMaterialManager;
 };
 } // namespace Font

@@ -1,31 +1,33 @@
 #pragma once
 #include <memory>
-
-struct SDL_GPUCommandBuffer;
-struct SDL_GPURenderPass;
+#include <vulkan/vulkan.h>
+struct SDL_Window;
 union SDL_Event;
 
-namespace Renderer {
-class CWindow;
-}
+namespace Vulkan {
+class CVulkanRendering;
+class CVulkanContext;
+} // namespace Vulkan
 
 namespace Debug {
 class IOverlord;
 
 class COverlordManager {
 public:
-    COverlordManager(const Renderer::CWindow& window);
+    COverlordManager(const Vulkan::CVulkanContext& context,
+                     const Vulkan::CVulkanRendering& rendering);
     ~COverlordManager();
 
-    void PrepareRender(SDL_GPUCommandBuffer* cmd);
-    void Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass);
+    bool PrepareRender(SDL_Window* window);
+    void Render(VkCommandBuffer cmd, VkPipeline pipeline = VK_NULL_HANDLE);
 
     void HandleEvent(const SDL_Event* e);
 
-    void CreateOverlord();
+    void CreateOverlord(SDL_Window* window);
 
 private:
     std::unique_ptr<IOverlord> mOverlordImpl;
-    const Renderer::CWindow& mWindow;
+    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::CVulkanRendering& mRendering;
 };
 } // namespace Debug

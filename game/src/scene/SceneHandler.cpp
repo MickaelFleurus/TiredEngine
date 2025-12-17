@@ -2,21 +2,23 @@
 #include "scene/SceneEnum.h"
 
 #include "scene/DebugScene.h"
+#include <engine/utils/Logger.h>
 #include <magic_enum/magic_enum.hpp>
-#include <stdexcept>
 
 namespace Scene {
 CSceneHandler::CSceneHandler(Core::CEngineLoop& engineLoop,
                              Component::CComponentManager& componentManager,
                              Font::CFontHandler& fontHandler,
+                             Core::CMeshManager& meshManager,
                              const System::CSystem& system)
-    : CAbstractSceneHandler(engineLoop, componentManager, fontHandler, system) {
+    : CAbstractSceneHandler(engineLoop, componentManager, fontHandler,
+                            meshManager, system) {
 }
 
 void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {
     auto sceneType = magic_enum::enum_cast<ESceneType>(sceneName);
     if (!sceneType.has_value()) {
-        throw std::runtime_error("Scene name not recognized: " + sceneName);
+        LOG_FATAL("Scene name not recognized: {}", sceneName);
     }
 
     switch (sceneType.value()) {
@@ -24,7 +26,7 @@ void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {
         CreateAndSetSceneImpl<CDebugScene>();
         break;
     default:
-        throw std::runtime_error("Scene type not implemented yet.");
+        LOG_FATAL("Scene type not implemented yet: {}", sceneName);
     }
 }
 

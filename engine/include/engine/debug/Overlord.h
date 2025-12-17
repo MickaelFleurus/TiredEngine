@@ -4,9 +4,12 @@
 
 class CToken;
 
-namespace Renderer {
-class CWindow;
-}
+struct SDL_Window;
+
+namespace Vulkan {
+class CVulkanContext;
+class CVulkanRendering;
+} // namespace Vulkan
 
 namespace Debug {
 
@@ -14,16 +17,17 @@ class IOverlordItem;
 
 class COverlord : public IOverlord {
 public:
-    COverlord(const Renderer::CWindow& window);
+    COverlord(const Vulkan::CVulkanContext& context,
+              const Vulkan::CVulkanRendering& rendering);
     ~COverlord();
 
-    void Initialize() override;
+    void Initialize(SDL_Window* window) override;
 
     static void AddWidget(IOverlordItem& item, CToken& token);
     static void AddMenu(IOverlordItem& item, CToken& token);
 
-    void PrepareRender(SDL_GPUCommandBuffer* cmd) override;
-    void Render(SDL_GPUCommandBuffer* cmd, SDL_GPURenderPass* pass) override;
+    bool PrepareRender(SDL_Window* window) override;
+    void Render(VkCommandBuffer cmd, VkPipeline pipeline) override;
     void HandleEvent(const SDL_Event* e) override;
 
 private:
@@ -33,6 +37,13 @@ private:
     static CGuardedContainer<IOverlordItem> mWidgets;
     static CGuardedContainer<IOverlordItem> mMenus;
 
-    const Renderer::CWindow& mWindow;
+    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::CVulkanRendering& mRendering;
+
+    VkDescriptorPool mImguiPool = VK_NULL_HANDLE;
+
+    float mFrameTime = 0.0f;
+    int mFPS = 0;
+    float mFPSUpdateTime = 0.0f;
 };
 } // namespace Debug

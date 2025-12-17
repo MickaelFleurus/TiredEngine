@@ -1,38 +1,44 @@
 #include "engine/core/EngineLoop.h"
+
+#include <SDL3/SDL.h>
+
+#include "engine/renderer/Window.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
-
 #include "engine/utils/Logger.h"
-#include <SDL3/SDL.h>
+#include "engine/vulkan/VulkanContext.h"
 
 namespace Core {
 
-CEngineLoop::CEngineLoop(System::CSystem& system)
-    : mWindow(system)
-    , mOverlordManager(mWindow)
+CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
+                         Vulkan::CVulkanContext& vulkanContext)
+    : mVulkanContext(vulkanContext)
+    , mVulkanRendering(vulkanContext)
+    , mDescriptorStorage(mVulkanContext)
+    , mMemoryAllocator(mVulkanContext)
+    , mBufferHandler(mVulkanContext, mMemoryAllocator)
+    , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
+                       mDescriptorStorage)
+    , mRendererManager(mBufferHandler, mMaterialManager)
+    , mMeshManager(mRendererManager.GetMeshRenderer())
+    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
+              mMaterialManager, mDescriptorStorage, mRendererManager)
+    , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
+                      mBufferHandler, system.GetFileHandler(),
+                      mDescriptorStorage)
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
+    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
+                        mMaterialManager)
+    , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
-    , mLastFrameTime(std::chrono::high_resolution_clock::now())
-    , mTextureManager(mWindow, system.GetFileHandler())
-    , mMaterialFactory(mTextureManager, system.GetFileHandler(), mWindow)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialFactory)
-    , mComponentManager(mFontHandler, mWindow) {
+    , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
 }
 
 CEngineLoop::~CEngineLoop() = default;
 
-std::expected<void, const char*> CEngineLoop::Initialize() {
-    if (!mWindow.Initialize()) {
-        const char* error = SDL_GetError();
-        if (error && *error) {
-            return std::unexpected(error);
-        }
-    }
-    return {};
-}
-
-void CEngineLoop::SetCurrentScene(
+void CEngineLoop::SetPendingScene(
     std::unique_ptr<Scene::CAbstractScene>&& scene) {
-    mCurrentScene.swap(scene);
+    mPendingScene.swap(scene);
 }
 
 Scene::CAbstractScene* CEngineLoop::GetCurrentScene() const {
@@ -48,20 +54,29 @@ bool CEngineLoop::Run() {
         mLastFrameTime = currentTime;
 
         mInputHandler.Update();
-        if (!mWindow.PrepareRender()) {
-            LOG_ERROR("Failed to prepare render");
-            continue;
-        }
-        mOverlordManager.PrepareRender(mWindow.GetCommandBuffer());
+
+        mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);
             }
-            mOverlordManager.Render(mWindow.GetCommandBuffer(),
-                                    mWindow.GetRenderPass());
+            mOverlordManager.Render(mVulkanContext.GetCommandBuffer(
+                mWindow.GetImageIndex().value()));
 
             mWindow.EndRender();
+        }
+        if (mPendingScene) {
+            if (mCurrentScene) {
+                mCurrentScene->Unload();
+            }
+            mRendererManager.FreeSceneData();
+
+            mPendingScene->Load();
+            mRendererManager.Prepare();
+
+            mCurrentScene.swap(mPendingScene);
+            mPendingScene.reset();
         }
         mInputHandler.Swap();
     }

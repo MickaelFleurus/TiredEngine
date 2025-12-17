@@ -1,14 +1,22 @@
 #include "engine/font/FontHandler.h"
 
-#include "engine/material/AbstractMaterial.h"
-#include "engine/material/MaterialFactory.h"
-#include "engine/renderer/TextureManager.h"
-#include "engine/utils/FileHandler.h"
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_surface.h>
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
+#include "engine/material/AbstractMaterial.h"
+#include "engine/material/MaterialManager.h"
+#include "engine/renderer/TextureManager.h"
+#include "engine/utils/FileHandler.h"
+#include "engine/utils/Logger.h"
+
 namespace {
+
+struct SFontData {
+    SDL_Surface* surface = nullptr;
+    std::unordered_map<std::string, Font::GlyphInfo> glyphInfos;
+    msdfgen::FontMetrics fontMetrics{};
+};
+
 nlohmann::json
 GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
              msdfgen::FontMetrics& fontMetrics) {
@@ -69,7 +77,7 @@ JsonToGlyphs(const nlohmann::json& jsonData) {
             }
 
             const auto& size = glyphJson["size"];
-            if (offset.contains("x") && offset.contains("y")) {
+            if (size.contains("x") && size.contains("y")) {
                 info.size.x = size["x"];
                 info.size.y = size["y"];
             }
@@ -91,19 +99,27 @@ msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
     return fontMetrics;
 }
 
-auto CreateFontData(const std::string& fontPath) {
-    std::unordered_map<std::string, Font::GlyphInfo> glyphInfos;
-    SDL_Surface* surface = nullptr;
-    msdfgen::FontMetrics fontMetrics{};
+void LoadExistingFontData(const std::string& filePath, SFontData& fontData,
+                          Utils::CFileHandler& fileHandler) {
+    fontData.surface = fileHandler.LoadTextureFileBMP(filePath);
+    nlohmann::json jsonData = fileHandler.LoadJson(filePath);
+    fontData.glyphInfos = JsonToGlyphs(jsonData);
+    fontData.fontMetrics = JsonToFontMetrics(jsonData);
+}
+
+SFontData CreateFontData(const std::string& fontPath) {
+    SFontData fontData{};
 
     auto freeType = msdfgen::initializeFreetype();
     if (!freeType) {
-        return std::make_tuple(surface, glyphInfos, fontMetrics);
+        LOG_ERROR("Failed to initialize FreeType for font: {}", fontPath);
+        return fontData;
     }
     msdfgen::FontHandle* font = msdfgen::loadFont(freeType, fontPath.c_str());
     if (!font) {
         msdfgen::deinitializeFreetype(freeType);
-        return std::make_tuple(surface, glyphInfos, fontMetrics);
+        LOG_ERROR("Failed to load font: {}", fontPath);
+        return fontData;
     }
 
     std::vector<msdf_atlas::GlyphGeometry> glyphs;
@@ -112,7 +128,7 @@ auto CreateFontData(const std::string& fontPath) {
     fontGeometry.loadCharset(font, 1.0, msdf_atlas::Charset::ASCII);
 
     // Get font metrics for proper baseline alignment
-    fontMetrics = fontGeometry.getMetrics();
+    fontData.fontMetrics = fontGeometry.getMetrics();
 
     constexpr double maxCornerAngle = 3.0;
     for (auto& glyph : glyphs) {
@@ -143,11 +159,11 @@ auto CreateFontData(const std::string& fontPath) {
     auto bitmapRef = static_cast<msdfgen::BitmapConstRef<msdf_atlas::byte, 3>>(
         generator.atlasStorage());
 
-    surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
-    if (surface) {
-        SDL_LockSurface(surface);
-        Uint8* dst = static_cast<Uint8*>(surface->pixels);
-        int pitch = surface->pitch;
+    fontData.surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
+    if (fontData.surface) {
+        SDL_LockSurface(fontData.surface);
+        Uint8* dst = static_cast<Uint8*>(fontData.surface->pixels);
+        int pitch = fontData.surface->pitch;
         const msdf_atlas::byte* src = bitmapRef.pixels;
 
         for (int y = 0; y < height; ++y) {
@@ -160,10 +176,8 @@ auto CreateFontData(const std::string& fontPath) {
                 row[x * 4 + 3] = 255;               // A
             }
         }
-        SDL_UnlockSurface(surface);
+        SDL_UnlockSurface(fontData.surface);
     }
-
-    const double atlasScale = packer.getScale();
 
     for (const auto& glyph : glyphs) {
         Font::GlyphInfo info;
@@ -190,16 +204,17 @@ auto CreateFontData(const std::string& fontPath) {
         info.size.x = static_cast<float>(r - l);
         info.size.y = static_cast<float>(t - b);
 
+        info.index = static_cast<int>(fontData.glyphInfos.size());
         std::string charKey(1,
                             static_cast<unsigned char>(glyph.getCodepoint()));
-        glyphInfos.emplace(charKey, info);
+        fontData.glyphInfos.emplace(charKey, info);
     }
 
     // Cleanup
     msdfgen::destroyFont(font);
     msdfgen::deinitializeFreetype(freeType);
 
-    return std::make_tuple(surface, glyphInfos, fontMetrics);
+    return fontData;
 }
 
 } // namespace
@@ -207,53 +222,48 @@ auto CreateFontData(const std::string& fontPath) {
 namespace Font {
 CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
                            Utils::CFileHandler& fileHandler,
-                           Material::CMaterialFactory& materialFactory)
+                           Material::CMaterialManager& materialManager)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mMaterialFactory(materialFactory) {
+    , mMaterialManager(materialManager) {
 }
 
 CFontHandler::~CFontHandler() {
 }
 
-CPolice& CFontHandler::GetPolice(const char* name, unsigned int size) {
-    SFont key{name, size};
-    auto it = mPolices.find(key);
+CPolice& CFontHandler::GetPolice(std::string name) {
+    auto it = mPolices.find(name);
     if (it != mPolices.end()) {
         return it->second;
     }
 
     const std::string glyphTexFilePath =
         std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
-    SDL_Surface* surface = nullptr;
-    std::unordered_map<std::string, Font::GlyphInfo> glyphs;
-    msdfgen::FontMetrics fontMetrics{};
+
+    SFontData fontData;
     if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
-        surface = mFileHandler.LoadTextureFileBMP(glyphTexFilePath);
-        auto jsonData = mFileHandler.LoadJson(glyphTexFilePath);
-        glyphs = JsonToGlyphs(jsonData);
-        fontMetrics = JsonToFontMetrics(jsonData);
+        LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
     } else {
-        auto [loadedSurface, loadedGlyphs, metrics] =
-            CreateFontData(std::format("{}/fonts/{}.ttf",
-                                       mFileHandler.GetAssetsFolder(), name));
-        surface = loadedSurface;
-        glyphs = std::move(loadedGlyphs);
-        fontMetrics = metrics;
-        mFileHandler.SaveTextureFileBMP(glyphTexFilePath, surface);
-        mFileHandler.SaveJson(glyphTexFilePath,
-                              GlyphsToJson(glyphs, fontMetrics));
+        fontData = CreateFontData(std::format(
+            "{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name));
+
+        mFileHandler.SaveTextureFileBMP(glyphTexFilePath, fontData.surface);
+        mFileHandler.SaveJson(
+            glyphTexFilePath,
+            GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
     }
 
-    mTextureManager.LoadTextureFromSurface(name, surface);
-    SDL_DestroySurface(surface);
+    auto textureIndex =
+        mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 
+    SDL_DestroySurface(fontData.surface);
     auto [emplaced_it, inserted] = mPolices.try_emplace(
-        key, name, std::move(mMaterialFactory.CreateTextMaterial(name)), size,
-        glyphs,
-        CPolice::SMetrics{fontMetrics.ascenderY, fontMetrics.descenderY,
-                          fontMetrics.lineHeight, fontMetrics.underlineY,
-                          fontMetrics.underlineThickness});
+        name, name.c_str(), textureIndex, fontData.glyphInfos,
+        CPolice::SMetrics{
+            fontData.fontMetrics.emSize, fontData.fontMetrics.ascenderY,
+            fontData.fontMetrics.descenderY, fontData.fontMetrics.lineHeight,
+            fontData.fontMetrics.underlineY,
+            fontData.fontMetrics.underlineThickness});
     return emplaced_it->second;
 }
 

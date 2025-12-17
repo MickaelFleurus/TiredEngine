@@ -1,9 +1,9 @@
 #pragma once
-#include "engine/debug/IOverlordItem.h"
-
 #include <memory>
 #include <optional>
 #include <string>
+
+#include "engine/debug/IOverlordItem.h"
 
 namespace Utils {
 class CFileHandler;
@@ -20,8 +20,9 @@ class CFontHandler;
 namespace Debug {
 
 class CTransformComponentWidget;
-class CTextComponentWidget;
+class CTextUIComponentWidget;
 class CCameraWidget;
+class CMeshComponentWidget;
 
 class CEntityWidget : public IOverlordItem {
 public:
@@ -46,7 +47,8 @@ private:
     std::string mName;
 
     std::unique_ptr<CTransformComponentWidget> mTransformWidget;
-    std::unique_ptr<CTextComponentWidget> mTextWidget;
+    std::unique_ptr<CTextUIComponentWidget> mTextWidget;
     std::unique_ptr<CCameraWidget> mCameraWidget;
+    std::unique_ptr<CMeshComponentWidget> mMeshWidget;
 };
 } // namespace Debug

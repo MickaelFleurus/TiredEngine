@@ -3,22 +3,23 @@
 #include "engine/debug/Overlord.h"
 
 namespace Debug {
-COverlordManager::COverlordManager(const Renderer::CWindow& window)
-    : mWindow(window) {
+COverlordManager::COverlordManager(const Vulkan::CVulkanContext& context,
+                                   const Vulkan::CVulkanRendering& rendering)
+    : mContext(context), mRendering(rendering) {
 }
 
 COverlordManager::~COverlordManager() = default;
 
-void COverlordManager::PrepareRender(SDL_GPUCommandBuffer* cmd) {
+bool COverlordManager::PrepareRender(SDL_Window* window) {
     if (mOverlordImpl) {
-        mOverlordImpl->PrepareRender(cmd);
+        return mOverlordImpl->PrepareRender(window);
     }
+    return false;
 }
 
-void COverlordManager::Render(SDL_GPUCommandBuffer* cmd,
-                              SDL_GPURenderPass* pass) {
+void COverlordManager::Render(VkCommandBuffer cmd, VkPipeline pipeline) {
     if (mOverlordImpl) {
-        mOverlordImpl->Render(cmd, pass);
+        mOverlordImpl->Render(cmd, pipeline);
     }
 }
 
@@ -28,9 +29,9 @@ void COverlordManager::HandleEvent(const SDL_Event* e) {
     }
 }
 
-void COverlordManager::CreateOverlord() {
-    mOverlordImpl = std::make_unique<COverlord>(mWindow);
-    mOverlordImpl->Initialize();
+void COverlordManager::CreateOverlord(SDL_Window* window) {
+    mOverlordImpl = std::make_unique<COverlord>(mContext, mRendering);
+    mOverlordImpl->Initialize(window);
 }
 
 } // namespace Debug

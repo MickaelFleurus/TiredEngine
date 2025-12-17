@@ -26,7 +26,7 @@
 //         [&](auto&& arg) -> Physics::SCollisionVariant {
 //             using T = std::decay_t<decltype(arg)>;
 //             return Physics::getConcreteShape<T>(arg,
-//             owner.getWorldPosition());
+//             owner.GetWorldPosition());
 //         },
 //         param);
 // }
@@ -85,9 +85,9 @@
 //     mCollisionCallback = std::move(callback);
 // }
 
-// void CCollisionComponent::update(float /*deltaTime*/) {
+// void CCollisionComponent::Update(float /*deltaTime*/) {
 //     auto movementComponent =
-//     mComponentManager.getComponent<CMovementComponent>(mOwner.getId()); if
+//     mComponentManager.GetComponent<CMovementComponent>(mOwner.GetId()); if
 //     (mIsStatic || !movementComponent) {
 //         // Static colliders do not need to be updated
 //         return;
@@ -96,7 +96,7 @@
 //     const auto bb = CreateCollisionShape(mOwner, mCollisionData);
 //     for (auto& colliderVector : {kStaticColliders, kDynamicColliders}) {
 //         for (auto& collider : colliderVector) {
-//             if (collider.get().mOwner.getId() == mOwner.getId()) {
+//             if (collider.get().mOwner.GetId() == mOwner.GetId()) {
 //                 continue; // Skip self
 //             }
 //             collisionLogic(collider.get(), bb, *movementComponent);
@@ -122,7 +122,7 @@
 
 //     if (!penetrationVector.isZero() && !mIsTrigger && !other.mIsTrigger) {
 //         movementComponent.applyPosition(GetSafePosition(
-//             mOwner.getLocalPosition(), penetrationVector,
+//             mOwner.GetLocalPosition(), penetrationVector,
 //             movementComponent.getDirection()));
 //     }
 
@@ -131,8 +131,8 @@
 //                                           .other = std::move(otherBb),
 //                                           .penetrationVector =
 //                                           penetrationVector, .impact =
-//                                           impactOpt, .ownId = mOwner.getId(),
-//                                           .otherId = other.mOwner.getId()};
+//                                           impactOpt, .ownId = mOwner.GetId(),
+//                                           .otherId = other.mOwner.GetId()};
 
 //     if (mCollisionCallback) {
 //         mCollisionCallback(collisionInfo);

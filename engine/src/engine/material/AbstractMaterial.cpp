@@ -1,76 +1,76 @@
 #include "engine/material/AbstractMaterial.h"
 
+#include "engine/vulkan/DescriptorStorage.h"
+
+namespace {
+static std::size_t gMaterialIdCounter = 0;
+} // namespace
+
 namespace Material {
-AbstractMaterial::AbstractMaterial(EMaterialType type,
-                                   SDL_GPUGraphicsPipeline* pipeline)
-    : mType(type), mPipeline(pipeline) {
+CAbstractMaterial::CAbstractMaterial(EMaterialType type,
+                                     Renderer::EVertexLayout vertexLayout,
+                                     Renderer::SPipelineDescriptors& pipeline)
+    : mType(type)
+    , mVertexLayout(vertexLayout)
+    , mPipeline(pipeline)
+    , mId(gMaterialIdCounter++) {
 }
 
-AbstractMaterial::AbstractMaterial(const AbstractMaterial& other)
+CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
     : mType(other.mType)
+    , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTexture(other.mTexture) {
+    , mTextureIndex(other.mTextureIndex)
+    , mId(gMaterialIdCounter++) {
 }
 
-AbstractMaterial& AbstractMaterial::operator=(const AbstractMaterial& other) {
-    if (this != &other) {
-        mType = other.mType;
-        mPipeline = other.mPipeline;
-        mColor = other.mColor;
-        mTexture = other.mTexture;
-    }
-    return *this;
-}
-
-AbstractMaterial::AbstractMaterial(AbstractMaterial&& other) noexcept
+CAbstractMaterial::CAbstractMaterial(CAbstractMaterial&& other) noexcept
     : mType(other.mType)
+    , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
-    , mTexture(other.mTexture) {
-    other.mPipeline = nullptr;
-    other.mTexture = nullptr;
+    , mTextureIndex(other.mTextureIndex)
+    , mId(gMaterialIdCounter++) {
+    other.mPipeline = {};
+    other.mTextureIndex = -1;
 }
 
-AbstractMaterial&
-AbstractMaterial::operator=(AbstractMaterial&& other) noexcept {
-    if (this != &other) {
-        mType = other.mType;
-        mPipeline = other.mPipeline;
-        mColor = other.mColor;
-        mTexture = other.mTexture;
-        other.mPipeline = nullptr;
-        other.mTexture = nullptr;
-    }
-    return *this;
-}
-
-EMaterialType AbstractMaterial::GetType() const {
+EMaterialType CAbstractMaterial::GetType() const {
     return mType;
 }
 
-SDL_GPUGraphicsPipeline* AbstractMaterial::GetPipeline() const {
-    return mPipeline;
+VkPipeline CAbstractMaterial::GetPipeline() const {
+    return mPipeline.pipeline;
 }
 
-void AbstractMaterial::SetColor(const glm::vec4& color) {
+void CAbstractMaterial::SetColor(const glm::vec4& color) {
     mColor = color;
 }
 
-void AbstractMaterial::SetTexture(SDL_GPUTexture* texture) {
-    mTexture = texture;
+void CAbstractMaterial::SetTextureIndex(int textureIndex) {
+    mTextureIndex = textureIndex;
 }
 
-const glm::vec4& AbstractMaterial::GetColor() const {
+const glm::vec4& CAbstractMaterial::GetColor() const {
     return mColor;
 }
 
-SDL_GPUTexture* AbstractMaterial::GetTexture() const {
-    return mTexture;
+int CAbstractMaterial::GetTextureIndex() const {
+    return mTextureIndex;
 }
 
-void AbstractMaterial::Bind(SDL_GPURenderPass* renderPass) {
-    // Default implementation does nothing
+VkPipelineLayout CAbstractMaterial::GetPipelineLayout() const {
+    return mPipeline.pipelineLayout;
+}
+
+std::size_t CAbstractMaterial::GetId() const {
+    return mId;
+}
+
+void CAbstractMaterial::Bind(VkDevice device, VkCommandBuffer commandBuffer,
+                             SMaterialBindingInfo& bindingInfo,
+                             VkDescriptorPool descriptorPool) {
 }
 
 } // namespace Material

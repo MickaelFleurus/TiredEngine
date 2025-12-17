@@ -11,6 +11,10 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_compile_definitions($<$<CONFIG:Debug>:DEBUG_BUILD>)
+add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
+add_compile_definitions(GLM_FORCE_LEFT_HANDED)
+
 include (Dependencies)
 setup_dependencies()
 
@@ -21,7 +25,6 @@ add_subdirectory(game)
 
 add_executable(BreakoutExclamationMark src/main.cpp)
 target_link_libraries(BreakoutExclamationMark PRIVATE Angine_LIB Breakout_LIB)
-
 
 copy_dll_dependencies(BreakoutExclamationMark)
 compile_shaders_to_target(BreakoutExclamationMark)

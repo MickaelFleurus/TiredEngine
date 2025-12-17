@@ -2,12 +2,13 @@
 
 #include "engine/component/CameraComponent.h"
 #include "engine/component/ComponentManager.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObjectBuilder.h"
 
 namespace {
 Core::CGameObject& BuildEntity(Core::CGameObjectBuilder::CBuilder builder,
                                Component::CComponentManager& componentManager) {
-    Core::CGameObject& entity = *builder.addCameraComponent().build();
+    Core::CGameObject& entity = *builder.AddCameraComponent().Build();
     return entity;
 }
 } // namespace
@@ -19,11 +20,11 @@ CCamera::CCamera(CGameObject& parent, CGameObjectBuilder& builder,
     : mEntity(BuildEntity(builder.CreateBuilder(cameraName, parent),
                           componentManager))
     , mCameraComponent(
-          *componentManager.getComponent<Component::CCameraComponent>(
-              mEntity.getId()))
+          *componentManager.GetComponent<Component::CCameraComponent>(
+              mEntity.GetId()))
     , mTransformComponent(
-          *componentManager.getComponent<Component::CTransformComponent>(
-              mEntity.getId())) {
+          *componentManager.GetComponent<Component::CTransformComponent>(
+              mEntity.GetId())) {
 }
 
 const glm::mat4& CCamera::GetViewMatrix() {
@@ -41,21 +42,12 @@ const glm::mat4& CCamera::GetViewProjection() {
     return mViewProjMatrix;
 }
 
-CCamera::SMatrices CCamera::GetMatrices() {
-    EnsureUpToDate();
-    SMatrices mats;
-    mats.projection = mProjMatrix;
-    mats.view = mViewMatrix;
-    mats.model = glm::mat4(1.0f);
-    return mats;
-}
-
 void CCamera::EnsureUpToDate() {
-    if (!mCameraComponent.isDirty() && !mTransformComponent.isDirty())
+    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
         return;
 
-    auto position = mTransformComponent.getPosition();
-    float rotationDeg = mTransformComponent.getRotation().z;
+    auto position = mTransformComponent.GetPosition();
+    float rotationDeg = mTransformComponent.GetRotation().z;
 
     float orthoHeight =
         mCameraComponent.GetOrthographicSize() / mCameraComponent.GetZoom();
@@ -77,8 +69,8 @@ void CCamera::EnsureUpToDate() {
     mViewMatrix = r * t;
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
-    mCameraComponent.setDirty(false);
-    mTransformComponent.setDirty(false);
+    mCameraComponent.SetDirty(false);
+    mTransformComponent.SetDirty(false);
 }
 
 glm::vec2 CCamera::ScreenToWorld(const glm::vec2& screenPos,

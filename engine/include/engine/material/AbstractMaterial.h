@@ -1,41 +1,49 @@
 #pragma once
 #include "engine/material/MaterialTypes.h"
+#include "engine/renderer/MaterialStructures.h"
+#include "engine/renderer/PipelineTypes.h"
 
 #include <glm/vec4.hpp>
-
-struct SDL_GPURenderPass;
-struct SDL_GPUGraphicsPipeline;
-struct SDL_GPUTexture;
+#include <vulkan/vulkan.h>
 
 namespace Material {
 
-class AbstractMaterial {
+class CAbstractMaterial {
 public:
-    virtual ~AbstractMaterial() = default;
+    virtual ~CAbstractMaterial() = default;
 
     EMaterialType GetType() const;
-    SDL_GPUGraphicsPipeline* GetPipeline() const;
 
     void SetColor(const glm::vec4& color);
-    void SetTexture(SDL_GPUTexture* texture);
+    void SetTextureIndex(int textureIndex);
 
     const glm::vec4& GetColor() const;
-    SDL_GPUTexture* GetTexture() const;
+    int GetTextureIndex() const;
 
-    virtual void Bind(SDL_GPURenderPass* renderPass);
+    VkPipeline GetPipeline() const;
+    VkPipelineLayout GetPipelineLayout() const;
+
+    std::size_t GetId() const;
+
+    virtual void Bind(VkDevice device, VkCommandBuffer commandBuffer,
+                      SMaterialBindingInfo& bindingInfo,
+                      VkDescriptorPool descriptorPool);
 
 protected:
-    explicit AbstractMaterial(EMaterialType type,
-                              SDL_GPUGraphicsPipeline* pipeline);
-    AbstractMaterial(const AbstractMaterial& other);
-    AbstractMaterial& operator=(const AbstractMaterial& other);
-    AbstractMaterial(AbstractMaterial&& other) noexcept;
-    AbstractMaterial& operator=(AbstractMaterial&& other) noexcept;
+    explicit CAbstractMaterial(EMaterialType type,
+                               Renderer::EVertexLayout vertexLayout,
+                               Renderer::SPipelineDescriptors& pipeline);
+    CAbstractMaterial(const CAbstractMaterial& other);
+    CAbstractMaterial& operator=(const CAbstractMaterial& other) = delete;
+    CAbstractMaterial(CAbstractMaterial&& other) noexcept;
+    CAbstractMaterial& operator=(CAbstractMaterial&& other) noexcept = delete;
 
+    Renderer::EVertexLayout mVertexLayout;
     EMaterialType mType = EMaterialType::Unlit;
-    SDL_GPUGraphicsPipeline* mPipeline = nullptr;
+    Renderer::SPipelineDescriptors mPipeline;
     glm::vec4 mColor = glm::vec4(1.0f);
-    SDL_GPUTexture* mTexture = nullptr;
+    int mTextureIndex = -1;
+    const std::size_t mId;
 };
 
 } // namespace Material

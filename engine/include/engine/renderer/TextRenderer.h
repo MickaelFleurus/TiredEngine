@@ -1,39 +1,54 @@
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
+#include <vector>
 
-struct SDL_GPUBuffer;
-struct SDL_GPUDevice;
+#include "engine/core/DataTypes.h"
+#include "engine/renderer/IRenderer.h"
+#include "engine/renderer/RendererUtils.h"
+#include "engine/utils/BufferMemoryBlocks.h"
+
+namespace Vulkan {
+template <typename T>
+class CBufferHandleWrapper;
+} // namespace Vulkan
+
 namespace Renderer {
 
-// Per-character instance data
-struct SCharacterInstance {
-    glm::vec2 position{0.0f};
-    glm::vec2 size{1.0f};
-    glm::vec4 uvRect{0.0f};
-    glm::vec4 color{1.0f};
-};
+template <typename T>
+class CRenderables;
 
-class CTextRenderer {
+class CTextRenderer : public IRenderer {
 public:
-    explicit CTextRenderer(SDL_GPUDevice* device);
-    ~CTextRenderer();
+    explicit CTextRenderer(
+        Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& instanceBuffer,
+        Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+            indirectDrawBuffer);
+    void Free() override {
+    }
+    void Prepare();
+    void Update() override;
 
-    void Initialize();
+    void UpdateInstances(CRenderables<STextRenderable>& renderables,
+                         const std::vector<Core::GameObjectId>& hidden);
 
-    SDL_GPUBuffer* GetQuadVertexBuffer() const;
-    SDL_GPUBuffer* GetQuadIndexBuffer() const;
-
-    SDL_GPUBuffer* CreateInstanceBuffer(size_t maxCharacters);
-
-    void UpdateInstanceBuffer(SDL_GPUBuffer* buffer,
-                              const std::vector<SCharacterInstance>& instances);
+    const std::vector<Utils::SBufferIndexRange>& GetIndirectDrawRange() const;
 
 private:
-    SDL_GPUDevice* mDevice;
-    SDL_GPUBuffer* mQuadVertexBuffer = nullptr;
-    SDL_GPUBuffer* mQuadIndexBuffer = nullptr;
+    Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mVertexBufferHandle;
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBufferHandle;
+    Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
+    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+        mIndirectDrawBuffer;
+
+    std::vector<std::vector<Core::SUIInstanceData>> mInstancesData;
+    std::vector<Core::GameObjectId> mGameObjectIds;
+    std::vector<Utils::SBufferIndexRange> mTextInstanceBufferRanges;
+    std::vector<Utils::SBufferIndexRange> mIndirectDrawBufferRanges;
+
+    std::optional<Utils::SBufferIndexRange> mVerticesRange{std::nullopt};
+    std::optional<Utils::SBufferIndexRange> mIndexesRange{std::nullopt};
 };
 
 } // namespace Renderer

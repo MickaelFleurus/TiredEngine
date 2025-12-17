@@ -1,10 +1,13 @@
 #pragma once
-#include <memory>
+#include <optional>
+#include <vector>
 
-struct SDL_GPUDevice;
+#include <vulkan/vulkan.h>
+
+#include "engine/core/GameObjectId.h"
+#include "engine/renderer/RendererUtils.h"
+
 struct SDL_Window;
-struct SDL_GPUCommandBuffer;
-struct SDL_GPURenderPass;
 
 namespace Scene {
 class CAbstractScene;
@@ -18,33 +21,53 @@ namespace System {
 class CSystem;
 } // namespace System
 
+namespace Vulkan {
+class CVulkanContext;
+class CVulkanRendering;
+class CDescriptorStorage;
+class CBufferHandler;
+} // namespace Vulkan
+
+namespace Material {
+class CMaterialManager;
+} // namespace Material
+
 namespace Renderer {
 
-class CTextRenderer;
+class CRendererManager;
 
 class CWindow {
 public:
-    CWindow(System::CSystem& system);
+    CWindow(System::CSystem& system, SDL_Window* window,
+            Vulkan::CVulkanContext& vulkanContext,
+            Vulkan::CVulkanRendering& renderer,
+            Vulkan::CBufferHandler& bufferHandler,
+            Material::CMaterialManager& materialManager,
+            Vulkan::CDescriptorStorage& descriptorStorage,
+            CRendererManager& rendererManager);
     ~CWindow();
 
-    bool Initialize();
-
-    bool PrepareRender();
     bool BeginRender();
     void Render(Scene::CAbstractScene& scene,
                 Component::CComponentManager& componentManager);
     void EndRender();
-    SDL_GPUDevice* GetDevice() const;
-    SDL_Window* Get() const;
 
-    SDL_GPUCommandBuffer* GetCommandBuffer() const;
-    SDL_GPURenderPass* GetRenderPass() const;
-
-    CTextRenderer& GetTextRenderer();
+    std::optional<uint32_t> GetImageIndex() const;
+    SDL_Window* GetSDLWindow() const;
 
 private:
-    class CImpl;
-    std::unique_ptr<CImpl> mImpl;
     const System::CSystem& mSystem;
+    SDL_Window* mSDLWindow;
+    Vulkan::CVulkanContext& mVulkanContext;
+    Vulkan::CVulkanRendering& mRenderer;
+    Vulkan::CBufferHandler& mBufferHandler;
+    Vulkan::CDescriptorStorage& mDescriptorStorage;
+    Material::CMaterialManager& mMaterialManager;
+    CRendererManager& mRendererManager;
+
+    std::optional<uint32_t> mImageIndex = std::nullopt;
+
+    VkViewport mViewport;
+    VkRect2D mScissor;
 };
 } // namespace Renderer

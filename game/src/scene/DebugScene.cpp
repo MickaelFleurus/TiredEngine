@@ -1,58 +1,22 @@
 #include "scene/DebugScene.h"
 
+#include "engine/core/Camera3D.h"
+
 namespace Scene {
 CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          Font::CFontHandler& fontHandler,
+                         Core::CMeshManager& meshManager,
                          const System::CSystem& system)
-    : CAbstractScene(componentManager, fontHandler, system) {
-    CreateGameObjectBuilder("Bibboop").build();
-    CreateGameObjectBuilder("TopLeft")
-        .addText("TopLeft", 50)
-        .setAnchor(Utils::EAnchors::TopLeft)
-        .setLocalPosition({0.0f, 1080.0f, 0.0f})
-        .build();
+    : CAbstractScene(componentManager, fontHandler, meshManager, system) {
+    mActiveCamera = std::make_unique<Core::CCamera3D>(
+        *mSceneRoot, mGameObjectBuilder, mComponentManager);
 
-    CreateGameObjectBuilder("TopRight")
-        .addText("TopRight", 50)
-        .setAnchor(Utils::EAnchors::TopRight)
-        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("BottomLeft")
-        .addText("BottomLeft", 50)
-        .setAnchor(Utils::EAnchors::BottomLeft)
-        .setLocalPosition({0.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("BottomRight")
-        .addText("BottomRight", 50)
-        .setAnchor(Utils::EAnchors::BottomRight)
-        .setLocalPosition({1920.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("0,0")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({0.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("1920,0")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({1920.0f, 0.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("1920,1080")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({1920.0f, 1080.0f, 0.0f})
-        .build();
-
-    CreateGameObjectBuilder("0,1080")
-        .addText("X", 50)
-        .setAnchor(Utils::EAnchors::Center)
-        .setLocalPosition({0.0f, 1080.0f, 0.0f})
-        .build();
+    // Position camera to look at the cube
+    // Camera at (0, 0, -5) looking at (0, 0, 1)
+    // auto& cameraTransform =
+    //     *mComponentManager.GetComponent<Component::CTransformComponent>(
+    //         mActiveCamera->mEntity.GetId());
+    // cameraTransform.SetPosition({0.0f, 2.0f, -5.0f});
 }
 
 void CDebugScene::Update(float deltaTime) {
@@ -65,6 +29,29 @@ CAbstractScene* CDebugScene::GetNextScene() const {
 
 const char* CDebugScene::GetName() const {
     return "CDebugScene";
+}
+
+void CDebugScene::Load() {
+    CreateGameObjectBuilder("Cube!")
+        .Add3DCube(1.0f)
+        .SetLocalPosition({0.0f, 0.0f, -5.0f})
+        .SetMaterialType(Material::EMaterialType::Normal)
+        .Build();
+    CreateGameObjectBuilder("Cube2!")
+        .Add3DCube(3.0f)
+        .SetLocalPosition({050.0f, 0.0f, -5.0f})
+        .SetMaterialType(Material::EMaterialType::Normal)
+        .Build();
+    CreateGameObjectBuilder("Cube3!")
+        .Add3DCube(2.0f)
+        .SetLocalPosition({-50.0f, 0.0f, -5.0f})
+        .SetMaterialType(Material::EMaterialType::Normal)
+        .Build();
+    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug! \nYo", 60).Build();
+}
+
+void CDebugScene::Unload() {
+    // Unload resources specific to the debug scene
 }
 
 } // namespace Scene

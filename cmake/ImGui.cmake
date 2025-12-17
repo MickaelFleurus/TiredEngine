@@ -15,10 +15,10 @@ function(setup_imgui)
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlgpu3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
     )
     
     add_library(imgui STATIC ${IMGUI_SOURCES})
-    target_link_libraries(imgui PRIVATE SDL3::SDL3)
+    target_link_libraries(imgui PRIVATE SDL3::SDL3 Vulkan::Vulkan)
     target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${imgui_SOURCE_DIR}/misc/cpp)
 endfunction()

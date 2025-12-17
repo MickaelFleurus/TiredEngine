@@ -3,22 +3,16 @@
 #include "engine/utils/Asserts.h"
 
 namespace Core {
-CGameLoop::CGameLoop(System::CSystem& system)
-    : CEngineLoop(system)
-    , mSceneHandler(*this, mComponentManager, mFontHandler, system)
+CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
+                     Vulkan::CVulkanContext& vulkanContext)
+    : CEngineLoop(system, window, vulkanContext)
+    , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
+                    system)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
-                   mFontHandler) {
-}
+                   mFontHandler, mBufferHandler, mTextureManager) {
 
-std::expected<void, const char*> CGameLoop::Initialize() {
-    if (auto initExpected = CEngineLoop::Initialize(); !initExpected) {
-        return initExpected;
-    }
-
-    mOverlordManager.CreateOverlord();
+    mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();
-
-    return {};
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

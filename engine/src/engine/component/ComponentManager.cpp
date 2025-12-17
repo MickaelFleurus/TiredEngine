@@ -3,30 +3,34 @@
 // #include "engine/component/CollisionComponent.h"
 #include "engine/component/CameraComponent.h"
 #include "engine/component/InputComponent.h"
+#include "engine/component/MeshComponent.h"
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
-#include "engine/component/TextComponent.h"
+#include "engine/component/TextUIComponent.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
-#include "engine/renderer/Window.h"
 
 namespace Component {
-CComponentManager::CComponentManager(Font::CFontHandler& fontHandler,
-                                     Renderer::CWindow& window)
-    : mFontHandler(fontHandler), mWindow(window) {
+CComponentManager::CComponentManager(
+    Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
+    Material::CMaterialManager& materialManager)
+    : mFontHandler(fontHandler)
+    , mTextRenderer(textRenderer)
+    , mMaterialManager(materialManager) {
 }
 
-CInputComponent& CComponentManager::addInputComponent(
+CInputComponent& CComponentManager::AddInputComponent(
     Core::CGameObject& owner, std::optional<Input::InputFunc> onFirePressed,
     std::optional<Input::InputFunc> onLeftPressed,
     std::optional<Input::InputFunc> onRightPressed) {
-    return createComponent<CInputComponent>(owner, owner.getId(), onFirePressed,
+    return CreateComponent<CInputComponent>(owner, owner.GetId(), onFirePressed,
                                             onLeftPressed, onRightPressed);
 }
 
 CMovementComponent&
-CComponentManager::addMovementComponent(Core::CGameObject& owner,
+CComponentManager::AddMovementComponent(Core::CGameObject& owner,
                                         float acceleration) {
-    return createComponent<CMovementComponent>(owner, owner.getId(),
+    return CreateComponent<CMovementComponent>(owner, owner.GetId(),
                                                acceleration);
 }
 
@@ -36,38 +40,43 @@ CComponentManager::addMovementComponent(Core::CGameObject& owner,
 //                                                               Physics::SCollisionParamVariant
 //                                                               shape, bool
 //                                                               isTrigger) {
-//     return createComponent<CCollisionComponent>(owner, owner.getId(),
+//     return CreateComponent<CCollisionComponent>(owner, owner.GetId(),
 //     isStatic, isTrigger, shape);
 // }
 
 CSpriteComponent&
-CComponentManager::addSpriteComponent(Core::CGameObject& owner) {
-    return createComponent<CSpriteComponent>(owner, owner.getId());
+CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
+    return CreateComponent<CSpriteComponent>(owner, owner.GetId());
 }
 
-CTextComponent& CComponentManager::addTextComponent(Core::CGameObject& owner) {
-    return createComponent<CTextComponent>(owner, owner.getId(),
-                                           mWindow.GetTextRenderer());
+CTextUIComponent&
+CComponentManager::AddTextComponent(Core::CGameObject& owner) {
+    return CreateComponent<CTextUIComponent>(owner, owner.GetId());
 }
 
 CTransformComponent&
-CComponentManager::addTransformComponent(Core::CGameObject& owner) {
-    return createComponent<CTransformComponent>(owner, owner.getId());
+CComponentManager::AddTransformComponent(Core::CGameObject& owner) {
+    return CreateComponent<CTransformComponent>(owner, owner.GetId());
 }
 
 CCameraComponent&
-CComponentManager::addCameraComponent(Core::CGameObject& owner) {
-    return createComponent<CCameraComponent>(owner, owner.getId());
+CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
+    return CreateComponent<CCameraComponent>(owner, owner.GetId());
 }
 
-void CComponentManager::removeComponents(Core::GameObjectId id) {
+CMeshComponent& CComponentManager::AddMeshComponent(Core::CGameObject& owner) {
+    return CreateComponent<CMeshComponent>(owner, owner.GetId(),
+                                           mMaterialManager);
+}
+
+void CComponentManager::RemoveComponents(Core::GameObjectId id) {
     for (auto& [type, pool] : mComponentPools) {
-        removeComponent<decltype(type)>(id);
+        RemoveComponent<decltype(type)>(id);
     }
 }
 
-void CComponentManager::update(float deltaTime) {
-    updateAll<CInputComponent, CMovementComponent, CCameraComponent,
+void CComponentManager::Update(float deltaTime) {
+    UpdateAll<CInputComponent, CMovementComponent, CCameraComponent,
               CSpriteComponent>(deltaTime);
 }
 

@@ -1,14 +1,16 @@
 #include "engine/debug/EntityWidget.h"
 
-#include "engine/component/ComponentManager.h"
-#include "engine/component/TextComponent.h"
-#include "engine/component/TransformComponent.h"
-
-#include "engine/debug/CameraWidget.h"
-#include "engine/debug/TextComponentWidget.h"
-#include "engine/debug/TransformComponentWidget.h"
-
 #include <imgui.h>
+
+#include "engine/component/CameraComponent.h"
+#include "engine/component/ComponentManager.h"
+#include "engine/component/MeshComponent.h"
+#include "engine/component/TextUIComponent.h"
+#include "engine/component/TransformComponent.h"
+#include "engine/debug/CameraWidget.h"
+#include "engine/debug/MeshComponentWidget.h"
+#include "engine/debug/TextUIComponentWidget.h"
+#include "engine/debug/TransformComponentWidget.h"
 
 namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
@@ -29,6 +31,7 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId,
     mTransformWidget.reset();
     mTextWidget.reset();
     mCameraWidget.reset();
+    mMeshWidget.reset();
 
     if (!mEntityId) {
         SetVisible(false);
@@ -37,22 +40,28 @@ void CEntityWidget::OnItemClicked(std::optional<int> entityId,
 
     SetVisible(true);
     if (auto* transformComponent =
-            mComponentManager.getComponent<Component::CTransformComponent>(
+            mComponentManager.GetComponent<Component::CTransformComponent>(
                 *mEntityId)) {
         mTransformWidget = std::make_unique<Debug::CTransformComponentWidget>(
             *transformComponent);
     }
     if (auto* textComponent =
-            mComponentManager.getComponent<Component::CTextComponent>(
+            mComponentManager.GetComponent<Component::CTextUIComponent>(
                 *mEntityId)) {
-        mTextWidget = std::make_unique<Debug::CTextComponentWidget>(
+        mTextWidget = std::make_unique<Debug::CTextUIComponentWidget>(
             *textComponent, mFileHandler, mFontHandler);
     }
     if (auto* cameraComponent =
-            mComponentManager.getComponent<Component::CCameraComponent>(
+            mComponentManager.GetComponent<Component::CCameraComponent>(
                 *mEntityId)) {
         mCameraWidget =
             std::make_unique<Debug::CCameraWidget>(*cameraComponent);
+    }
+    if (auto* meshComponent =
+            mComponentManager.GetComponent<Component::CMeshComponent>(
+                *mEntityId)) {
+        mMeshWidget =
+            std::make_unique<Debug::CMeshComponentWidget>(*meshComponent);
     }
 }
 
@@ -86,6 +95,9 @@ void CEntityWidget::Render() {
         }
         if (mCameraWidget) {
             mCameraWidget->Render();
+        }
+        if (mMeshWidget) {
+            mMeshWidget->Render();
         }
         SetVisible(isVisible);
     }

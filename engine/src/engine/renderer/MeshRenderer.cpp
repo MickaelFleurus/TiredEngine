@@ -1,0 +1,169 @@
+#include "engine/renderer/MeshRenderer.h"
+
+#include <set>
+
+#include "engine/core/Mesh.h"
+#include "engine/renderer/Renderables.h"
+#include "engine/utils/Logger.h"
+#include "engine/vulkan/BufferHandleWrapper.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
+namespace Renderer {
+CMeshRenderer::CMeshRenderer(
+    Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::SInstanceData>& instancesBuffer,
+    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
+        indirectDrawBuffer)
+    : mVertexBufferHandle(vertexBufferHandle)
+    , mIndexesBufferHandle(indexesBufferHandle)
+    , mInstancesBuffer(instancesBuffer)
+    , mIndirectDrawBuffer(indirectDrawBuffer) {
+}
+
+CMeshRenderer::~CMeshRenderer() = default;
+
+void CMeshRenderer::Free() {
+    // mMeshDrawRanges.clear();
+    // mMeshInstancesRanges.clear();
+}
+
+void CMeshRenderer::Update() {
+    // Implementation for updating mesh data goes here
+}
+
+void CMeshRenderer::RegisterMesh(const Core::CMesh* mesh) {
+    if (mMeshDrawRanges.contains(mesh->GetHash())) {
+        return;
+    }
+
+    Utils::SBufferIndexRange verticesRange{};
+    Utils::SBufferIndexRange indexesRange{};
+    bool dataPrepared =
+        mVertexBufferHandle.PrepareData(verticesRange, mesh->GetVertices());
+    dataPrepared = dataPrepared && mIndexesBufferHandle.PrepareData(
+                                       indexesRange, mesh->GetIndexes());
+
+    if (!dataPrepared) {
+        LOG_FATAL(
+            "Failed to register mesh! This is the symptom of too many unique "
+            "meshes being created or a buffer being way too small.");
+        return;
+    }
+
+    mMeshDrawRanges.emplace(mesh->GetHash(),
+                            SMeshDrawData{.verticesRange = verticesRange,
+                                          .indexesRange = indexesRange});
+}
+
+void CMeshRenderer::UnregisterMesh(const Core::CMesh* mesh) {
+    auto it = mMeshDrawRanges.find(mesh->GetHash());
+    if (it != mMeshDrawRanges.end()) {
+        const auto& drawData = it->second;
+        mVertexBufferHandle.FreeRange(drawData.verticesRange);
+        mIndexesBufferHandle.FreeRange(drawData.indexesRange);
+        mMeshDrawRanges.erase(it);
+    }
+}
+
+void CMeshRenderer::UpdateInstances(
+    Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
+    const std::vector<Core::GameObjectId>& hidden) {
+
+    std::set<std::pair<std::size_t, std::size_t>> requireInstanceUpdate;
+    std::set<std::pair<std::size_t, std::size_t>> requireIndirectUpdate;
+
+    for (const auto& renderable : renderables.GetUpdateRenderables()) {
+        auto key = std::make_pair(renderable.meshHash, renderable.materialId);
+        requireInstanceUpdate.emplace(key);
+        auto instanceIndex =
+            mInstanceCache[key].GetInstanceIndex(renderable.id);
+        if (instanceIndex.has_value()) {
+            auto& instanceData =
+                mInstanceCache[key].instancesData[*instanceIndex];
+            instanceData.modelMatrix = renderable.transform;
+            instanceData.color = renderable.color;
+            instanceData.materialId = renderable.materialId;
+            instanceData.textureId = renderable.textureIndex;
+        } else {
+            LOG_WARNING("Renderable with id {} not found in instance cache.",
+                        renderable.id);
+        }
+    }
+
+    for (const auto& id : hidden) {
+        for (auto& [key, group] : mInstanceCache) {
+            auto instanceIndex = group.GetInstanceIndex(id);
+            if (instanceIndex.has_value()) {
+                requireIndirectUpdate.emplace(key);
+                group.instancesData.erase(group.instancesData.begin() +
+                                          *instanceIndex);
+                group.gameObjectIds.erase(group.gameObjectIds.begin() +
+                                          *instanceIndex);
+            }
+        }
+    }
+
+    for (const auto& renderable : renderables.GetReorderRenderables()) {
+        auto key = std::make_pair(renderable.meshHash, renderable.materialId);
+        requireInstanceUpdate.emplace(key);
+        requireIndirectUpdate.emplace(key);
+
+        auto& group = mInstanceCache[key];
+        Core::SInstanceData instanceData{};
+        instanceData.modelMatrix = renderable.transform;
+        instanceData.color = renderable.color;
+        instanceData.materialId = renderable.materialId;
+        instanceData.textureId = renderable.textureIndex;
+        if (auto instanceIndex = group.GetInstanceIndex(renderable.id);
+            instanceIndex.has_value()) {
+            group.instancesData[*instanceIndex] = instanceData;
+
+        } else {
+            group.instancesData.push_back(instanceData);
+            group.gameObjectIds.push_back(renderable.id);
+        }
+    }
+
+    for (const auto& key : requireInstanceUpdate) {
+        auto& cachedGroup = mInstanceCache[key];
+        if (!mInstancesBuffer.PrepareData(cachedGroup.instanceBufferRange,
+                                          cachedGroup.instancesData)) {
+            LOG_WARNING("Failed to prepare instance data!");
+        }
+    }
+
+    for (const auto& key : requireIndirectUpdate) {
+        auto& cachedGroup = mInstanceCache[key];
+        Core::SIndirectDrawCommand cmd{};
+        cmd.indexCount = static_cast<uint32_t>(
+            mMeshDrawRanges[key.first].indexesRange.count);
+        cmd.instanceCount =
+            static_cast<uint32_t>(cachedGroup.instancesData.size());
+        cmd.firstIndex = static_cast<uint32_t>(
+            mMeshDrawRanges[key.first].indexesRange.first);
+        cmd.vertexOffset = static_cast<int32_t>(
+            mMeshDrawRanges[key.first].verticesRange.first);
+        cmd.firstInstance =
+            static_cast<uint32_t>(cachedGroup.instanceBufferRange.first);
+
+        if (!mIndirectDrawBuffer.PrepareData(cachedGroup.indirectBufferRange,
+                                             cmd)) {
+            LOG_WARNING("Failed to prepare indirect draw command!");
+        }
+    }
+}
+
+std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
+CMeshRenderer::GetIndirectDrawRanges() const {
+    std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
+        drawRanges;
+    for (const auto& [key, group] : mInstanceCache) {
+        drawRanges[key.second].push_back(group.indirectBufferRange);
+    }
+    return drawRanges;
+}
+
+} // namespace Renderer

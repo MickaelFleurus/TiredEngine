@@ -1,21 +1,19 @@
 #pragma once
-#include <bitset>
-#include <compare>
+#include "engine/utils/Hashing.h"
 #include <string>
 
 namespace Font {
 
 struct SFont {
-    std::string fontPath;
-    unsigned int fontSize;
+    std::string fontName;
+    char character;
 
     auto operator<=>(const SFont&) const = default;
 };
 
 struct SFontHash {
     std::size_t operator()(const SFont& key) const {
-        return std::hash<std::string>{}(key.fontPath) ^
-               (std::hash<unsigned int>{}(key.fontSize) << 1);
+        return Utils::CreateHash(key.fontName, key.character);
     }
 };
 
