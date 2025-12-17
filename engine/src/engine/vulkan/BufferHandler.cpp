@@ -43,12 +43,6 @@ constexpr int kUIVertexBufferDefaultSize =
 constexpr auto kUIVertexBufferUsage =
     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-constexpr auto kUIIndexStructSize = sizeof(Core::TextIndexType);
-constexpr int kUIIndexBufferDefaultSize =
-    Vulkan::kIndexAmountPerBuffer * kUIIndexStructSize;
-constexpr auto kUIIndexBufferUsage =
-    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-
 } // namespace
 
 namespace Vulkan {
@@ -91,11 +85,6 @@ CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
             mVulkanContext, mMemoryAllocator);
     mBufferWrappers[kUIVerticesBufferIndex]->Init(kUIVertexBufferDefaultSize,
                                                   kUIVertexBufferUsage);
-    mBufferWrappers[kUIIndicesBufferIndex] =
-        std::make_unique<CBufferHandleWrapper<Core::TextIndexType>>(
-            mVulkanContext, mMemoryAllocator);
-    mBufferWrappers[kUIIndicesBufferIndex]->Init(kUIIndexBufferDefaultSize,
-                                                 kUIIndexBufferUsage);
 }
 
 CBufferHandler::~CBufferHandler() = default;

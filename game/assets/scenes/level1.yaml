@@ -1,0 +1,18 @@
+name: level1
+description: The first level of the game
+resources:
+  type: textures - "bricks.png" - "paddles_and_balls.png"
+grid:
+  cellSize:
+    width: 32
+    height: 16
+  brickDefinitions:
+    type: "Red"
+    key: "r"
+    spriteName: "Red"
+    hitPoints: 1
+  scorePerBrick: 100
+  layout:
+    "rrrrrrrrrr
+    rrrrrrrrrr
+    rrrrrrrrrr"

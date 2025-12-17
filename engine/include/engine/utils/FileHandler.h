@@ -1,7 +1,9 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include <string>
+
+#include <nlohmann/json.hpp>
+#include <yaml-cpp/yaml.h>
 
 struct SDL_Surface;
 
@@ -28,6 +30,7 @@ public:
     bool SaveJson(const std::string& filePath, const nlohmann::json& data);
 
     nlohmann::json LoadJson(const std::string& filePath);
+    YAML::Node LoadYAML(const std::string& filePath);
     SDL_Surface* LoadTextureFileBMP(const std::string& filePath);
 
     std::vector<std::string> GetFileNames(const char* extension) const;

@@ -21,5 +21,4 @@ constexpr int kInstanceBufferIndex = 2;
 constexpr int kInstanceInfoBufferIndex = 3;
 constexpr int kTextInstanceBufferIndex = 4;
 constexpr int kUIVerticesBufferIndex = 5;
-constexpr int kUIIndicesBufferIndex = 6;
 } // namespace Vulkan

@@ -36,14 +36,14 @@ std::optional<Utils::SBufferIndexRange> CreateVertices(
 }
 
 std::optional<Utils::SBufferIndexRange> CreateIndexes(
-    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
     const std::optional<Utils::SBufferIndexRange>& vertexBufferRange) {
     if (!vertexBufferRange.has_value()) {
         LOG_ERROR("Vertex buffer range is not valid!");
         return std::nullopt;
     }
 
-    std::vector<Core::TextIndexType> indexes;
+    std::vector<Core::IndexType> indexes;
     indexes.reserve(6);
     indexes.push_back(vertexBufferRange->first + 0);
     indexes.push_back(vertexBufferRange->first + 1);
@@ -76,7 +76,7 @@ namespace Renderer {
 
 CTextRenderer::CTextRenderer(
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
-    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
     Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& textInstanceBuffer,
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         indirectDrawBuffer)

@@ -21,7 +21,7 @@ class CTextRenderer : public IRenderer {
 public:
     explicit CTextRenderer(
         Vulkan::CBufferHandleWrapper<Core::SUIVertex>& vertexBufferHandle,
-        Vulkan::CBufferHandleWrapper<Core::TextIndexType>& indexesBufferHandle,
+        Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
         Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& instanceBuffer,
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
             indirectDrawBuffer);
@@ -37,7 +37,7 @@ public:
 
 private:
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mVertexBufferHandle;
-    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& mIndexesBufferHandle;
+    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBufferHandle;
     Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;

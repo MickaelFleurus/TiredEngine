@@ -43,7 +43,6 @@ private:
         mIndirectDrawBuffer;
     Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mUIVertexBuffer;
-    Vulkan::CBufferHandleWrapper<Core::TextIndexType>& mIndexesUIBuffer;
 
     Material::CMaterialManager& mMaterialManager;
     CMeshRenderer mMeshRenderer;

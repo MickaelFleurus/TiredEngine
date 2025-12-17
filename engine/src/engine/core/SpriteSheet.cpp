@@ -45,8 +45,8 @@ CSpriteSheetLoader::CSpriteSheetLoader(
             continue;
         }
         SSpriteInfo info;
-        info.topLeft.x = spriteInfo["topLeft"]["x"];
-        info.topLeft.y = spriteInfo["topLeft"]["y"];
+        info.origin.x = spriteInfo["topLeft"]["x"];
+        info.origin.y = spriteInfo["topLeft"]["y"];
         info.size.x = spriteInfo["size"]["x"];
         info.size.y = spriteInfo["size"]["y"];
         // mSprites[it.key()] = info;

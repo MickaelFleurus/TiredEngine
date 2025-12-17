@@ -8,7 +8,6 @@
 namespace Core {
 
 using IndexType = uint32_t;
-using TextIndexType = uint32_t;
 
 struct SVertex {
     glm::vec3 position;

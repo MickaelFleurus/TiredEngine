@@ -13,6 +13,7 @@ target_link_libraries(Angine_LIB PUBLIC
     freetype
     Vulkan::Vulkan
     spirv-reflect-static
+    yaml-cpp::yaml-cpp
 )
 
 # On macOS, link required frameworks for MoltenVK

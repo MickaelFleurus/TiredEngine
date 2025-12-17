@@ -25,12 +25,10 @@ CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
           Vulkan::kTextInstanceBufferIndex))
     , mUIVertexBuffer(
           bufferHandler.Get<Core::SUIVertex>(Vulkan::kUIVerticesBufferIndex))
-    , mIndexesUIBuffer(
-          bufferHandler.Get<Core::TextIndexType>(Vulkan::kUIIndicesBufferIndex))
     , mMaterialManager(materialManager)
     , mMeshRenderer(mVertexBuffer, mIndexesBuffer, mInstanceBuffer,
                     mIndirectDrawBuffer)
-    , mTextRenderer(mUIVertexBuffer, mIndexesUIBuffer, mTextInstanceBuffer,
+    , mTextRenderer(mUIVertexBuffer, mIndexesBuffer, mTextInstanceBuffer,
                     mIndirectDrawBuffer) {
 }
 
@@ -73,7 +71,6 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
     mIndirectDrawBuffer.Upload();
     mTextInstanceBuffer.Upload();
     mUIVertexBuffer.Upload();
-    mIndexesUIBuffer.Upload();
 
     VkDeviceSize offsets[] = {0, 0};
     VkBuffer vertexBuffers[] = {mVertexBuffer.GetBuffer(),
@@ -122,7 +119,7 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
         VkBuffer textVertexBuffers[] = {mUIVertexBuffer.GetBuffer(),
                                         mTextInstanceBuffer.GetBuffer()};
         vkCmdBindVertexBuffers(commandBuffer, 0, 2, textVertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, mIndexesUIBuffer.GetBuffer(), 0,
+        vkCmdBindIndexBuffer(commandBuffer, mIndexesBuffer.GetBuffer(), 0,
                              VK_INDEX_TYPE_UINT32);
 
         currentMaterial =
