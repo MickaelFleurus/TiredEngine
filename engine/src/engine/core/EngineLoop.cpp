@@ -20,6 +20,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
     , mRendererManager(mBufferHandler, mMaterialManager)
+    , mSpriteManager(system.GetFileHandler(), mTextureManager)
     , mMeshManager(mRendererManager.GetMeshRenderer())
     , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
               mMaterialManager, mDescriptorStorage, mRendererManager)

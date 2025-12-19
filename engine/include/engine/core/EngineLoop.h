@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "engine/component/ComponentManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
@@ -11,14 +13,13 @@
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/MemoryAllocator.h"
 #include "engine/renderer/RendererManager.h"
+#include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/renderer/Window.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
-
-#include <chrono>
 
 struct SDL_Window;
 
@@ -59,6 +60,7 @@ protected:
 
     Material::CMaterialManager mMaterialManager;
     Renderer::CRendererManager mRendererManager;
+    Renderer::CSpriteManager mSpriteManager;
 
     Core::CMeshManager mMeshManager;
 
