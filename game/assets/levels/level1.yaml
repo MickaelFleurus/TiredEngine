@@ -1,0 +1,19 @@
+name: level1
+description: The first level of the game
+resources:
+  spritesheets:
+    - "common/textures/bricks"
+gameSpecific:
+  grid:
+    size:
+      width: 32
+      height: 16
+    brickDefinitions:
+      - type: "Standard"
+        key: "A"
+        color: "Red"
+        hitPoints: 1
+    scorePerBrick: 100
+    layout: "AAAAAAAAA
+      AAAAAAAAA
+      AAAAAAAAA"

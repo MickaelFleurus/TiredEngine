@@ -56,11 +56,12 @@ int CTextureManager::LoadTexture(const std::string& filename) {
     }
 
     std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
-        mFileHandler.LoadTextureFileBMP(filename), kGPUSurfaceDeleter};
+        mFileHandler.LoadTextureFile(filename), kGPUSurfaceDeleter};
     if (!surface) {
         return -1;
     }
-    auto textureIndex = LoadTextureFromSurface(filename, surface.get());
+    auto textureIndex =
+        LoadTextureFromSurface(filename + ".png", surface.get());
 
     return textureIndex;
 }

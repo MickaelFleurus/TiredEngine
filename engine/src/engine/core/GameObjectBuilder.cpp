@@ -63,9 +63,10 @@ CGameObjectBuilder::CBuilder::AddText(const std::string& text,
     return *this;
 }
 
-CGameObjectBuilder::CBuilder& CGameObjectBuilder::CBuilder::AddSprite() {
+CGameObjectBuilder::CBuilder&
+CGameObjectBuilder::CBuilder::AddSprite(std::string spriteName) {
     auto& component{mComponentManager.AddSpriteComponent(*mGameObject)};
-    // component.AddSprite(type);
+    component.SetSprite(spriteName);
     return *this;
 }
 

@@ -104,7 +104,7 @@ bool COverlord::PrepareRender(SDL_Window* window) {
         mFPSUpdateTime = 0.0f;
     }
 
-    // RenderMenuBar();
+    RenderMenuBar();
     RenderWidgets();
     ImGui::Render();
     return true;

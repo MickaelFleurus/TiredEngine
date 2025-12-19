@@ -92,92 +92,92 @@ sprites:
   y: 87
   width: 31
   height: 9
-- name: "Grey"
+- name: "GreyStandard"
   x: 112
   y: 0
   width: 31
   height: 15
-- name: "GreyCracked"
+- name: "GreyStandardCracked"
   x: 144
   y: 0
   width: 31
   height: 15
-- name: "GreyBroken"
+- name: "GreyStandardBroken"
   x: 176
   y: 0
   width: 31
   height: 15
-- name: "Green"
+- name: "GreenStandard"
   x: 112
   y: 16
   width: 31
   height: 15
-- name: "GreenCracked"
+- name: "GreenStandardCracked"
   x: 144
   y: 16
   width: 31
   height: 15
-- name: "GreenBroken"
+- name: "GreenStandardBroken"
   x: 176
   y: 16
   width: 31
   height: 15
-- name: "Golden"
+- name: "GoldenStandard"
   x: 112
   y: 32
   width: 31
   height: 15
-- name: "GoldenCracked"
+- name: "GoldenStandardCracked"
   x: 144
   y: 32
   width: 31
   height: 15
-- name: "GoldenBroken"
+- name: "GoldenStandardBroken"
   x: 176
   y: 32
   width: 31
   height: 15
-- name: "Orange"
+- name: "OrangeStandard"
   x: 112
   y: 48
   width: 31
   height: 15
-- name: "OrangeCracked"
+- name: "OrangeStandardCracked"
   x: 144
   y: 48
   width: 31
   height: 15
-- name: "OrangeBroken"
+- name: "OrangeStandardBroken"
   x: 176
   y: 48
   width: 31
   height: 15
-- name: "Red"
+- name: "RedStandard"
   x: 112
   y: 80
   width: 31
   height: 15
-- name: "RedCracked"
+- name: "RedStandardCracked"
   x: 144
   y: 80
   width: 31
   height: 15
-- name: "RedBroken"
+- name: "RedStandardBroken"
   x: 176
   y: 80
   width: 31
   height: 15
-- name: "Purple"
+- name: "PurpleStandard"
   x: 112
   y: 64
   width: 31
   height: 15
-- name: "PurpleCracked"
+- name: "PurpleStandardCracked"
   x: 144
   y: 64
   width: 31
   height: 15
-- name: "PurpleBroken"
+- name: "PurpleStandardBroken"
   x: 176
   y: 64
   width: 31

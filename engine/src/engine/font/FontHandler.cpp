@@ -101,7 +101,7 @@ msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
 
 void LoadExistingFontData(const std::string& filePath, SFontData& fontData,
                           Utils::CFileHandler& fileHandler) {
-    fontData.surface = fileHandler.LoadTextureFileBMP(filePath);
+    fontData.surface = fileHandler.LoadTextureFile(filePath);
     nlohmann::json jsonData = fileHandler.LoadJson(filePath);
     fontData.glyphInfos = JsonToGlyphs(jsonData);
     fontData.fontMetrics = JsonToFontMetrics(jsonData);
@@ -241,18 +241,21 @@ CPolice& CFontHandler::GetPolice(std::string name) {
         std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
 
     SFontData fontData;
-    if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
+    if (mFileHandler.DoesFileExist(glyphTexFilePath, ".png")) {
         LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
     } else {
         fontData = CreateFontData(std::format(
             "{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name));
 
-        mFileHandler.SaveTextureFileBMP(glyphTexFilePath, fontData.surface);
+        mFileHandler.SaveTextureFile(glyphTexFilePath, fontData.surface,
+                                     ".png");
         mFileHandler.SaveJson(
             glyphTexFilePath,
             GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
     }
-
+    if (!fontData.surface) {
+        LOG_FATAL(std::format("Failed to load or create font: {}", name));
+    }
     auto textureIndex =
         mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 

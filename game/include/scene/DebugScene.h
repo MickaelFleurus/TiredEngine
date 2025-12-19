@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "engine/scene/AbstractScene.h"
 
 namespace Scene {
@@ -16,5 +18,8 @@ public:
 
     void Load() override;
     void Unload() override;
+
+private:
+    std::function<void(CAbstractScene&)> mLoadCallback;
 };
 } // namespace Scene

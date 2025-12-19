@@ -1,27 +1,31 @@
 #include "engine/component/SpriteComponent.h"
 
-#include "engine/component/ComponentManager.h"
-#include "engine/component/MovementComponent.h"
 #include "engine/core/GameObject.h"
+#include "engine/renderer/SpriteManager.h"
 
 namespace Component {
 CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
-                                   CComponentManager& componentManager)
-    : IComponent(owner, componentManager, Core::EDirtyType::None) {
+                                   CComponentManager& componentManager,
+                                   Renderer::CSpriteManager& spriteManager)
+    : IComponent(owner, componentManager, Core::EDirtyType::None)
+    , mSpriteManager(spriteManager) {
 }
 
-CSpriteComponent::~CSpriteComponent() {
-    removeSprite();
-}
+CSpriteComponent::~CSpriteComponent() = default;
 
-void CSpriteComponent::removeSprite() {
+void CSpriteComponent::SetSprite(const std::string& spriteName) {
+    mCurrentSprite = mSpriteManager.GetSpriteInfo(spriteName);
+    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
 }
 
 void CSpriteComponent::Update(float) {
 }
 
 glm::vec2 CSpriteComponent::GetSize() const {
-    return glm::vec2(1.0f, 1.0f);
+    return mCurrentSprite.has_value()
+               ? glm::vec2{static_cast<float>(mCurrentSprite->size.x),
+                           static_cast<float>(mCurrentSprite->size.y)}
+               : glm::vec2{0.0f, 0.0f};
 }
 
 } // namespace Component

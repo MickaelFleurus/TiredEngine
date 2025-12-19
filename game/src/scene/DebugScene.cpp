@@ -10,13 +10,26 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
     : CAbstractScene(componentManager, fontHandler, meshManager, system) {
     mActiveCamera = std::make_unique<Core::CCamera3D>(
         *mSceneRoot, mGameObjectBuilder, mComponentManager);
-
-    // Position camera to look at the cube
-    // Camera at (0, 0, -5) looking at (0, 0, 1)
-    // auto& cameraTransform =
-    //     *mComponentManager.GetComponent<Component::CTransformComponent>(
-    //         mActiveCamera->mEntity.GetId());
-    // cameraTransform.SetPosition({0.0f, 2.0f, -5.0f});
+    mLoadCallback = [](CAbstractScene& scene) {
+        scene.CreateGameObjectBuilder("Cube!")
+            .Add3DCube(1.0f)
+            .SetLocalPosition({0.0f, 0.0f, -5.0f})
+            .SetMaterialType(Material::EMaterialType::Normal)
+            .Build();
+        scene.CreateGameObjectBuilder("Cube2!")
+            .Add3DCube(3.0f)
+            .SetLocalPosition({050.0f, 0.0f, -5.0f})
+            .SetMaterialType(Material::EMaterialType::Normal)
+            .Build();
+        scene.CreateGameObjectBuilder("Cube3!")
+            .Add3DCube(2.0f)
+            .SetLocalPosition({-50.0f, 0.0f, -5.0f})
+            .SetMaterialType(Material::EMaterialType::Normal)
+            .Build();
+        scene.CreateGameObjectBuilder("TEXT!")
+            .AddText("Hello Debug! \nYo", 60)
+            .Build();
+    };
 }
 
 void CDebugScene::Update(float deltaTime) {
@@ -32,22 +45,7 @@ const char* CDebugScene::GetName() const {
 }
 
 void CDebugScene::Load() {
-    CreateGameObjectBuilder("Cube!")
-        .Add3DCube(1.0f)
-        .SetLocalPosition({0.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("Cube2!")
-        .Add3DCube(3.0f)
-        .SetLocalPosition({050.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("Cube3!")
-        .Add3DCube(2.0f)
-        .SetLocalPosition({-50.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug! \nYo", 60).Build();
+    mLoadCallback(*this);
 }
 
 void CDebugScene::Unload() {

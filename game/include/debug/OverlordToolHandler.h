@@ -2,6 +2,7 @@
 
 #include <engine/debug/BufferWidget.h>
 #include <engine/debug/EntityWidget.h>
+#include <engine/debug/LevelSceneLoaderWidget.h>
 #include <engine/debug/OverlordSettingsWidget.h>
 #include <engine/debug/SceneHierarchy.h>
 #include <engine/debug/SceneLoaderOverlord.h>
@@ -15,6 +16,7 @@ class CFileHandler;
 
 namespace Scene {
 class ISceneHandler;
+class CSceneLoader;
 } // namespace Scene
 
 namespace Component {
@@ -41,7 +43,8 @@ public:
                          Scene::ISceneHandler& sceneLoader,
                          Font::CFontHandler& fontHandler,
                          Vulkan::CBufferHandler& bufferHandler,
-                         Renderer::CTextureManager& textureManager);
+                         Renderer::CTextureManager& textureManager,
+                         Scene::CSceneLoader& sceneLoaderOverlord);
 
     void Initialize();
 
@@ -56,6 +59,7 @@ private:
     CSceneHierarchy mSceneHierarchy;
     CBufferWidget mBufferWidget;
     CTexturesWidget mTexturesWidget;
+    CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
 
     CToken mToken;
 };

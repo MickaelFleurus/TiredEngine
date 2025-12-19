@@ -13,10 +13,12 @@
 namespace Component {
 CComponentManager::CComponentManager(
     Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
-    Material::CMaterialManager& materialManager)
+    Material::CMaterialManager& materialManager,
+    Renderer::CSpriteManager& spriteManager)
     : mFontHandler(fontHandler)
     , mTextRenderer(textRenderer)
-    , mMaterialManager(materialManager) {
+    , mMaterialManager(materialManager)
+    , mSpriteManager(spriteManager) {
 }
 
 CInputComponent& CComponentManager::AddInputComponent(
@@ -46,7 +48,8 @@ CComponentManager::AddMovementComponent(Core::CGameObject& owner,
 
 CSpriteComponent&
 CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
-    return CreateComponent<CSpriteComponent>(owner, owner.GetId());
+    return CreateComponent<CSpriteComponent>(owner, owner.GetId(),
+                                             mSpriteManager);
 }
 
 CTextUIComponent&

@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -18,6 +19,9 @@ public:
     ~CSpriteManager();
 
     void LoadSpriteSheet(const std::string& spriteSheetName);
+
+    std::optional<Core::SSpriteInfo>
+    GetSpriteInfo(const std::string& spriteName) const;
 
 private:
     Utils::CFileHandler& mFileHandler;

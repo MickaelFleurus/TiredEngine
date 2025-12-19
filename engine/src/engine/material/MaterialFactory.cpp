@@ -35,11 +35,11 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
     case EMaterialType::Normal:
         return CreateMaterial(
             type, Renderer::SPipelineConfig{
+                      .cullMode = Renderer::ECullMode::Back,
+                      .frontFace = Renderer::EFrontFace::Clockwise,
                       .shaderName = "NormalShader",
                       .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
-                      .vertexLayout = Renderer::EVertexLayout::Mesh3D,
-                      .frontFace = Renderer::EFrontFace::Clockwise,
-                      .cullMode = Renderer::ECullMode::Back});
+                      .vertexLayout = Renderer::EVertexLayout::Mesh3D});
     case EMaterialType::UI:
         return CreateUIMaterial();
     default:

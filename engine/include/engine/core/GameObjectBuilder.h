@@ -42,7 +42,7 @@ public:
 
         CBuilder& AddText(const std::string& text, unsigned int size,
                           std::string fontName = "Arial");
-        CBuilder& AddSprite();
+        CBuilder& AddSprite(std::string spriteName);
         CBuilder& AddAABBCollisionData(float width, float height,
                                        bool isStatic = true,
                                        bool isTrigger = false);

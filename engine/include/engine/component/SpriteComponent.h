@@ -1,22 +1,28 @@
 #pragma once
 #include <optional>
 #include <string>
-#include <variant>
 
 #include "engine/component/IComponent.h"
+#include "engine/core/Sprite.h"
+
+namespace Renderer {
+class CSpriteManager;
+}
 
 namespace Component {
 class CSpriteComponent : public IComponent {
 public:
     explicit CSpriteComponent(Core::CGameObject& owner,
-                              CComponentManager& componentManager);
+                              CComponentManager& componentManager,
+                              Renderer::CSpriteManager& spriteManager);
     ~CSpriteComponent() override;
-    // void AddSprite(SDK::SpriteType type);
+    void SetSprite(const std::string& spriteName);
 
     void Update(float deltaTime) override;
     glm::vec2 GetSize() const;
 
 private:
-    void removeSprite();
+    Renderer::CSpriteManager& mSpriteManager;
+    std::optional<Core::SSpriteInfo> mCurrentSprite;
 };
 } // namespace Component

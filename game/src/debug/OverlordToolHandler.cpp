@@ -8,14 +8,16 @@ COverlordToolHandler::COverlordToolHandler(
     Component::CComponentManager& componentManager,
     Utils::CFileHandler& fileHandler, Scene::ISceneHandler& sceneHandler,
     Font::CFontHandler& fontHandler, Vulkan::CBufferHandler& bufferHandler,
-    Renderer::CTextureManager& textureManager)
+    Renderer::CTextureManager& textureManager,
+    Scene::CSceneLoader& sceneLoaderOverlord)
     : mSettings(fileHandler, sceneHandler)
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
     , mEntityWidget(componentManager, fileHandler, fontHandler)
     , mSceneHierarchy(mEntityWidget, sceneHandler)
     , mBufferWidget(bufferHandler)
-    , mTexturesWidget(textureManager) {
+    , mTexturesWidget(textureManager)
+    , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord) {
 }
 
 void COverlordToolHandler::Initialize() {
@@ -30,6 +32,7 @@ void COverlordToolHandler::RegisterTools() {
     COverlord::AddWidget(mSceneHierarchy, mToken);
     COverlord::AddWidget(mBufferWidget, mToken);
     COverlord::AddWidget(mTexturesWidget, mToken);
+    COverlord::AddWidget(mLevelSceneLoaderWidget, mToken);
 
     COverlord::AddMenu(mOverlordSettings, mToken);
 }

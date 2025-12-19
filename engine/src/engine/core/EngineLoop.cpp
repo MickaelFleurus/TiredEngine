@@ -29,7 +29,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                       mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
     , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
-                        mMaterialManager)
+                        mMaterialManager, mSpriteManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {

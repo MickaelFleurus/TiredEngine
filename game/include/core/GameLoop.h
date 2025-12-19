@@ -1,9 +1,10 @@
 #pragma once
 
-#include "debug/OverlordToolHandler.h"
-#include "scene/SceneHandler.h"
-
 #include <engine/core/EngineLoop.h>
+
+#include "debug/OverlordToolHandler.h"
+#include "scene/GameSceneLoader.h"
+#include "scene/SceneHandler.h"
 
 namespace Vulkan {
 class CVulkanContext;
@@ -18,6 +19,7 @@ public:
 
 private:
     Scene::CSceneHandler mSceneHandler;
+    Scene::CGameSceneLoader mSceneLoader;
     Debug::COverlordToolHandler mToolHandler;
 };
 } // namespace Core

@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_surface.h>
+#include <SDL3_image/SDL_image.h>
 
 namespace {
 constexpr const char* kCompanyName = "PotatoThunder";
@@ -66,17 +67,15 @@ bool CFileHandler::DeleteFile(const std::string& filePath,
     return std::filesystem::remove(filePath + extension);
 }
 
-bool CFileHandler::SaveTextureFileBMP(const std::string& filePath,
-                                      SDL_Surface* surface) {
+bool CFileHandler::SaveTextureFile(const std::string& filePath,
+                                   SDL_Surface* surface,
+                                   std::string extension) {
     if (const auto parent = std::filesystem::path(filePath).parent_path();
         !DoesDirectoryExists(parent.string())) {
         CreateDirectories(parent);
     }
-    const auto completePath = filePath + ".bmp";
-    if (SDL_SaveBMP(surface, completePath.c_str()) != 0) {
-        return false;
-    }
-    return true;
+    const auto completePath = filePath + extension;
+    return IMG_SavePNG(surface, completePath.c_str());
 }
 
 bool CFileHandler::SaveJson(const std::string& filePath,
@@ -107,17 +106,19 @@ YAML::Node CFileHandler::LoadYAML(const std::string& filePath) {
     return YAML::LoadFile(completePath);
 }
 
-SDL_Surface* CFileHandler::LoadTextureFileBMP(const std::string& filePath) {
-    const auto completePath = filePath + ".bmp";
-    SDL_Surface* surface = SDL_LoadBMP(completePath.c_str());
-    return surface;
+SDL_Surface* CFileHandler::LoadTextureFile(const std::string& filePath) {
+    const auto completePath = filePath + ".png";
+
+    return IMG_Load(completePath.c_str());
 }
 
 std::vector<std::string>
-CFileHandler::GetFileNames(const char* extension) const {
+CFileHandler::GetFileNames(const char* extension,
+                           std::string specificFolder) const {
+    const std::string fullPath = mAssetFolder + specificFolder;
     std::vector<std::string> files;
     for (auto const& dir_entry :
-         std::filesystem::recursive_directory_iterator{mAssetFolder}) {
+         std::filesystem::recursive_directory_iterator{fullPath}) {
         if (dir_entry.path().extension() == extension) {
             files.push_back(dir_entry.path().stem().string());
         }

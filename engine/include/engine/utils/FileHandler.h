@@ -26,14 +26,16 @@ public:
 
     bool DeleteFile(const std::string& filePath, const char* extension);
 
-    bool SaveTextureFileBMP(const std::string& filePath, SDL_Surface* surface);
+    bool SaveTextureFile(const std::string& filePath, SDL_Surface* surface,
+                         std::string extension = ".png");
     bool SaveJson(const std::string& filePath, const nlohmann::json& data);
 
     nlohmann::json LoadJson(const std::string& filePath);
     YAML::Node LoadYAML(const std::string& filePath);
-    SDL_Surface* LoadTextureFileBMP(const std::string& filePath);
+    SDL_Surface* LoadTextureFile(const std::string& filePath);
 
-    std::vector<std::string> GetFileNames(const char* extension) const;
+    std::vector<std::string>
+    GetFileNames(const char* extension, std::string specificFolder = "") const;
 
 private:
     std::string mTempFolder;
