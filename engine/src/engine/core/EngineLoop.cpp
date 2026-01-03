@@ -27,7 +27,8 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
+    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
+                   mThreadPool)
     , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
                         mMaterialManager, mSpriteManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)

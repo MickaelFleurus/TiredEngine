@@ -18,6 +18,7 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
 
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();
+    mFontHandler.LoadAllThePolices();
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

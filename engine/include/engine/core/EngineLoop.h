@@ -16,6 +16,7 @@
 #include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/renderer/Window.h"
+#include "engine/thread/Pool.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
@@ -51,6 +52,7 @@ public:
     virtual void GameLoop(float deltaTime) = 0;
 
 protected:
+    Thread::CPool mThreadPool;
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
 

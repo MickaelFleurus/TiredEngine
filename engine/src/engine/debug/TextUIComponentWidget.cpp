@@ -29,7 +29,7 @@ CTextUIComponentWidget::CTextUIComponentWidget(
     Utils::CFileHandler& fileHandler, Font::CFontHandler& fontHandler)
     : mTextComponent(textComponent)
     , mFontHandler(fontHandler)
-    , mAvailableFonts(fileHandler.GetFileNames(kFontExtension))
+    , mAvailableFonts(fileHandler.GetFileNames(kFontExtension, "", false))
     , mCurrentText(textComponent.GetText())
     , mFontSize(mTextComponent.GetFontSize())
     , mFontColor(textComponent.GetColor())

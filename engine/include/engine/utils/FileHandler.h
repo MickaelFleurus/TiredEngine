@@ -35,7 +35,8 @@ public:
     SDL_Surface* LoadTextureFile(const std::string& filePath);
 
     std::vector<std::string>
-    GetFileNames(const char* extension, std::string specificFolder = "") const;
+    GetFileNames(const char* extension, std::string specificFolder = "",
+                 bool includeExtensionInResult = true) const;
 
 private:
     std::string mTempFolder;

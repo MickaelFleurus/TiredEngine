@@ -113,14 +113,18 @@ SDL_Surface* CFileHandler::LoadTextureFile(const std::string& filePath) {
 }
 
 std::vector<std::string>
-CFileHandler::GetFileNames(const char* extension,
-                           std::string specificFolder) const {
+CFileHandler::GetFileNames(const char* extension, std::string specificFolder,
+                           bool includeExtensionInResult) const {
     const std::string fullPath = mAssetFolder + specificFolder;
     std::vector<std::string> files;
     for (auto const& dir_entry :
          std::filesystem::recursive_directory_iterator{fullPath}) {
         if (dir_entry.path().extension() == extension) {
-            files.push_back(dir_entry.path().stem().string());
+            if (includeExtensionInResult) {
+                files.push_back(dir_entry.path().filename().string());
+            } else {
+                files.push_back(dir_entry.path().stem().string());
+            }
         }
     }
     return files;
