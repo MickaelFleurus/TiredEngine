@@ -22,27 +22,19 @@
         },
         {
             "name": "(lldb) Launch (macOS)",
-            "type": "cppdbg",
+            "type": "lldb-dap",
             "request": "launch",
             "program": "${workspaceFolder}/build/BreakoutExclamationMark",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "internalTerminal",
-            "MIMode": "lldb"
         },
         {
             "name": "(lldb) Unit tests (macOS)",
-            "type": "cppdbg",
+            "type": "lldb-dap",
             "request": "launch",
             "program": "${workspaceFolder}/build/engine/tests/angine_tests",
             "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "internalTerminal",
-            "MIMode": "lldb"
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

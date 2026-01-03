@@ -8,6 +8,7 @@
 #include "engine/renderer/TextureManager.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
+#include "engine/utils/ThreadPool.h"
 
 namespace {
 
@@ -107,17 +108,12 @@ void LoadExistingFontData(const std::string& filePath, SFontData& fontData,
     fontData.fontMetrics = JsonToFontMetrics(jsonData);
 }
 
-SFontData CreateFontData(const std::string& fontPath) {
+SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
+                         const std::string& fontPath) {
     SFontData fontData{};
 
-    auto freeType = msdfgen::initializeFreetype();
-    if (!freeType) {
-        LOG_ERROR("Failed to initialize FreeType for font: {}", fontPath);
-        return fontData;
-    }
-    msdfgen::FontHandle* font = msdfgen::loadFont(freeType, fontPath.c_str());
+    msdfgen::FontHandle* font = msdfgen::loadFont(freetype, fontPath.c_str());
     if (!font) {
-        msdfgen::deinitializeFreetype(freeType);
         LOG_ERROR("Failed to load font: {}", fontPath);
         return fontData;
     }
@@ -212,7 +208,6 @@ SFontData CreateFontData(const std::string& fontPath) {
 
     // Cleanup
     msdfgen::destroyFont(font);
-    msdfgen::deinitializeFreetype(freeType);
 
     return fontData;
 }
@@ -222,10 +217,12 @@ SFontData CreateFontData(const std::string& fontPath) {
 namespace Font {
 CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
                            Utils::CFileHandler& fileHandler,
-                           Material::CMaterialManager& materialManager)
+                           Material::CMaterialManager& materialManager,
+                           Utils::CThreadPool& threadPool)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mMaterialManager(materialManager) {
+    , mMaterialManager(materialManager)
+    , mThreadPool(threadPool) {
 }
 
 CFontHandler::~CFontHandler() {
@@ -244,14 +241,7 @@ CPolice& CFontHandler::GetPolice(std::string name) {
     if (mFileHandler.DoesFileExist(glyphTexFilePath, ".png")) {
         LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
     } else {
-        fontData = CreateFontData(std::format(
-            "{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name));
-
-        mFileHandler.SaveTextureFile(glyphTexFilePath, fontData.surface,
-                                     ".png");
-        mFileHandler.SaveJson(
-            glyphTexFilePath,
-            GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
+        LOG_FATAL("Font should be loaded before being used: {}", name);
     }
     if (!fontData.surface) {
         LOG_FATAL(std::format("Failed to load or create font: {}", name));
@@ -268,6 +258,50 @@ CPolice& CFontHandler::GetPolice(std::string name) {
             fontData.fontMetrics.underlineY,
             fontData.fontMetrics.underlineThickness});
     return emplaced_it->second;
+}
+
+void CFontHandler::LoadAllThePolices() {
+    auto freeType = msdfgen::initializeFreetype();
+    if (!freeType) {
+        LOG_ERROR("Failed to initialize FreeType!");
+        return;
+    }
+
+    const auto fontFiles = mFileHandler.GetFileNames(".ttf", "fonts");
+    for (const auto& fontFile : fontFiles) {
+        const auto fontName = fontFile.substr(0, fontFile.find_last_of('.'));
+        mThreadPool.EnqueueJob(
+            [this, fontName, freeType]() { LoadFont(fontName, freeType); });
+    }
+    LOG_INFO("Loading fonts...");
+    mThreadPool.WaitForCompletion();
+    LOG_INFO("All fonts loaded.");
+}
+
+bool CFontHandler::LoadFont(const std::string& name,
+                            msdfgen::FreetypeHandle* freeType) {
+
+    if (!freeType) {
+        freeType = msdfgen::initializeFreetype();
+        if (!freeType) {
+            LOG_ERROR("Failed to initialize FreeType for font: {}", name);
+            return false;
+        }
+    }
+
+    const std::string glyphTexFilePath =
+        std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
+
+    const std::string fontPath =
+        std::format("{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name);
+
+    SFontData fontData = CreateFontData(freeType, fontPath);
+
+    mFileHandler.SaveTextureFile(glyphTexFilePath, fontData.surface, ".png");
+    mFileHandler.SaveJson(glyphTexFilePath, GlyphsToJson(fontData.glyphInfos,
+                                                         fontData.fontMetrics));
+    LOG_INFO("Loaded font: {}", name);
+    return true;
 }
 
 } // namespace Font
