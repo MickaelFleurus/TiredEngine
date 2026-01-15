@@ -1,12 +1,13 @@
 #include "engine/component/MovementComponent.h"
 
+#include <algorithm>
+
+#include <glm/glm.hpp>
+
 #include "engine/component/ComponentManager.h"
 #include "engine/component/SpriteComponent.h"
 #include "engine/core/GameObject.h"
 #include "engine/utils/Math.h"
-
-#include <algorithm>
-#include <glm/glm.hpp>
 
 namespace {
 void UpdatePosition(Core::CGameObject& current,
@@ -29,15 +30,31 @@ CMovementComponent::CMovementComponent(Core::CGameObject& owner,
     , mAcceleration(acceleration) {
 }
 
-const glm::vec3& CMovementComponent::getVelocity() const {
+CMovementComponent::CMovementComponent(Core::CGameObject& owner,
+                                       CComponentManager& componentManager,
+                                       const CMovementComponent& other)
+    : CMovementComponent(owner, componentManager, other.mAcceleration) {
+    *this = other;
+}
+
+CMovementComponent&
+CMovementComponent::operator=(const CMovementComponent& other) {
+    mAcceleration = other.mAcceleration;
+    mVelocity = {};
+    mDirection = other.mDirection;
+    mIsDirty = true;
+    return *this;
+}
+
+const glm::vec3& CMovementComponent::GetVelocity() const {
     return mVelocity;
 }
 
-void CMovementComponent::setDirection(glm::vec3 direction) {
+void CMovementComponent::SetDirection(glm::vec3 direction) {
     mDirection = glm::normalize(direction);
 }
 
-const glm::vec3& CMovementComponent::getDirection() const {
+const glm::vec3& CMovementComponent::GetDirection() const {
     return mDirection;
 }
 
@@ -49,14 +66,14 @@ void CMovementComponent::Update(float deltaTime) {
 
     auto position = mOwner.GetLocalPosition();
     position += mVelocity;
-    applyPosition(position);
+    ApplyPosition(position);
 }
 
-void CMovementComponent::addDirection(glm::vec3 direction) {
-    setDirection(mDirection + direction);
+void CMovementComponent::AddDirection(glm::vec3 direction) {
+    SetDirection(mDirection + direction);
 }
 
-void CMovementComponent::applyPosition(const glm::vec3& position) {
+void CMovementComponent::ApplyPosition(const glm::vec3& position) {
     // mOwner.SetLocalPosition(position);
     UpdatePosition(mOwner, mComponentManager);
 }

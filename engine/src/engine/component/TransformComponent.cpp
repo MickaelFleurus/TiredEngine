@@ -10,6 +10,23 @@ CTransformComponent::CTransformComponent(Core::CGameObject& owner,
     : IComponent(owner, componentManager, Core::EDirtyType::Transform) {
 }
 
+CTransformComponent::CTransformComponent(Core::CGameObject& owner,
+                                         CComponentManager& componentManager,
+                                         const CTransformComponent& other)
+    : CTransformComponent(owner, componentManager) {
+    *this = other;
+}
+
+CTransformComponent&
+CTransformComponent::operator=(const CTransformComponent& other) {
+    mRotation = other.mRotation;
+    mAnchor = other.mAnchor;
+    mPosition = other.mPosition;
+    mScale = other.mScale;
+    SetDirty(true);
+    return *this;
+}
+
 void CTransformComponent::Update(float deltaTime) {
     // Update logic can be implemented here if needed
 }

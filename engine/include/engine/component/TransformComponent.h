@@ -12,6 +12,13 @@ class CTransformComponent : public IComponent {
 public:
     CTransformComponent(Core::CGameObject& owner,
                         CComponentManager& componentManager);
+    CTransformComponent(Core::CGameObject& owner,
+                        CComponentManager& componentManager,
+                        const CTransformComponent& other);
+    CTransformComponent& operator=(const CTransformComponent& other);
+    CTransformComponent(const CTransformComponent& other) = delete;
+    CTransformComponent(const CTransformComponent&& other) = delete;
+    CTransformComponent& operator=(CTransformComponent&& other) = delete;
 
     void Update(float deltaTime) override;
 

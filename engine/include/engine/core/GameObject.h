@@ -1,14 +1,15 @@
 #pragma once
 
-#include "engine/core/DirtyTypeEnum.h"
-#include "engine/core/GameObjectId.h"
-
-#include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+
+#include "engine/core/DirtyTypeEnum.h"
+#include "engine/core/GameObjectId.h"
 
 namespace Component {
 class CComponentManager;
@@ -27,11 +28,14 @@ public:
     void RemoveChild(GameObjectId id);
     void RemoveChildren();
     void DestroySelf();
+    CGameObject* Clone(CGameObject* parent = nullptr) const;
 
     const std::string& GetName() const;
+    void SetName(const std::string& name);
 
     GameObjectId GetId() const;
     void SetParent(CGameObject* parent);
+    CGameObject* GetParent() const;
 
     bool IsVisible() const;
     void SetVisible(bool isVisible);
@@ -42,17 +46,19 @@ public:
     EDirtyType GetDirtyFlags() const;
     void ClearDirtyFlags();
 
+    void ReflectIfVisible();
+
 private:
     CGameObject(const std::string& name,
                 Component::CComponentManager& componentManager,
-                CGameObject* parent = nullptr, GameObjectId id = 0);
+                CGameObject* parent = nullptr);
 
     std::unique_ptr<CGameObject> ExtractChild(CGameObject* child);
 
     CGameObject& AddChild(std::unique_ptr<CGameObject>&& child);
     void RemoveChild(CGameObject* child);
 
-    const std::string mName;
+    std::string mName;
     bool mIsVisible{true};
 
     Component::CComponentManager& mComponentManager;

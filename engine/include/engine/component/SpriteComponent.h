@@ -15,6 +15,14 @@ public:
     explicit CSpriteComponent(Core::CGameObject& owner,
                               CComponentManager& componentManager,
                               Renderer::CSpriteManager& spriteManager);
+    CSpriteComponent(Core::CGameObject& owner,
+                     CComponentManager& componentManager,
+                     const CSpriteComponent& other);
+
+    CSpriteComponent& operator=(const CSpriteComponent& other);
+    CSpriteComponent(const CSpriteComponent& other) = delete;
+    CSpriteComponent(const CSpriteComponent&& other) = delete;
+    CSpriteComponent& operator=(CSpriteComponent&& other) = delete;
     ~CSpriteComponent() override;
     void SetSprite(const std::string& spriteName);
 

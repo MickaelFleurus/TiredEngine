@@ -11,6 +11,21 @@ CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
     , mSpriteManager(spriteManager) {
 }
 
+CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
+                                   CComponentManager& componentManager,
+                                   const CSpriteComponent& other)
+    : CSpriteComponent(owner, componentManager, other.mSpriteManager) {
+    *this = other;
+}
+
+CSpriteComponent& CSpriteComponent::operator=(const CSpriteComponent& other) {
+    if (other.mCurrentSprite.has_value()) {
+        mCurrentSprite = other.mCurrentSprite;
+        AddDirtyFlag(Core::EDirtyType::InstanceProperties);
+    }
+    return *this;
+}
+
 CSpriteComponent::~CSpriteComponent() = default;
 
 void CSpriteComponent::SetSprite(const std::string& spriteName) {

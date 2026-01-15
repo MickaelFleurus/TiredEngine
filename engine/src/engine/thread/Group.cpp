@@ -13,7 +13,7 @@ void CGroup::WaitForCompletion() {
     }
     if (mTaskLeft > 0) {
         std::unique_lock<std::mutex> lock(mMutex);
-        mCondition.wait(lock, [this] -> bool { return mTaskLeft == 0; });
+        mCondition.wait(lock, [this]() { return mTaskLeft == 0; });
     }
 }
 

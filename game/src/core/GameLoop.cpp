@@ -19,6 +19,9 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();
     mFontHandler.LoadAllThePolices();
+    auto filePath = std::format("{}/common/textures/bricks",
+                                system.GetFileHandler().GetAssetsFolder());
+    mSpriteManager.LoadSpriteSheet(filePath);
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

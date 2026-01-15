@@ -14,6 +14,14 @@ class CTextUIComponent : public IComponent {
 public:
     explicit CTextUIComponent(Core::CGameObject& owner,
                               CComponentManager& componentManager);
+    explicit CTextUIComponent(Core::CGameObject& owner,
+                              CComponentManager& componentManager,
+                              const CTextUIComponent& other);
+
+    CTextUIComponent& operator=(const CTextUIComponent& other);
+    CTextUIComponent(const CTextUIComponent& other) = delete;
+    CTextUIComponent(const CTextUIComponent&& other) = delete;
+    CTextUIComponent& operator=(CTextUIComponent&& other) = delete;
     ~CTextUIComponent() override;
 
     void SetText(const std::string& text);

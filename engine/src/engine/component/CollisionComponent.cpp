@@ -11,7 +11,7 @@
 // collisionLogicImpl(const A& a, const B& b, Component::CMovementComponent&
 // aMovementComponent) {
 //     if (Physics::CheckCollision(a, b)) {
-//         const auto velocity = aMovementComponent.getVelocity();
+//         const auto velocity = aMovementComponent.GetVelocity();
 //         std::optional<glm::vec2> impact{std::nullopt};
 //         auto penetrationVector = Physics::GetPenetrationVector(a, b, impact,
 //         velocity); return std::make_tuple(impact, penetrationVector);
@@ -121,9 +121,9 @@
 //     auto [impactOpt, penetrationVector] = *collisionData;
 
 //     if (!penetrationVector.isZero() && !mIsTrigger && !other.mIsTrigger) {
-//         movementComponent.applyPosition(GetSafePosition(
+//         movementComponent.ApplyPosition(GetSafePosition(
 //             mOwner.GetLocalPosition(), penetrationVector,
-//             movementComponent.getDirection()));
+//             movementComponent.GetDirection()));
 //     }
 
 //     Physics::SCollisionInfo collisionInfo{.own = CreateCollisionShape(mOwner,

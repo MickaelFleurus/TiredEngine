@@ -1,7 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
+#include "engine/core/GameObjectId.h"
 #include "engine/debug/IOverlordItem.h"
 
 namespace Scene {
@@ -26,7 +28,9 @@ public:
     const char* GetName() const override;
 
 private:
-    void DrawNodeRecursive(const Core::CGameObject& obj);
+    void DrawNodeRecursive(Core::CGameObject& obj);
+    void DrawContextMenu();
+    std::optional<Core::CGameObject*> mSelectedItem{std::nullopt};
 
     Debug::CEntityWidget& mEntityWidget;
     Scene::ISceneHandler& mSceneHandler;

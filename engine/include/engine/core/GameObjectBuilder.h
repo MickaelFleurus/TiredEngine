@@ -77,7 +77,6 @@ private:
     static std::unique_ptr<CGameObject>
     CreateRoot(Component::CComponentManager& componentManager);
 
-    static GameObjectId mNextId;
     Component::CComponentManager& mComponentManager;
     Font::CFontHandler& mFontHandler;
     CMeshManager& mMeshManager;

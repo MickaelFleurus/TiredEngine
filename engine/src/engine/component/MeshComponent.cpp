@@ -11,6 +11,21 @@ CMeshComponent::CMeshComponent(Core::CGameObject& owner,
     , mMaterialManager(materialManager) {
 }
 
+CMeshComponent::CMeshComponent(Core::CGameObject& owner,
+                               CComponentManager& componentManager,
+                               const CMeshComponent& other)
+    : CMeshComponent(owner, componentManager, other.mMaterialManager) {
+}
+
+CMeshComponent& CMeshComponent::operator=(const CMeshComponent& other) {
+    mTextureIndex = other.mTextureIndex;
+    mColor = other.mColor;
+    mSize = other.mSize;
+    mMesh = other.mMesh;
+    mIsDirty = true;
+    return *this;
+}
+
 CMeshComponent::~CMeshComponent() = default;
 
 void CMeshComponent::SetMesh(Core::CMesh* mesh) {

@@ -23,7 +23,7 @@ void CWorker::Start() {
                 {
                     std::unique_lock<std::mutex> lock(mConditionMutex);
 
-                    mGlobalCondition.wait(lock, [this] -> bool {
+                    mGlobalCondition.wait(lock, [this]() {
                         return !mTasks.empty() || mShouldStop ||
                                mCommunication.HasJobToSteal();
                     });

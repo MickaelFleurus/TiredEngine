@@ -17,6 +17,27 @@ CTextUIComponent::CTextUIComponent(Core::CGameObject& owner,
                  Core::EDirtyType::TextInstanceProperties) {
 }
 
+CTextUIComponent::CTextUIComponent(Core::CGameObject& owner,
+                                   CComponentManager& componentManager,
+                                   const CTextUIComponent& other)
+    : CTextUIComponent(owner, componentManager) {
+    *this = other;
+}
+
+CTextUIComponent& CTextUIComponent::operator=(const CTextUIComponent& other) {
+    SetText(other.mText);
+    SetPolice(other.mPolice);
+    SetFontSize(other.mFontSize);
+    mPolice = other.mPolice;
+    mText = other.mText;
+    mFontSize = other.mFontSize;
+    mColor = other.mColor;
+    mSize = other.mSize;
+    AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
+    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    return *this;
+}
+
 CTextUIComponent::~CTextUIComponent() = default;
 
 void CTextUIComponent::SetText(const std::string& text) {

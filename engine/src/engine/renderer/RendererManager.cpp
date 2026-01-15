@@ -54,10 +54,10 @@ void CRendererManager::FreeSceneData() {
 void CRendererManager::GenerateInstances(
     Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
     Renderer::CRenderables<Renderer::STextRenderable>& textRenderables) {
-    if (!meshRenderables.IsEmpty()) {
+    if (!meshRenderables.IsEmpty() || !mHiddenGameObjects.empty()) {
         mMeshRenderer.UpdateInstances(meshRenderables, mHiddenGameObjects);
     }
-    if (!textRenderables.IsEmpty()) {
+    if (!textRenderables.IsEmpty() || !mHiddenGameObjects.empty()) {
         mTextRenderer.UpdateInstances(textRenderables, mHiddenGameObjects);
     }
 }

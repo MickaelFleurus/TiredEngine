@@ -78,27 +78,17 @@ public:
                                     previousIndexRange.count * mDataSize)};
 
         if (previousIndexRange.first + previousIndexRange.count == 0) {
-            LOG_INFO(
-                "Data range not uploaded yet, reserving a space for it...");
-
             auto reservedRange = Reserve(data.size() * mDataSize);
             if (!reservedRange.has_value()) {
                 LOG_FATAL("Not enough space to reserve data in data buffer!");
                 return false;
             }
 
-            LOG_INFO("Reserved range: offset={}, size={}",
-                     reservedRange->offset, reservedRange->size);
-
             previousIndexRange = Utils::SBufferIndexRange{
                 .first = reservedRange->offset / mDataSize,
                 .count = data.size()};
 
-            LOG_INFO("Converted to index range: first={}, count={}",
-                     previousIndexRange.first, previousIndexRange.count);
         } else if (previousDataRange.size < newDataSize) {
-            LOG_INFO("Data size has changed, resizing and uploading new data "
-                     "on next upload call.");
             auto resizedRange =
                 mMemoryBlocks.TryResize(previousDataRange, newDataSize);
             if (!resizedRange.has_value()) {

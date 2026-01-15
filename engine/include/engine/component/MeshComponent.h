@@ -19,6 +19,13 @@ public:
     explicit CMeshComponent(Core::CGameObject& owner,
                             CComponentManager& componentManager,
                             Material::CMaterialManager& materialManager);
+    CMeshComponent(Core::CGameObject& owner,
+                   CComponentManager& componentManager,
+                   const CMeshComponent& other);
+    CMeshComponent& operator=(const CMeshComponent& other);
+    CMeshComponent(const CMeshComponent& other) = delete;
+    CMeshComponent(const CMeshComponent&& other) = delete;
+    CMeshComponent& operator=(CMeshComponent&& other) = delete;
     ~CMeshComponent() override;
 
     void SetTextureIndex(int index);

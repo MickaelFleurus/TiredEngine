@@ -1,0 +1,33 @@
+name: MainMenu
+description: Main menu
+resources:
+  spritesheets:
+    - "common/textures/bricks"
+  fonts:
+    - id: "title_font"
+      path: "EarlyGameBoy"
+      size: 72
+    - id: "button_font"
+      path: "fonts/aurora-24"
+      size: 36
+
+ui:
+  elements:
+    - id: "title"
+      type: "text"
+      text: "My Game"
+      font: "title_font"
+      position: [640, 100]
+      color: [1.0, 1.0, 1.0, 1.0]
+      anchor: "top_center"
+
+    - id: "play_button"
+      type: "button"
+      text: "Play"
+      font: "button_font"
+      position: [640, 300]
+      size: [200, 60]
+      color: [0.2, 0.5, 1.0, 1.0]
+      hoverColor: [0.3, 0.6, 1.0, 1.0]
+      anchor: "center"
+      action: "start_game"

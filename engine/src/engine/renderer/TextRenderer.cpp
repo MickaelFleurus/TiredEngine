@@ -100,6 +100,7 @@ void CTextRenderer::UpdateInstances(
     const std::vector<Core::GameObjectId>& hidden) {
     std::vector<std::size_t> requireInstanceUpdate;
     std::vector<std::size_t> requireIndirectUpdate;
+    std::vector<std::size_t> toErase;
 
     for (auto& renderable : renderables.GetUpdateRenderables()) {
         auto instanceIndex = GetInstanceIndex(mGameObjectIds, renderable.id);
@@ -116,8 +117,7 @@ void CTextRenderer::UpdateInstances(
         if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, id);
             instanceIndex.has_value()) {
             requireIndirectUpdate.push_back(*instanceIndex);
-            mInstancesData.erase(mInstancesData.begin() + *instanceIndex);
-            mGameObjectIds.erase(mGameObjectIds.begin() + *instanceIndex);
+            toErase.push_back(*instanceIndex);
         }
     }
 
@@ -157,6 +157,15 @@ void CTextRenderer::UpdateInstances(
                                              cmd)) {
             LOG_WARNING("Failed to prepare indirect draw command!");
         }
+    }
+
+    for (auto it = toErase.rbegin(); it != toErase.rend(); ++it) {
+        mInstancesData.erase(mInstancesData.begin() + *it);
+        mGameObjectIds.erase(mGameObjectIds.begin() + *it);
+        mTextInstanceBufferRanges.erase(mTextInstanceBufferRanges.begin() +
+                                        *it);
+        mIndirectDrawBufferRanges.erase(mIndirectDrawBufferRanges.begin() +
+                                        *it);
     }
 }
 

@@ -16,8 +16,21 @@ CInputComponent::CInputComponent(Core::CGameObject& owner,
     , mOnRightPressed(onRightPressed) {
 }
 
-void CInputComponent::Update(float /*deltaTime*/) {
+CInputComponent::CInputComponent(Core::CGameObject& owner,
+                                 CComponentManager& componentManager,
+                                 const CInputComponent& other)
+    : CInputComponent(owner, componentManager, other.mOnFirePressed,
+                      other.mOnLeftPressed, other.mOnRightPressed) {
+}
 
+CInputComponent& CInputComponent::operator=(const CInputComponent& other) {
+    mOnFirePressed = other.mOnFirePressed;
+    mOnLeftPressed = other.mOnLeftPressed;
+    mOnRightPressed = other.mOnRightPressed;
+    return *this;
+}
+
+void CInputComponent::Update(float /*deltaTime*/) {
     auto fireState = mInputWatcher.getButtonState(Input::EButton::Fire);
     if (fireState != Input::EButtonState::None) {
         if (mOnFirePressed) {

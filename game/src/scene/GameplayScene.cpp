@@ -18,7 +18,6 @@ CGameplayScene::CGameplayScene(Component::CComponentManager& componentManager,
 CGameplayScene::~CGameplayScene() = default;
 
 void CGameplayScene::Update(float deltaTime) {
-    // Implementation of Update
 }
 
 CAbstractScene* CGameplayScene::GetNextScene() const {
@@ -33,7 +32,6 @@ void CGameplayScene::Load() {
 }
 
 void CGameplayScene::Unload() {
-    // Implementation of Unload
 }
 
 Core::CGrid& CGameplayScene::CreateGrid(int width, int height) {

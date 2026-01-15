@@ -13,9 +13,6 @@
 #include "engine/font/FontHandler.h"
 
 namespace Core {
-
-GameObjectId CGameObjectBuilder::mNextId = 0;
-
 CGameObjectBuilder::CGameObjectBuilder(
     Component::CComponentManager& componentManager,
     Font::CFontHandler& fontHandler, CMeshManager& meshManager)
@@ -35,7 +32,7 @@ CGameObjectBuilder::CreateBuilder(const std::string& name,
 std::unique_ptr<CGameObject>
 CGameObjectBuilder::CreateRoot(Component::CComponentManager& componentManager) {
     return std::unique_ptr<CGameObject>(
-        new CGameObject("Root", componentManager, nullptr, mNextId++));
+        new CGameObject("Root", componentManager, nullptr));
 }
 
 // CGameObjectBuilder::CBuilder implementation
@@ -48,8 +45,8 @@ CGameObjectBuilder::CBuilder::CBuilder(
     , mFontHandler(fontHandler)
     , mMeshManager(meshFactory)
     , mParent(parent)
-    , mGameObject(std::unique_ptr<CGameObject>(new CGameObject(
-          name, componentManager, &parent, CGameObjectBuilder::mNextId++))) {
+    , mGameObject(std::unique_ptr<CGameObject>(
+          new CGameObject(name, componentManager, &parent))) {
 }
 
 CGameObjectBuilder::CBuilder&
