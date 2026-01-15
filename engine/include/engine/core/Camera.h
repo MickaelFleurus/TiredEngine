@@ -1,23 +1,19 @@
 #pragma once
-#include <glm/mat4x4.hpp>
+#include <optional>
 #include <string>
 
+#include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
+
 namespace Component {
-class CCameraComponent;
-class CComponentManager;
 class CTransformComponent;
-} // namespace Component
+}
 
 namespace Core {
 
-class CGameObjectBuilder;
-class CGameObject;
-
 class CCamera {
 public:
-    CCamera(CGameObject& parent, CGameObjectBuilder& builder,
-            Component::CComponentManager& componentManager,
-            std::string cameraName = "Camera");
+    explicit CCamera(std::string cameraName = "Camera");
 
     const glm::mat4& GetViewMatrix();
     const glm::mat4& GetProjectionMatrix();
@@ -28,15 +24,35 @@ public:
     glm::vec2 WorldToScreen(const glm::vec2& worldPos,
                             const glm::vec2& viewportSize);
 
-protected:
-    virtual void EnsureUpToDate();
+    void
+    SetTransformComponent(Component::CTransformComponent& transformComponent);
 
-    CGameObject& mEntity;
-    Component::CCameraComponent& mCameraComponent;
-    Component::CTransformComponent& mTransformComponent;
+    void SetZoom(float z);
+    float GetZoom() const;
+    void ZoomBy(float factor);
+
+    void SetAspectRatio(float aspect);
+    float GetAspectRatio() const;
+
+    void SetClipPlanes(float n, float f);
+    const glm::vec2& GetClipPlanes() const;
+
+protected:
+    virtual void EnsureUpToDate() = 0;
+
+    std::optional<std::reference_wrapper<Component::CTransformComponent>>
+        mTransformComponent;
+
+    std::string mName;
 
     glm::mat4 mViewMatrix{1.0f};
     glm::mat4 mProjMatrix{1.0f};
     glm::mat4 mViewProjMatrix{1.0f};
+
+    float mZoom{1.0f};
+    float mAspectRatio{16.0f / 9.0f};
+    glm::vec2 mNearFarZ{0.1f, 1000.0f};
+
+    bool mIsDirty{true};
 };
 } // namespace Core

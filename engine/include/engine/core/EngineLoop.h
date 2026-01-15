@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "engine/component/ComponentManager.h"
+#include "engine/core/CameraManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
 #include "engine/core/MeshManager.h"
@@ -55,7 +56,7 @@ protected:
     Thread::CPool mThreadPool;
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
-
+    Core::CCameraManager mCameraManager;
     Vulkan::CDescriptorStorage mDescriptorStorage;
     Renderer::CMemoryAllocator mMemoryAllocator;
     Vulkan::CBufferHandler mBufferHandler;

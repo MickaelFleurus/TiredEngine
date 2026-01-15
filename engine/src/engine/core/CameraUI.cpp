@@ -11,30 +11,38 @@ constexpr const char* kUICameraName = "UI Canvas";
 }
 
 namespace Core {
-CCameraUI::CCameraUI(CGameObject& parent, CGameObjectBuilder& builder,
-                     Component::CComponentManager& componentManager)
-    : CCamera(parent, builder, componentManager, kUICameraName) {
-    mCameraComponent.SetOrthographicSize(1080.0f);
-    mCameraComponent.SetAspectRatio(16.0f / 9.0f);
-    mCameraComponent.SetZoom(1.0f);
-    mCameraComponent.SetClipPlanes(-1.0f, 1.0f);
-    mTransformComponent.SetPosition({0.0f, 0.0f, 0.1f});
+CCameraUI::CCameraUI() : CCamera(kUICameraName) {
+}
+
+void CCameraUI::SetOrthographicSize(float size) {
+    mOrthographicSize = std::min(size, std::numeric_limits<float>::max());
+    mIsDirty = true;
+}
+
+float CCameraUI::GetOrthographicSize() const {
+    return mOrthographicSize;
 }
 
 void CCameraUI::EnsureUpToDate() {
-    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
+
+    if ((mTransformComponent.has_value() &&
+         !mTransformComponent->get().IsDirty() && !mIsDirty) ||
+        !mIsDirty) {
         return;
+    }
 
-    auto position = mTransformComponent.GetPosition();
+    auto position = mTransformComponent.has_value()
+                        ? mTransformComponent->get().GetPosition()
+                        : glm::vec3(0.0f, 0.0f, 0.1f);
 
-    auto& nearFarZ = mCameraComponent.GetClipPlanes();
-    mProjMatrix =
-        glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, nearFarZ.x, nearFarZ.y);
+    mProjMatrix = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, 0.0f, 1.0f);
 
     mViewMatrix = glm::translate(glm::mat4(1.0f), position);
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
-    mCameraComponent.SetDirty(false);
-    mTransformComponent.SetDirty(false);
+    mIsDirty = false;
+    if (mTransformComponent.has_value()) {
+        mTransformComponent->get().SetDirty(false);
+    }
 }
 } // namespace Core

@@ -27,7 +27,7 @@ namespace Debug {
 
 class CTransformComponentWidget;
 class CTextUIComponentWidget;
-class CCameraWidget;
+class CCameraComponentWidget;
 class CMeshComponentWidget;
 
 class CEntityWidget : public IOverlordItem {
@@ -59,7 +59,7 @@ private:
 
     std::unique_ptr<CTransformComponentWidget> mTransformWidget;
     std::unique_ptr<CTextUIComponentWidget> mTextWidget;
-    std::unique_ptr<CCameraWidget> mCameraWidget;
+    std::unique_ptr<CCameraComponentWidget> mCameraWidget;
     std::unique_ptr<CMeshComponentWidget> mMeshWidget;
 
     // UI state for collapsible sections

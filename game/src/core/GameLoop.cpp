@@ -13,8 +13,8 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                    mSpriteManager, mComponentManager, mFontHandler,
                    mMeshManager, system)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
-                   mFontHandler, mBufferHandler, mTextureManager,
-                   mSceneLoader) {
+                   mFontHandler, mBufferHandler, mTextureManager, mSceneLoader,
+                   mCameraManager) {
 
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();

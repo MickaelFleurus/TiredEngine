@@ -195,7 +195,6 @@ const char* CBufferWidget::GetName() const {
 }
 
 void CBufferWidget::Render() {
-    bool isVisible = IsVisible();
     // if (ImGui::Begin("Vulkan Buffers", &isVisible)) {
 
     //     if (ImGui::BeginCombo("Select Buffer",

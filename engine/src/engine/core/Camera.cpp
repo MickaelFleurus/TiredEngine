@@ -1,30 +1,22 @@
 #include "engine/core/Camera.h"
 
-#include "engine/component/CameraComponent.h"
-#include "engine/component/ComponentManager.h"
 #include "engine/component/TransformComponent.h"
-#include "engine/core/GameObjectBuilder.h"
+#include "engine/utils/Logger.h"
 
-namespace {
-Core::CGameObject& BuildEntity(Core::CGameObjectBuilder::CBuilder builder,
-                               Component::CComponentManager& componentManager) {
-    Core::CGameObject& entity = *builder.AddCameraComponent().Build();
-    return entity;
-}
-} // namespace
+namespace {} // namespace
 
 namespace Core {
-CCamera::CCamera(CGameObject& parent, CGameObjectBuilder& builder,
-                 Component::CComponentManager& componentManager,
-                 std::string cameraName)
-    : mEntity(BuildEntity(builder.CreateBuilder(cameraName, parent),
-                          componentManager))
-    , mCameraComponent(
-          *componentManager.GetComponent<Component::CCameraComponent>(
-              mEntity.GetId()))
-    , mTransformComponent(
-          *componentManager.GetComponent<Component::CTransformComponent>(
-              mEntity.GetId())) {
+CCamera::CCamera(std::string cameraName) : mName(std::move(cameraName)) {
+}
+
+void CCamera::SetTransformComponent(
+    Component::CTransformComponent& transformComponent) {
+    if (mTransformComponent.has_value()) {
+        LOG_WARNING("Having two camera is not supported yet. The last "
+                    "registered component will set the transform. This is most "
+                    "likely going to be an issue.");
+    }
+    mTransformComponent = transformComponent;
 }
 
 const glm::mat4& CCamera::GetViewMatrix() {
@@ -40,37 +32,6 @@ const glm::mat4& CCamera::GetProjectionMatrix() {
 const glm::mat4& CCamera::GetViewProjection() {
     EnsureUpToDate();
     return mViewProjMatrix;
-}
-
-void CCamera::EnsureUpToDate() {
-    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
-        return;
-
-    auto position = mTransformComponent.GetPosition();
-    float rotationDeg = mTransformComponent.GetRotation().z;
-
-    float orthoHeight =
-        mCameraComponent.GetOrthographicSize() / mCameraComponent.GetZoom();
-    float orthoWidth = orthoHeight * mCameraComponent.GetAspectRatio();
-
-    // Create projection matrix with world-space bounds
-    float left = -orthoWidth * 0.5f;
-    float right = orthoWidth * 0.5f;
-    float bottom = -orthoHeight * 0.5f;
-    float top = orthoHeight * 0.5f;
-
-    auto& nearFarZ = mCameraComponent.GetClipPlanes();
-    mProjMatrix = glm::ortho(left, right, bottom, top, nearFarZ.x, nearFarZ.y);
-
-    const glm::vec3& shakeOffset = mCameraComponent.GetShakeOffset();
-    glm::mat4 t = glm::translate(glm::mat4(1.0f), -position - shakeOffset);
-    glm::mat4 r = glm::rotate(glm::mat4(1.0f), glm::radians(-rotationDeg),
-                              glm::vec3(0, 0, 1));
-    mViewMatrix = r * t;
-    mViewProjMatrix = mProjMatrix * mViewMatrix;
-
-    mCameraComponent.SetDirty(false);
-    mTransformComponent.SetDirty(false);
 }
 
 glm::vec2 CCamera::ScreenToWorld(const glm::vec2& screenPos,
@@ -95,6 +56,38 @@ glm::vec2 CCamera::WorldToScreen(const glm::vec2& worldPos,
     screen.x = (ndc.x * 0.5f + 0.5f) * viewportSize.x;
     screen.y = (1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y;
     return screen;
+}
+
+void CCamera::SetZoom(float z) {
+    mZoom = std::min(z, std::numeric_limits<float>::max());
+    mIsDirty = true;
+}
+
+float CCamera::GetZoom() const {
+    return mZoom;
+}
+
+void CCamera::ZoomBy(float factor) {
+    SetZoom(mZoom * factor);
+}
+
+void CCamera::SetClipPlanes(float n, float f) {
+    mNearFarZ.x = n;
+    mNearFarZ.y = f;
+    mIsDirty = true;
+}
+
+const glm::vec2& CCamera::GetClipPlanes() const {
+    return mNearFarZ;
+}
+
+void CCamera::SetAspectRatio(float aspect) {
+    mAspectRatio = aspect;
+    mIsDirty = true;
+}
+
+float CCamera::GetAspectRatio() const {
+    return mAspectRatio;
 }
 
 } // namespace Core

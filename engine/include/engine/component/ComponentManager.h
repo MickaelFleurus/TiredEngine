@@ -12,6 +12,7 @@
 
 namespace Core {
 class CGameObject;
+class CCameraManager;
 } // namespace Core
 
 namespace Material {
@@ -31,7 +32,7 @@ namespace Component {
 
 class CSpriteComponent;
 class CInputComponent;
-class CCameraComponent;
+class CCamera3DComponent;
 class CTextUIComponent;
 class CMovementComponent;
 class CMeshComponent;
@@ -42,7 +43,8 @@ public:
     CComponentManager(Font::CFontHandler& fontHandler,
                       Renderer::CTextRenderer& textRenderer,
                       Material::CMaterialManager& materialManager,
-                      Renderer::CSpriteManager& spriteManager);
+                      Renderer::CSpriteManager& spriteManager,
+                      Core::CCameraManager& cameraManager);
 
     template <typename T>
     T* GetComponent(int entityId) {
@@ -63,7 +65,7 @@ public:
     CMovementComponent& AddMovementComponent(Core::CGameObject& owner,
                                              float acceleration);
     CTextUIComponent& AddTextComponent(Core::CGameObject& owner);
-    CCameraComponent& AddCameraComponent(Core::CGameObject& owner);
+    CCamera3DComponent& AddCameraComponent(Core::CGameObject& owner);
     CSpriteComponent& AddSpriteComponent(Core::CGameObject& owner);
     CTransformComponent& AddTransformComponent(Core::CGameObject& owner);
     CMeshComponent& AddMeshComponent(Core::CGameObject& owner);
@@ -123,6 +125,7 @@ private:
     Renderer::CTextRenderer& mTextRenderer;
     Material::CMaterialManager& mMaterialManager;
     Renderer::CSpriteManager& mSpriteManager;
+    Core::CCameraManager& mCameraManager;
     std::vector<ComponentPool> mComponentPools;
 };
 } // namespace Component

@@ -11,8 +11,6 @@ CGameplayScene::CGameplayScene(Component::CComponentManager& componentManager,
                                Core::CMeshManager& meshManager,
                                const System::CSystem& system)
     : CAbstractScene(componentManager, fontHandler, meshManager, system) {
-    mActiveCamera = std::make_unique<Core::CCamera3D>(
-        *mSceneRoot, mGameObjectBuilder, mComponentManager);
 }
 
 CGameplayScene::~CGameplayScene() = default;

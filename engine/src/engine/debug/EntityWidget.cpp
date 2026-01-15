@@ -9,7 +9,7 @@
 #include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
-#include "engine/debug/CameraWidget.h"
+#include "engine/debug/CameraComponentWidget.h"
 #include "engine/debug/MeshComponentWidget.h"
 #include "engine/debug/TextUIComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
@@ -59,10 +59,9 @@ void CEntityWidget::OnItemClicked(Core::CGameObject* obj) {
             *textComponent, mFileHandler, mFontHandler);
     }
     if (auto* cameraComponent =
-            mComponentManager.GetComponent<Component::CCameraComponent>(
+            mComponentManager.GetComponent<Component::CCamera3DComponent>(
                 objId)) {
-        mCameraWidget =
-            std::make_unique<Debug::CCameraWidget>(*cameraComponent);
+        mCameraWidget = std::make_unique<Debug::CCameraComponentWidget>();
     }
     if (auto* meshComponent =
             mComponentManager.GetComponent<Component::CMeshComponent>(objId)) {
@@ -204,7 +203,7 @@ void CEntityWidget::RenderAddComponentSection() {
 }
 
 void CEntityWidget::Render() {
-    bool isVisible = IsVisible() && mObj.has_value();
+    mVisible = mVisible && mObj.has_value();
 
     // Position on right side of screen by default
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -216,9 +215,8 @@ void CEntityWidget::Render() {
     ImVec2 work_size = viewport->WorkSize;
 
     ImVec2 window_pos;
-    window_pos.x =
-        work_pos.x + work_size.x - 450; // 20px padding from right edge
-    window_pos.y = work_pos.y + 50;     // 50px from top
+    window_pos.x = work_pos.x + work_size.x - 450;
+    window_pos.y = work_pos.y + 50;
 
     ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(430, 700), ImGuiCond_FirstUseEver);
@@ -227,13 +225,11 @@ void CEntityWidget::Render() {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
 
-    if (ImGui::Begin("Inspector", &isVisible, ImGuiWindowFlags_NoMove)) {
+    if (ImGui::Begin("Inspector", &mVisible, ImGuiWindowFlags_NoMove)) {
         RenderEntityHeader();
         RenderComponentsSection();
         RenderAddComponentSection();
         RenderAddComponentPopup();
-
-        SetVisible(isVisible);
     }
     ImGui::End();
 
@@ -258,20 +254,6 @@ void CEntityWidget::RenderAddComponentPopup() {
 
         ImGui::EndPopup();
     }
-    // ImGui::OpenPopup("AddComponentPopup");
-    // if (ImGui::BeginPopup("AddComponentPopup")) {
-    //     for (const auto& componentType :
-    //          magic_enum::enum_values<Component::EComponentType>()) {
-    //         const std::string componentName =
-    //             std::string("Add ") +
-    //             std::string(magic_enum::enum_name(componentType).data());
-    //         if (ImGui::MenuItem(componentName.c_str())) {
-    //             mComponentManager.AddComponent(componentType, **mObj);
-    //             OnItemClicked(*mObj);
-    //         }
-    //     }
-    //     ImGui::EndPopup();
-    // }
 }
 
 const char* CEntityWidget::GetName() const {

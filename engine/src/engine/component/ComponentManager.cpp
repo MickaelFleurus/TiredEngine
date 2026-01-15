@@ -17,11 +17,13 @@ namespace Component {
 CComponentManager::CComponentManager(
     Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
     Material::CMaterialManager& materialManager,
-    Renderer::CSpriteManager& spriteManager)
+    Renderer::CSpriteManager& spriteManager,
+    Core::CCameraManager& cameraManager)
     : mFontHandler(fontHandler)
     , mTextRenderer(textRenderer)
     , mMaterialManager(materialManager)
     , mSpriteManager(spriteManager)
+    , mCameraManager(cameraManager)
     , mComponentPools(magic_enum::enum_count<Component::EComponentType>()) {
 }
 
@@ -56,9 +58,10 @@ CComponentManager::AddTransformComponent(Core::CGameObject& owner) {
     return CreateComponent<CTransformComponent>(owner, owner.GetId());
 }
 
-CCameraComponent&
+CCamera3DComponent&
 CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
-    return CreateComponent<CCameraComponent>(owner, owner.GetId());
+    return CreateComponent<CCamera3DComponent>(owner, owner.GetId(),
+                                               mCameraManager);
 }
 
 CMeshComponent& CComponentManager::AddMeshComponent(Core::CGameObject& owner) {
@@ -205,7 +208,7 @@ EComponentType CComponentManager::GetComponentType(std::type_index type) const {
         return EComponentType::Sprite;
     } else if (type == typeid(CTextUIComponent)) {
         return EComponentType::TextUI;
-    } else if (type == typeid(CCameraComponent)) {
+    } else if (type == typeid(CCamera3DComponent)) {
         return EComponentType::Camera;
     } else if (type == typeid(CMeshComponent)) {
         return EComponentType::Mesh;

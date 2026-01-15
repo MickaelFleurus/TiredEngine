@@ -15,6 +15,7 @@
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextUIComponent.h"
 #include "engine/component/TransformComponent.h"
+#include "engine/core/CameraManager.h"
 #include "engine/core/DataTypes.h"
 #include "engine/core/GameObject.h"
 #include "engine/core/Mesh.h"
@@ -133,7 +134,8 @@ CWindow::CWindow(System::CSystem& system, SDL_Window* window,
                  Vulkan::CBufferHandler& bufferHandler,
                  Material::CMaterialManager& materialManager,
                  Vulkan::CDescriptorStorage& descriptorStorage,
-                 CRendererManager& rendererManager)
+                 CRendererManager& rendererManager,
+                 Core::CCameraManager& cameraManager)
     : mSystem(system)
     , mVulkanContext(vulkanContext)
     , mRenderer(renderer)
@@ -141,6 +143,7 @@ CWindow::CWindow(System::CSystem& system, SDL_Window* window,
     , mMaterialManager(materialManager)
     , mDescriptorStorage(descriptorStorage)
     , mRendererManager(rendererManager)
+    , mCameraManager(cameraManager)
     , mSDLWindow(window)
     , mViewport(GetViewport(window, mSystem.GetDisplayParameters()))
     , mScissor(GetScissor(mViewport))
@@ -166,9 +169,9 @@ void CWindow::Render(Scene::CAbstractScene& scene,
     mRendererManager.GenerateInstances(meshRenderables, textRenderables);
     VkCommandBuffer commandBuffer =
         mVulkanContext.GetCommandBuffer(mImageIndex.value());
-    mRendererManager.Render(commandBuffer,
-                            mDescriptorStorage.GetDescriptorSet(),
-                            scene.GetActiveCamera(), scene.GetUICamera());
+    mRendererManager.Render(
+        commandBuffer, mDescriptorStorage.GetDescriptorSet(),
+        mCameraManager.GetDefaultCamera3D(), mCameraManager.GetCameraUI());
 }
 
 bool CWindow::BeginRender() {

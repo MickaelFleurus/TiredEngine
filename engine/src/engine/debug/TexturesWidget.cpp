@@ -21,8 +21,7 @@ const char* CTexturesWidget::GetName() const {
 }
 
 void CTexturesWidget::Render() {
-    bool isVisible = IsVisible();
-    if (ImGui::Begin("Textures", &isVisible)) {
+    if (ImGui::Begin("Textures", &mVisible)) {
         for (const auto& [name, index] :
              mTextureManager.GetAllTextureIndices()) {
             ImGui::Text("Name: %s", name.c_str());

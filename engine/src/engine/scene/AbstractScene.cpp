@@ -15,9 +15,6 @@ CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
     , mGameObjectBuilder(componentManager, fontHandler, meshManager) {
     const auto& windowData = mSystem.GetDisplayParameters();
     mSceneRoot = Core::CGameObjectBuilder::CreateRoot(componentManager);
-
-    mUICamera = std::make_unique<Core::CCameraUI>(
-        *mSceneRoot, mGameObjectBuilder, mComponentManager);
 }
 
 CAbstractScene::~CAbstractScene() = default;
@@ -35,11 +32,4 @@ Core::CGameObject& CAbstractScene::GetRoot() {
     return *mSceneRoot;
 }
 
-Core::CCamera& CAbstractScene::GetActiveCamera() {
-    return *mActiveCamera;
-}
-
-Core::CCamera& CAbstractScene::GetUICamera() {
-    return *mUICamera;
-}
 } // namespace Scene

@@ -9,7 +9,8 @@ COverlordToolHandler::COverlordToolHandler(
     Utils::CFileHandler& fileHandler, Scene::ISceneHandler& sceneHandler,
     Font::CFontHandler& fontHandler, Vulkan::CBufferHandler& bufferHandler,
     Renderer::CTextureManager& textureManager,
-    Scene::CSceneLoader& sceneLoaderOverlord)
+    Scene::CSceneLoader& sceneLoaderOverlord,
+    Core::CCameraManager& cameraManager)
     : mSettings(fileHandler, sceneHandler)
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
@@ -17,7 +18,9 @@ COverlordToolHandler::COverlordToolHandler(
     , mSceneHierarchy(mEntityWidget, sceneHandler)
     , mBufferWidget(bufferHandler)
     , mTexturesWidget(textureManager)
-    , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord) {
+    , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord)
+    , mCamera3DWidget(cameraManager)
+    , mCameraUIWidget(cameraManager) {
 }
 
 void COverlordToolHandler::Initialize() {
@@ -35,6 +38,8 @@ void COverlordToolHandler::RegisterTools() {
     COverlord::AddWidget(mLevelSceneLoaderWidget, mToken);
 
     COverlord::AddMenu(mOverlordSettings, mToken);
+    COverlord::AddWidget(mCamera3DWidget, mToken);
+    COverlord::AddWidget(mCameraUIWidget, mToken);
 }
 
 } // namespace Debug

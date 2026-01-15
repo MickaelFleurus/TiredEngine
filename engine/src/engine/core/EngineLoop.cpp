@@ -14,6 +14,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                          Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext)
     , mVulkanRendering(vulkanContext)
+    , mCameraManager(system.GetFileHandler())
     , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
@@ -23,14 +24,15 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mSpriteManager(system.GetFileHandler(), mTextureManager)
     , mMeshManager(mRendererManager.GetMeshRenderer())
     , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mMaterialManager, mDescriptorStorage, mRendererManager)
+              mMaterialManager, mDescriptorStorage, mRendererManager,
+              mCameraManager)
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
                    mThreadPool)
     , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
-                        mMaterialManager, mSpriteManager)
+                        mMaterialManager, mSpriteManager, mCameraManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {

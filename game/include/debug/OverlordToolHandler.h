@@ -1,6 +1,8 @@
 #pragma once
 
 #include <engine/debug/BufferWidget.h>
+#include <engine/debug/Camera3DWidget.h>
+#include <engine/debug/CameraUIWidget.h>
 #include <engine/debug/EntityWidget.h>
 #include <engine/debug/LevelSceneLoaderWidget.h>
 #include <engine/debug/OverlordSettingsWidget.h>
@@ -9,6 +11,10 @@
 #include <engine/debug/TexturesWidget.h>
 #include <engine/utils/OverlordSettings.h>
 #include <engine/utils/Token.h>
+
+namespace Core {
+class CCameraManager;
+} // namespace Core
 
 namespace Utils {
 class CFileHandler;
@@ -44,7 +50,8 @@ public:
                          Font::CFontHandler& fontHandler,
                          Vulkan::CBufferHandler& bufferHandler,
                          Renderer::CTextureManager& textureManager,
-                         Scene::CSceneLoader& sceneLoaderOverlord);
+                         Scene::CSceneLoader& sceneLoaderOverlord,
+                         Core::CCameraManager& cameraManager);
 
     void Initialize();
 
@@ -60,6 +67,8 @@ private:
     CBufferWidget mBufferWidget;
     CTexturesWidget mTexturesWidget;
     CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
+    CCamera3DWidget mCamera3DWidget;
+    CCameraUIWidget mCameraUIWidget;
 
     CToken mToken;
 };

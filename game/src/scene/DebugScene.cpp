@@ -8,9 +8,11 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
                          Core::CMeshManager& meshManager,
                          const System::CSystem& system)
     : CAbstractScene(componentManager, fontHandler, meshManager, system) {
-    mActiveCamera = std::make_unique<Core::CCamera3D>(
-        *mSceneRoot, mGameObjectBuilder, mComponentManager);
     mLoadCallback = [this](CAbstractScene& scene) {
+        scene.CreateGameObjectBuilder("Camera")
+            .SetLocalPosition({0.0f, 0.0f, -15.0f})
+            .AddCameraComponent()
+            .Build();
         scene.CreateGameObjectBuilder("Cube!")
             .Add3DCube(1.0f)
             .SetLocalPosition({0.0f, 0.0f, -5.0f})
@@ -18,7 +20,7 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
             .Build();
         scene.CreateGameObjectBuilder("Cube2!")
             .Add3DCube(3.0f)
-            .SetLocalPosition({050.0f, 0.0f, -5.0f})
+            .SetLocalPosition({50.0f, 0.0f, -5.0f})
             .SetMaterialType(Material::EMaterialType::Normal)
             .Build();
         scene.CreateGameObjectBuilder("Cube3!")

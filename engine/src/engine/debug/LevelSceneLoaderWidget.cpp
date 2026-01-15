@@ -18,8 +18,7 @@ void CLevelSceneLoaderWidget::Render() {
         mSelectedSceneIndex = -1;
         mNeedsRefresh = false;
     }
-    bool isVisible = IsVisible();
-    if (!ImGui::Begin("Level Scene Loader", &isVisible)) {
+    if (!ImGui::Begin("Level Scene Loader", &mVisible)) {
         return;
     }
 

@@ -45,13 +45,8 @@ public:
     CreateGameObjectBuilder(const std::string& name,
                             Core::CGameObject* parent = nullptr);
 
-    Core::CCamera& GetActiveCamera();
-    Core::CCamera& GetUICamera();
-
 protected:
     std::unique_ptr<Core::CGameObject> mSceneRoot;
-    std::unique_ptr<Core::CCamera> mActiveCamera;
-    std::unique_ptr<Core::CCameraUI> mUICamera;
     Component::CComponentManager& mComponentManager;
     const System::CSystem& mSystem;
     const Input::CInputWatcher mInputWatcher;

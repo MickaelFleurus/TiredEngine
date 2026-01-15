@@ -32,6 +32,10 @@ namespace Material {
 class CMaterialManager;
 } // namespace Material
 
+namespace Core {
+class CCameraManager;
+} // namespace Core
+
 namespace Renderer {
 
 class CRendererManager;
@@ -44,7 +48,8 @@ public:
             Vulkan::CBufferHandler& bufferHandler,
             Material::CMaterialManager& materialManager,
             Vulkan::CDescriptorStorage& descriptorStorage,
-            CRendererManager& rendererManager);
+            CRendererManager& rendererManager,
+            Core::CCameraManager& cameraManager);
     ~CWindow();
 
     bool BeginRender();
@@ -64,6 +69,7 @@ private:
     Vulkan::CDescriptorStorage& mDescriptorStorage;
     Material::CMaterialManager& mMaterialManager;
     CRendererManager& mRendererManager;
+    Core::CCameraManager& mCameraManager;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;
 
