@@ -15,7 +15,7 @@ COverlordToolHandler::COverlordToolHandler(
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
     , mEntityWidget(componentManager, fileHandler, fontHandler)
-    , mSceneHierarchy(mEntityWidget, sceneHandler)
+    , mSceneHierarchy(componentManager, mEntityWidget, sceneHandler)
     , mBufferWidget(bufferHandler)
     , mTexturesWidget(textureManager)
     , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord)

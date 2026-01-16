@@ -10,7 +10,8 @@ CCamera::CCamera(std::string cameraName) : mName(std::move(cameraName)) {
 }
 
 void CCamera::SetTransformComponent(
-    Component::CTransformComponent& transformComponent) {
+    std::optional<std::reference_wrapper<Component::CTransformComponent>>
+        transformComponent) {
     if (mTransformComponent.has_value()) {
         LOG_WARNING("Having two camera is not supported yet. The last "
                     "registered component will set the transform. This is most "

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 
 #include "engine/core/GameObjectId.h"
 #include "engine/debug/IOverlordItem.h"
@@ -14,13 +15,18 @@ namespace Core {
 class CGameObject;
 }
 
+namespace Component {
+class CComponentManager;
+}
+
 namespace Debug {
 
 class CEntityWidget;
 
 class CSceneHierarchy : public IOverlordItem {
 public:
-    CSceneHierarchy(Debug::CEntityWidget& entityWidget,
+    CSceneHierarchy(Component::CComponentManager& componentManager,
+                    Debug::CEntityWidget& entityWidget,
                     Scene::ISceneHandler& sceneHandler);
     ~CSceneHierarchy() override;
 
@@ -30,9 +36,14 @@ public:
 private:
     void DrawNodeRecursive(Core::CGameObject& obj);
     void DrawContextMenu();
-    std::optional<Core::CGameObject*> mSelectedItem{std::nullopt};
+    void DrawNameModal();
 
+    Core::CGameObject* mSelectedItem{nullptr};
+
+    Component::CComponentManager& mComponentManager;
     Debug::CEntityWidget& mEntityWidget;
     Scene::ISceneHandler& mSceneHandler;
+
+    std::optional<std::string> mModalName{std::nullopt};
 };
 } // namespace Debug

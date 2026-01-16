@@ -1,20 +1,35 @@
 #include "engine/debug/SceneHierarchy.h"
 
 #include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
 
+#include "engine/component/ComponentManager.h"
 #include "engine/core/EngineLoop.h"
 #include "engine/core/GameObject.h"
 #include "engine/debug/EntityWidget.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/scene/ISceneHandler.h"
 
-namespace {} // namespace
+namespace {
+
+constexpr int kBufferSize = 256;
+static char kDefaultNameBuffer[kBufferSize]{};
+static bool isOpen{false};
+void FillDefaultNameBuffer(const std::string& name) {
+    std::copy(name.begin(), name.end(), kDefaultNameBuffer);
+    kDefaultNameBuffer[name.size()] = '\0';
+}
+
+} // namespace
 
 namespace Debug {
 
-CSceneHierarchy::CSceneHierarchy(Debug::CEntityWidget& entityWidget,
+CSceneHierarchy::CSceneHierarchy(Component::CComponentManager& componentManager,
+                                 Debug::CEntityWidget& entityWidget,
                                  Scene::ISceneHandler& sceneHandler)
-    : mEntityWidget(entityWidget), mSceneHandler(sceneHandler) {
+    : mComponentManager(componentManager)
+    , mEntityWidget(entityWidget)
+    , mSceneHandler(sceneHandler) {
     SetVisible(mSceneHandler.GetCurrentScene());
 }
 
@@ -22,11 +37,26 @@ CSceneHierarchy::~CSceneHierarchy() = default;
 
 void CSceneHierarchy::Render() {
     Scene::CAbstractScene* currentScene = mSceneHandler.GetCurrentScene();
-    if (currentScene) {
+    if (currentScene && ImGui::Begin("Scene Hierarchy", &mVisible)) {
         ImGui::Text("Current Scene: %s", currentScene->GetName());
-        DrawNodeRecursive(currentScene->GetRoot());
+        ImGui::Separator();
+
+        if (ImGui::IsWindowHovered() &&
+            ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            mSelectedItem = nullptr;
+            ImGui::OpenPopup("ItemContext", ImGuiPopupFlags_MouseButtonRight);
+        }
+        for (const auto& child : currentScene->GetRoot().GetChildren()) {
+            DrawNodeRecursive(*child);
+        }
         DrawContextMenu();
+        if (!isOpen && mModalName) {
+            ImGui::OpenPopup(mModalName->c_str());
+        }
+        DrawNameModal();
         mEntityWidget.Render();
+
+        ImGui::End();
     }
 }
 
@@ -51,6 +81,14 @@ void CSceneHierarchy::DrawNodeRecursive(Core::CGameObject& obj) {
         mEntityWidget.OnItemClicked(&obj);
     }
 
+    if (ImGui::IsItemHovered() &&
+        ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        mSelectedItem = &obj;
+        FillDefaultNameBuffer(mSelectedItem->GetName());
+        mModalName = "Rename Entity";
+        ImGui::OpenPopup(mModalName->c_str());
+    }
+
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         mSelectedItem = &obj;
         ImGui::OpenPopup("ItemContext", ImGuiPopupFlags_MouseButtonRight);
@@ -66,42 +104,85 @@ void CSceneHierarchy::DrawNodeRecursive(Core::CGameObject& obj) {
 }
 
 void CSceneHierarchy::DrawContextMenu() {
+
     if (ImGui::BeginPopupContextWindow("ItemContext",
                                        ImGuiPopupFlags_MouseButtonRight)) {
-        if (ImGui::MenuItem("Delete")) {
-            if (mSelectedItem.has_value()) {
-                mSelectedItem.value()->DestroySelf();
-                mSelectedItem = std::nullopt;
+        if (mSelectedItem) {
+            if (ImGui::MenuItem("Rename")) {
+                FillDefaultNameBuffer(mSelectedItem->GetName());
+                mModalName = "Rename Entity";
+                ImGui::CloseCurrentPopup();
+                ImGui::OpenPopup(mModalName->c_str());
+            }
+            if (ImGui::MenuItem("Delete")) {
+                mSelectedItem->DestroySelf();
+                mSelectedItem = nullptr;
+                mEntityWidget.OnItemClicked(nullptr);
+            }
+            if (ImGui::MenuItem("Duplicate")) {
+                mSelectedItem->Clone(mSelectedItem->GetParent());
+            }
+            if (ImGui::BeginMenu("Add Component##submenu")) {
+                for (auto type :
+                     magic_enum::enum_values<Component::EComponentType>()) {
+                    bool hasComponent = mComponentManager.HasComponent(
+                        mSelectedItem->GetId(), type);
+                    if (!hasComponent) {
+                        if (ImGui::MenuItem(
+                                magic_enum::enum_name(type).data())) {
+                            mComponentManager.AddComponent(type,
+                                                           *mSelectedItem);
+                            mEntityWidget.OnItemClicked(mSelectedItem);
+                        }
+                    }
+                }
+                ImGui::EndMenu();
             }
         }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Remove this entity from the scene");
+        if (ImGui::MenuItem("Add Entity")) {
+            if (mSelectedItem) {
+            }
         }
 
-        if (ImGui::MenuItem("Duplicate")) {
-            if (mSelectedItem.has_value()) {
-                mSelectedItem.value()->Clone(
-                    mSelectedItem.value()->GetParent());
-            }
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Create a copy of this entity");
-        }
-        if (ImGui::BeginMenu("Add Component##submenu")) {
+        ImGui::EndPopup();
+    }
+}
 
-            if (ImGui::MenuItem("Sprite")) {
-                // Add sprite component
-            }
-            if (ImGui::MenuItem("Text")) {
-                // Add text component
-            }
-            if (ImGui::MenuItem("Text UI")) {
-                // Add sprite component
-            }
-            if (ImGui::MenuItem("Mesh")) {
-                // Add sprite component
-            }
-            ImGui::EndMenu();
+void CSceneHierarchy::DrawNameModal() {
+    if (!mModalName) {
+        return;
+    }
+    if (ImGui::BeginPopupModal(mModalName->c_str(), nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Enter new name:");
+
+        // Initialize buffer only once when dialog opens
+        if (!isOpen) {
+            isOpen = true;
+            ImGui::SetKeyboardFocusHere(0);
+        }
+
+        bool renamed = false;
+        if (ImGui::InputText("##name_input", kDefaultNameBuffer, kBufferSize,
+                             ImGuiInputTextFlags_EnterReturnsTrue)) {
+            renamed = true;
+        }
+
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            renamed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            isOpen = false;
+            mModalName = std::nullopt;
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (renamed && mSelectedItem) {
+            mSelectedItem->SetName(kDefaultNameBuffer);
+            isOpen = false;
+            mModalName = std::nullopt;
+            ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();

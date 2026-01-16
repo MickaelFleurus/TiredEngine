@@ -15,6 +15,7 @@ public:
     explicit CCamera3DComponent(Core::CGameObject& owner,
                                 CComponentManager& componentManager,
                                 Core::CCameraManager& cameraManager);
+    ~CCamera3DComponent() override;
 
     void Update(float dt) override;
 

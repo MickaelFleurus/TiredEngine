@@ -17,6 +17,9 @@ CCamera3DComponent::CCamera3DComponent(Core::CGameObject& owner,
     mCameraManager.GetDefaultCamera3D().SetTransformComponent(
         *componentManager.GetComponent<CTransformComponent>(owner.GetId()));
 }
+CCamera3DComponent::~CCamera3DComponent() {
+    mCameraManager.GetDefaultCamera3D().SetTransformComponent(std::nullopt);
+}
 
 void CCamera3DComponent::Update(float dt) {
 }

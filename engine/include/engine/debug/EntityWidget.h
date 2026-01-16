@@ -55,7 +55,7 @@ private:
     Utils::CFileHandler& mFileHandler;
     Font::CFontHandler& mFontHandler;
 
-    std::optional<Core::CGameObject*> mObj;
+    Core::CGameObject* mObj{nullptr};
 
     std::unique_ptr<CTransformComponentWidget> mTransformWidget;
     std::unique_ptr<CTextUIComponentWidget> mTextWidget;

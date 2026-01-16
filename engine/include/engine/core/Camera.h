@@ -24,8 +24,9 @@ public:
     glm::vec2 WorldToScreen(const glm::vec2& worldPos,
                             const glm::vec2& viewportSize);
 
-    void
-    SetTransformComponent(Component::CTransformComponent& transformComponent);
+    void SetTransformComponent(
+        std::optional<std::reference_wrapper<Component::CTransformComponent>>
+            transformComponent);
 
     void SetZoom(float z);
     float GetZoom() const;

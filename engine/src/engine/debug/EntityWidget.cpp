@@ -43,7 +43,7 @@ void CEntityWidget::OnItemClicked(Core::CGameObject* obj) {
         SetVisible(false);
         return;
     }
-    const auto objId = (*mObj)->GetId();
+    const auto objId = mObj->GetId();
 
     SetVisible(true);
     if (auto* transformComponent =
@@ -79,8 +79,7 @@ void CEntityWidget::RenderEntityHeader() {
                       ImGuiWindowFlags_NoMove);
     ImGui::TextUnformatted("Entity Properties");
     ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-    ImGui::TextWrapped("Name: %s",
-                       mObj ? (*mObj)->GetName().c_str() : "Unknown");
+    ImGui::TextWrapped("Name: %s", mObj ? mObj->GetName().c_str() : "Unknown");
     ImGui::EndChild();
 
     ImGui::PopStyleVar();
@@ -135,9 +134,9 @@ void CEntityWidget::RenderComponentWithHeader(
             ImGui::PopStyleColor(2);
             ImGui::PopID();
             ImGui::PopStyleColor(2);
-            mComponentManager.RemoveComponent((*mObj)->GetId(), componentType);
-            mObj.value()->ReflectIfVisible();
-            OnItemClicked(*mObj);
+            mComponentManager.RemoveComponent(mObj->GetId(), componentType);
+            mObj->ReflectIfVisible();
+            OnItemClicked(mObj);
             ImGui::Spacing();
             ImGui::TreePop();
             return;
@@ -185,10 +184,7 @@ void CEntityWidget::RenderComponentsSection() {
 }
 
 void CEntityWidget::RenderAddComponentSection() {
-    if (!mObj) {
-        return;
-    }
-    auto& obj = *mObj.value();
+
     const float buttonWidth = (ImGui::GetContentRegionAvail().x - 8) * 0.5f;
     ImGui::Spacing();
     ImGui::Separator();
@@ -203,7 +199,7 @@ void CEntityWidget::RenderAddComponentSection() {
 }
 
 void CEntityWidget::Render() {
-    mVisible = mVisible && mObj.has_value();
+    mVisible = mVisible && mObj != nullptr;
 
     // Position on right side of screen by default
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -226,28 +222,28 @@ void CEntityWidget::Render() {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
 
     if (ImGui::Begin("Inspector", &mVisible, ImGuiWindowFlags_NoMove)) {
-        RenderEntityHeader();
-        RenderComponentsSection();
-        RenderAddComponentSection();
-        RenderAddComponentPopup();
+        if (mObj) {
+            RenderEntityHeader();
+            RenderComponentsSection();
+            RenderAddComponentSection();
+            RenderAddComponentPopup();
+        }
+        ImGui::End();
     }
-    ImGui::End();
 
     ImGui::PopStyleColor(2);
 }
 
 void CEntityWidget::RenderAddComponentPopup() {
-    if (!mObj) {
-        return;
-    }
+
     if (ImGui::BeginPopupContextWindow("AddComponentPopup")) {
         for (auto type : magic_enum::enum_values<Component::EComponentType>()) {
             bool hasComponent =
-                mComponentManager.HasComponent((*mObj)->GetId(), type);
+                mComponentManager.HasComponent(mObj->GetId(), type);
             if (!hasComponent) {
                 if (ImGui::MenuItem(magic_enum::enum_name(type).data())) {
-                    mComponentManager.AddComponent(type, **mObj);
-                    OnItemClicked(*mObj);
+                    mComponentManager.AddComponent(type, *mObj);
+                    OnItemClicked(mObj);
                 }
             }
         }
@@ -261,6 +257,6 @@ const char* CEntityWidget::GetName() const {
 }
 
 bool CEntityWidget::IsSelected(Core::GameObjectId id) const {
-    return mObj && (*mObj)->GetId() == id;
+    return mObj && mObj->GetId() == id;
 }
 } // namespace Debug
