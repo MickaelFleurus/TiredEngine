@@ -1,6 +1,4 @@
 #pragma once
-#include <glm/mat4x4.hpp>
-#include <glm/vec2.hpp>
 
 #include "engine/component/IComponent.h"
 
@@ -9,10 +7,9 @@ class CCameraManager;
 }
 
 namespace Component {
-class CTransformComponent;
 class CCamera3DComponent : public IComponent {
 public:
-    explicit CCamera3DComponent(Core::CGameObject& owner,
+    explicit CCamera3DComponent(Core::GameObjectId& owner,
                                 CComponentManager& componentManager,
                                 Core::CCameraManager& cameraManager);
     ~CCamera3DComponent() override;

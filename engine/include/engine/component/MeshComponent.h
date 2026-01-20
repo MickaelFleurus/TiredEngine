@@ -1,4 +1,5 @@
 #pragma once
+#include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
 #include "engine/component/IComponent.h"
@@ -16,10 +17,10 @@ class CMesh;
 namespace Component {
 class CMeshComponent : public IComponent {
 public:
-    explicit CMeshComponent(Core::CGameObject& owner,
+    explicit CMeshComponent(Core::GameObjectId& owner,
                             CComponentManager& componentManager,
                             Material::CMaterialManager& materialManager);
-    CMeshComponent(Core::CGameObject& owner,
+    CMeshComponent(Core::GameObjectId& owner,
                    CComponentManager& componentManager,
                    const CMeshComponent& other);
     CMeshComponent& operator=(const CMeshComponent& other);

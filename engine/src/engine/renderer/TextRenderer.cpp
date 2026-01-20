@@ -109,7 +109,7 @@ void CTextRenderer::UpdateInstances(
             mInstancesData[*instanceIndex].swap(renderable.instancesData);
         } else {
             LOG_WARNING("Renderable with id {} not found in instance cache.",
-                        renderable.id);
+                        renderable.id.index);
         }
     }
 

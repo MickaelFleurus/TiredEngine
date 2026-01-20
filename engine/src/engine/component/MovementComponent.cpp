@@ -12,25 +12,24 @@
 namespace {
 void UpdatePosition(Core::CGameObject& current,
                     Component::CComponentManager& componentManager) {
-    auto spriteComponent =
-        componentManager.GetComponent<Component::CSpriteComponent>(
-            current.GetId());
+    // auto spriteComponent =
+    //     componentManager.GetComponent<Component::CSpriteComponent>(
+    //         current.GetId());
 
-    for (const auto& child : current.GetChildren()) {
-        UpdatePosition(*child, componentManager);
-    }
+    // for (const auto& child : current.GetChildren()) {
+    //     UpdatePosition(*child, componentManager);
+    // }
 }
 } // namespace
 
 namespace Component {
-CMovementComponent::CMovementComponent(Core::CGameObject& owner,
+CMovementComponent::CMovementComponent(Core::GameObjectId& owner,
                                        CComponentManager& componentManager,
                                        float acceleration)
-    : IComponent(owner, componentManager, Core::EDirtyType::None)
-    , mAcceleration(acceleration) {
+    : IComponent(owner, componentManager), mAcceleration(acceleration) {
 }
 
-CMovementComponent::CMovementComponent(Core::CGameObject& owner,
+CMovementComponent::CMovementComponent(Core::GameObjectId& owner,
                                        CComponentManager& componentManager,
                                        const CMovementComponent& other)
     : CMovementComponent(owner, componentManager, other.mAcceleration) {
@@ -64,9 +63,9 @@ void CMovementComponent::Update(float deltaTime) {
     }
     mVelocity = mDirection * mAcceleration * deltaTime;
 
-    auto position = mOwner.GetLocalPosition();
-    position += mVelocity;
-    ApplyPosition(position);
+    // auto position = mOwner.GetLocalPosition();
+    // position += mVelocity;
+    // ApplyPosition(position);
 }
 
 void CMovementComponent::AddDirection(glm::vec3 direction) {
@@ -75,7 +74,7 @@ void CMovementComponent::AddDirection(glm::vec3 direction) {
 
 void CMovementComponent::ApplyPosition(const glm::vec3& position) {
     // mOwner.SetLocalPosition(position);
-    UpdatePosition(mOwner, mComponentManager);
+    // UpdatePosition(mOwner, mComponentManager);
 }
 
 } // namespace Component

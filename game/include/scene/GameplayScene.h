@@ -12,7 +12,8 @@ public:
     explicit CGameplayScene(Component::CComponentManager& componentManager,
                             Font::CFontHandler& fontHandler,
                             Core::CMeshManager& meshManager,
-                            const System::CSystem& system);
+                            const System::CSystem& system,
+                            Core::CGameObjectManager& gameObjectManager);
     ~CGameplayScene() override;
 
     void Update(float deltaTime) override;
@@ -22,9 +23,9 @@ public:
     void Load() override;
     void Unload() override;
 
-    Core::CGrid& CreateGrid(int width, int height);
+    // Core::CGrid& CreateGrid(int width, int height);
 
 private:
-    std::unique_ptr<Core::CGrid> mGrid;
+    // std::unique_ptr<Core::CGrid> mGrid;
 };
 } // namespace Scene

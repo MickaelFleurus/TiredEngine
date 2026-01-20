@@ -11,12 +11,16 @@ namespace Scene {
 class ISceneHandler;
 }
 
-namespace Core {
-class CGameObject;
-}
-
 namespace Component {
 class CComponentManager;
+}
+
+namespace Core {
+class CGameObjectManager;
+}
+
+namespace Renderer {
+class CTransformManager;
 }
 
 namespace Debug {
@@ -27,22 +31,25 @@ class CSceneHierarchy : public IOverlordItem {
 public:
     CSceneHierarchy(Component::CComponentManager& componentManager,
                     Debug::CEntityWidget& entityWidget,
-                    Scene::ISceneHandler& sceneHandler);
+                    Scene::ISceneHandler& sceneHandler,
+                    Core::CGameObjectManager& gameObjectManager);
     ~CSceneHierarchy() override;
 
     void Render() override;
     const char* GetName() const override;
 
 private:
-    void DrawNodeRecursive(Core::CGameObject& obj);
+    void DrawNodeRecursive(Core::GameObjectId obj);
     void DrawContextMenu();
     void DrawNameModal();
 
-    Core::CGameObject* mSelectedItem{nullptr};
+    std::optional<Core::GameObjectId> mSelectedItem{std::nullopt};
 
     Component::CComponentManager& mComponentManager;
     Debug::CEntityWidget& mEntityWidget;
     Scene::ISceneHandler& mSceneHandler;
+    Core::CGameObjectManager& mGameObjectManager;
+    Renderer::CTransformManager& mTransformManager;
 
     std::optional<std::string> mModalName{std::nullopt};
 };

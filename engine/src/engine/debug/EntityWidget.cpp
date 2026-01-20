@@ -7,26 +7,28 @@
 #include "engine/component/ComponentManager.h"
 #include "engine/component/MeshComponent.h"
 #include "engine/component/TextUIComponent.h"
-#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
 #include "engine/debug/CameraComponentWidget.h"
 #include "engine/debug/MeshComponentWidget.h"
 #include "engine/debug/TextUIComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
+#include "engine/renderer/TransformManager.h"
 
 namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
                              Utils::CFileHandler& fileHandler,
-                             Font::CFontHandler& fontHandler)
+                             Font::CFontHandler& fontHandler,
+                             Renderer::CTransformManager& transformManager)
     : mComponentManager(componentManager)
     , mFileHandler(fileHandler)
-    , mFontHandler(fontHandler) {
+    , mFontHandler(fontHandler)
+    , mTransformManager(transformManager) {
 }
 
 CEntityWidget::~CEntityWidget() = default;
 
-void CEntityWidget::OnItemClicked(Core::CGameObject* obj) {
-    mObj = obj;
+void CEntityWidget::OnItemClicked(std::optional<Core::GameObjectId> id) {
+    mId = id;
 
     mTransformWidget.reset();
     mTextWidget.reset();
@@ -39,32 +41,27 @@ void CEntityWidget::OnItemClicked(Core::CGameObject* obj) {
     mCameraExpanded = false;
     mMeshExpanded = false;
 
-    if (!mObj) {
+    if (!mId) {
         SetVisible(false);
         return;
     }
-    const auto objId = mObj->GetId();
-
     SetVisible(true);
-    if (auto* transformComponent =
-            mComponentManager.GetComponent<Component::CTransformComponent>(
-                objId)) {
-        mTransformWidget = std::make_unique<Debug::CTransformComponentWidget>(
-            *transformComponent);
-    }
+
+    mTransformWidget = std::make_unique<Debug::CTransformWidget>(
+        mTransformManager.CreateHandle(*mId));
+
     if (auto* textComponent =
-            mComponentManager.GetComponent<Component::CTextUIComponent>(
-                objId)) {
+            mComponentManager.GetComponent<Component::CTextUIComponent>(*mId)) {
         mTextWidget = std::make_unique<Debug::CTextUIComponentWidget>(
             *textComponent, mFileHandler, mFontHandler);
     }
     if (auto* cameraComponent =
             mComponentManager.GetComponent<Component::CCamera3DComponent>(
-                objId)) {
+                *mId)) {
         mCameraWidget = std::make_unique<Debug::CCameraComponentWidget>();
     }
     if (auto* meshComponent =
-            mComponentManager.GetComponent<Component::CMeshComponent>(objId)) {
+            mComponentManager.GetComponent<Component::CMeshComponent>(*mId)) {
         mMeshWidget =
             std::make_unique<Debug::CMeshComponentWidget>(*meshComponent);
     }
@@ -79,7 +76,7 @@ void CEntityWidget::RenderEntityHeader() {
                       ImGuiWindowFlags_NoMove);
     ImGui::TextUnformatted("Entity Properties");
     ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-    ImGui::TextWrapped("Name: %s", mObj ? mObj->GetName().c_str() : "Unknown");
+    ImGui::TextWrapped("Name: %s", "Unknown"); // TODO
     ImGui::EndChild();
 
     ImGui::PopStyleVar();
@@ -134,9 +131,8 @@ void CEntityWidget::RenderComponentWithHeader(
             ImGui::PopStyleColor(2);
             ImGui::PopID();
             ImGui::PopStyleColor(2);
-            mComponentManager.RemoveComponent(mObj->GetId(), componentType);
-            mObj->ReflectIfVisible();
-            OnItemClicked(mObj);
+            mComponentManager.RemoveComponent(*mId, componentType);
+            OnItemClicked(mId);
             ImGui::Spacing();
             ImGui::TreePop();
             return;
@@ -199,7 +195,7 @@ void CEntityWidget::RenderAddComponentSection() {
 }
 
 void CEntityWidget::Render() {
-    mVisible = mVisible && mObj != nullptr;
+    mVisible = mVisible && mId;
 
     // Position on right side of screen by default
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -222,7 +218,7 @@ void CEntityWidget::Render() {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
 
     if (ImGui::Begin("Inspector", &mVisible, ImGuiWindowFlags_NoMove)) {
-        if (mObj) {
+        if (mId) {
             RenderEntityHeader();
             RenderComponentsSection();
             RenderAddComponentSection();
@@ -238,12 +234,11 @@ void CEntityWidget::RenderAddComponentPopup() {
 
     if (ImGui::BeginPopupContextWindow("AddComponentPopup")) {
         for (auto type : magic_enum::enum_values<Component::EComponentType>()) {
-            bool hasComponent =
-                mComponentManager.HasComponent(mObj->GetId(), type);
+            bool hasComponent = mComponentManager.HasComponent(*mId, type);
             if (!hasComponent) {
                 if (ImGui::MenuItem(magic_enum::enum_name(type).data())) {
-                    mComponentManager.AddComponent(type, *mObj);
-                    OnItemClicked(mObj);
+                    mComponentManager.AddComponent(type, *mId);
+                    OnItemClicked(mId);
                 }
             }
         }
@@ -257,6 +252,6 @@ const char* CEntityWidget::GetName() const {
 }
 
 bool CEntityWidget::IsSelected(Core::GameObjectId id) const {
-    return mObj && mObj->GetId() == id;
+    return mId == id;
 }
 } // namespace Debug

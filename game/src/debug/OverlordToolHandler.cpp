@@ -1,5 +1,6 @@
 #include "debug/OverlordToolHandler.h"
 
+#include <engine/core/GameObjectManager.h>
 #include <engine/debug/Overlord.h>
 
 namespace Debug {
@@ -10,12 +11,15 @@ COverlordToolHandler::COverlordToolHandler(
     Font::CFontHandler& fontHandler, Vulkan::CBufferHandler& bufferHandler,
     Renderer::CTextureManager& textureManager,
     Scene::CSceneLoader& sceneLoaderOverlord,
-    Core::CCameraManager& cameraManager)
+    Core::CCameraManager& cameraManager,
+    Core::CGameObjectManager& gameObjectManager)
     : mSettings(fileHandler, sceneHandler)
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
-    , mEntityWidget(componentManager, fileHandler, fontHandler)
-    , mSceneHierarchy(componentManager, mEntityWidget, sceneHandler)
+    , mEntityWidget(componentManager, fileHandler, fontHandler,
+                    gameObjectManager.GetTransformManager())
+    , mSceneHierarchy(componentManager, mEntityWidget, sceneHandler,
+                      gameObjectManager)
     , mBufferWidget(bufferHandler)
     , mTexturesWidget(textureManager)
     , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord)

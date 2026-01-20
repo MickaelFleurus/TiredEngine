@@ -9,8 +9,10 @@ namespace Scene {
 CGameplayScene::CGameplayScene(Component::CComponentManager& componentManager,
                                Font::CFontHandler& fontHandler,
                                Core::CMeshManager& meshManager,
-                               const System::CSystem& system)
-    : CAbstractScene(componentManager, fontHandler, meshManager, system) {
+                               const System::CSystem& system,
+                               Core::CGameObjectManager& gameObjectManager)
+    : CAbstractScene(componentManager, fontHandler, meshManager, system,
+                     gameObjectManager) {
 }
 
 CGameplayScene::~CGameplayScene() = default;
@@ -32,10 +34,11 @@ void CGameplayScene::Load() {
 void CGameplayScene::Unload() {
 }
 
-Core::CGrid& CGameplayScene::CreateGrid(int width, int height) {
-    mGrid = std::make_unique<Core::CGrid>(mGameObjectBuilder, mComponentManager,
-                                          *mSceneRoot, width, height);
-    return *mGrid;
-}
+// Core::CGrid& CGameplayScene::CreateGrid(int width, int height) {
+//     mGrid = std::make_unique<Core::CGrid>(mGameObjectBuilder,
+//     mComponentManager,
+//                                           *mSceneRoot, width, height);
+//     return *mGrid;
+// }
 
 } // namespace Scene

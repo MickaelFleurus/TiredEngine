@@ -23,9 +23,13 @@ namespace Font {
 class CFontHandler;
 }
 
+namespace Renderer {
+class CTransformManager;
+}
+
 namespace Debug {
 
-class CTransformComponentWidget;
+class CTransformWidget;
 class CTextUIComponentWidget;
 class CCameraComponentWidget;
 class CMeshComponentWidget;
@@ -34,10 +38,11 @@ class CEntityWidget : public IOverlordItem {
 public:
     CEntityWidget(Component::CComponentManager& componentManager,
                   Utils::CFileHandler& fileHandler,
-                  Font::CFontHandler& fontHandler);
+                  Font::CFontHandler& fontHandler,
+                  Renderer::CTransformManager& transformManager);
     ~CEntityWidget() override;
 
-    void OnItemClicked(Core::CGameObject* obj);
+    void OnItemClicked(std::optional<Core::GameObjectId> id);
 
     void Render() override;
     const char* GetName() const override;
@@ -54,10 +59,11 @@ private:
     Component::CComponentManager& mComponentManager;
     Utils::CFileHandler& mFileHandler;
     Font::CFontHandler& mFontHandler;
+    Renderer::CTransformManager& mTransformManager;
 
-    Core::CGameObject* mObj{nullptr};
+    std::optional<Core::GameObjectId> mId{std::nullopt};
 
-    std::unique_ptr<CTransformComponentWidget> mTransformWidget;
+    std::unique_ptr<CTransformWidget> mTransformWidget;
     std::unique_ptr<CTextUIComponentWidget> mTextWidget;
     std::unique_ptr<CCameraComponentWidget> mCameraWidget;
     std::unique_ptr<CMeshComponentWidget> mMeshWidget;

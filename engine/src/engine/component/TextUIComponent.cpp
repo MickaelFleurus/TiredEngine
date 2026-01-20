@@ -11,13 +11,12 @@
 #include "engine/utils/Logger.h"
 
 namespace Component {
-CTextUIComponent::CTextUIComponent(Core::CGameObject& owner,
+CTextUIComponent::CTextUIComponent(Core::GameObjectId& owner,
                                    CComponentManager& componentManager)
-    : IComponent(owner, componentManager,
-                 Core::EDirtyType::TextInstanceProperties) {
+    : IComponent(owner, componentManager) {
 }
 
-CTextUIComponent::CTextUIComponent(Core::CGameObject& owner,
+CTextUIComponent::CTextUIComponent(Core::GameObjectId& owner,
                                    CComponentManager& componentManager,
                                    const CTextUIComponent& other)
     : CTextUIComponent(owner, componentManager) {
@@ -33,8 +32,8 @@ CTextUIComponent& CTextUIComponent::operator=(const CTextUIComponent& other) {
     mFontSize = other.mFontSize;
     mColor = other.mColor;
     mSize = other.mSize;
-    AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
-    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    // AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
+    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
     return *this;
 }
 
@@ -47,7 +46,7 @@ void CTextUIComponent::SetText(const std::string& text) {
 
     mText = text;
     ResolveSize();
-    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 void CTextUIComponent::SetPolice(Font::CPolice* police) {
@@ -57,7 +56,7 @@ void CTextUIComponent::SetPolice(Font::CPolice* police) {
 
     mPolice = police;
     ResolveSize();
-    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 Font::CPolice* CTextUIComponent::GetPolice() const {
@@ -79,7 +78,7 @@ void CTextUIComponent::SetFontSize(int size) {
 
     mFontSize = size;
     ResolveSize();
-    AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
 }
 
 const glm::vec4& CTextUIComponent::GetColor() const {
@@ -92,7 +91,7 @@ void CTextUIComponent::SetColor(const glm::vec4& color) {
     }
 
     mColor = color;
-    AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
+    //  AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
 }
 
 void CTextUIComponent::GenerateInstances() {

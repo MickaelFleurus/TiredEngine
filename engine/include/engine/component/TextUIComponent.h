@@ -12,9 +12,9 @@ class CPolice;
 namespace Component {
 class CTextUIComponent : public IComponent {
 public:
-    explicit CTextUIComponent(Core::CGameObject& owner,
+    explicit CTextUIComponent(Core::GameObjectId& owner,
                               CComponentManager& componentManager);
-    explicit CTextUIComponent(Core::CGameObject& owner,
+    explicit CTextUIComponent(Core::GameObjectId& owner,
                               CComponentManager& componentManager,
                               const CTextUIComponent& other);
 

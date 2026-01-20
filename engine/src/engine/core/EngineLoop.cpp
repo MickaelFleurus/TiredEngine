@@ -14,7 +14,9 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                          Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext)
     , mVulkanRendering(vulkanContext)
-    , mCameraManager(system.GetFileHandler())
+    , mGameObjectManager()
+    , mCameraManager(mGameObjectManager.GetTransformManager(),
+                     system.GetFileHandler())
     , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)

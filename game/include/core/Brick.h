@@ -18,4 +18,4 @@ private:
     EBrickColor mColor{EBrickColor::Red};
     int mHitCount{0};
 };
-} // namespace Core
+} // namespace Core 

@@ -3,7 +3,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/component/CameraComponent.h"
-#include "engine/component/TransformComponent.h"
 #include "engine/utils/Logger.h"
 
 namespace {
@@ -24,16 +23,11 @@ float CCameraUI::GetOrthographicSize() const {
 }
 
 void CCameraUI::EnsureUpToDate() {
-
-    if ((mTransformComponent.has_value() &&
-         !mTransformComponent->get().IsDirty() && !mIsDirty) ||
-        !mIsDirty) {
+    if (!mIsDirty) {
         return;
     }
 
-    auto position = mTransformComponent.has_value()
-                        ? mTransformComponent->get().GetPosition()
-                        : glm::vec3(0.0f, 0.0f, 0.1f);
+    auto position = glm::vec3(0.0f, 0.0f, 0.1f);
 
     mProjMatrix = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, 0.0f, 1.0f);
 
@@ -41,8 +35,5 @@ void CCameraUI::EnsureUpToDate() {
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
     mIsDirty = false;
-    if (mTransformComponent.has_value()) {
-        mTransformComponent->get().SetDirty(false);
-    }
 }
 } // namespace Core

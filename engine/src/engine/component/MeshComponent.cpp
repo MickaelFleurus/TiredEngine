@@ -4,14 +4,13 @@
 #include "engine/material/MaterialManager.h"
 
 namespace Component {
-CMeshComponent::CMeshComponent(Core::CGameObject& owner,
+CMeshComponent::CMeshComponent(Core::GameObjectId& owner,
                                CComponentManager& componentManager,
                                Material::CMaterialManager& materialManager)
-    : IComponent(owner, componentManager, Core::EDirtyType::None)
-    , mMaterialManager(materialManager) {
+    : IComponent(owner, componentManager), mMaterialManager(materialManager) {
 }
 
-CMeshComponent::CMeshComponent(Core::CGameObject& owner,
+CMeshComponent::CMeshComponent(Core::GameObjectId& owner,
                                CComponentManager& componentManager,
                                const CMeshComponent& other)
     : CMeshComponent(owner, componentManager, other.mMaterialManager) {
@@ -40,12 +39,12 @@ Core::CMesh* CMeshComponent::GetMesh() const {
 
 void CMeshComponent::SetTextureIndex(int index) {
     mTextureIndex = index;
-    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
+    // AddDirtyFlag(Core::EDirtyType::InstanceProperties)
 }
 
 void CMeshComponent::SetColor(const glm::vec4& color) {
     mColor = color;
-    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
+    // AddDirtyFlag(Core::EDirtyType::InstanceProperties);
 }
 
 int CMeshComponent::GetTextureIndex() const {
@@ -97,7 +96,7 @@ void CMeshComponent::SetMaterialType(Material::EMaterialType type) {
 
     auto* material = mMaterialManager.GetorCreateMaterial(type);
     mMesh->SetMaterial(material);
-    AddDirtyFlag(Core::EDirtyType::Pipeline);
+    // AddDirtyFlag(Core::EDirtyType::Pipeline);
 }
 
 } // namespace Component

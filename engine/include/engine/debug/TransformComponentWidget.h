@@ -1,21 +1,17 @@
 #pragma once
 
 #include "engine/debug/IOverlordItem.h"
-
-namespace Component {
-class CTransformComponent;
-}
+#include "engine/renderer/TransformHandle.h"
 
 namespace Debug {
 
-class CTransformComponentWidget : public IOverlordItem {
+class CTransformWidget : public IOverlordItem {
 public:
-    CTransformComponentWidget(
-        Component::CTransformComponent& transformComponent);
+    CTransformWidget(Renderer::CTransformHandle transform);
     void Render() override;
     const char* GetName() const override;
 
 private:
-    Component::CTransformComponent& mTransformComponent;
+    Renderer::CTransformHandle mTransform;
 };
 } // namespace Debug

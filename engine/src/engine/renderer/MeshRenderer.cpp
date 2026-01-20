@@ -89,7 +89,7 @@ void CMeshRenderer::UpdateInstances(
             instanceData.textureId = renderable.textureIndex;
         } else {
             LOG_WARNING("Renderable with id {} not found in instance cache.",
-                        renderable.id);
+                        renderable.id.index);
         }
     }
 

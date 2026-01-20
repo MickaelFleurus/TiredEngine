@@ -1,6 +1,5 @@
 #include "engine/core/Camera.h"
 
-#include "engine/component/TransformComponent.h"
 #include "engine/utils/Logger.h"
 
 namespace {} // namespace
@@ -9,15 +8,14 @@ namespace Core {
 CCamera::CCamera(std::string cameraName) : mName(std::move(cameraName)) {
 }
 
-void CCamera::SetTransformComponent(
-    std::optional<std::reference_wrapper<Component::CTransformComponent>>
-        transformComponent) {
-    if (mTransformComponent.has_value()) {
+void CCamera::SetAttachedGameObject(
+    std::optional<Core::GameObjectId> gameobjectId) {
+    if (mGameObjectId.has_value()) {
         LOG_WARNING("Having two camera is not supported yet. The last "
                     "registered component will set the transform. This is most "
                     "likely going to be an issue.");
     }
-    mTransformComponent = transformComponent;
+    mGameObjectId = gameobjectId;
 }
 
 const glm::mat4& CCamera::GetViewMatrix() {

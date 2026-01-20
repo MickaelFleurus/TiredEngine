@@ -5,9 +5,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-namespace Component {
-class CTransformComponent;
-}
+#include "engine/core/GameObjectId.h"
 
 namespace Core {
 
@@ -24,9 +22,7 @@ public:
     glm::vec2 WorldToScreen(const glm::vec2& worldPos,
                             const glm::vec2& viewportSize);
 
-    void SetTransformComponent(
-        std::optional<std::reference_wrapper<Component::CTransformComponent>>
-            transformComponent);
+    void SetAttachedGameObject(std::optional<Core::GameObjectId> gameobjectId);
 
     void SetZoom(float z);
     float GetZoom() const;
@@ -41,8 +37,7 @@ public:
 protected:
     virtual void EnsureUpToDate() = 0;
 
-    std::optional<std::reference_wrapper<Component::CTransformComponent>>
-        mTransformComponent;
+    std::optional<Core::GameObjectId> mGameObjectId;
 
     std::string mName;
 
