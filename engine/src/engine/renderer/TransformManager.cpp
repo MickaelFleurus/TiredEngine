@@ -27,6 +27,7 @@ void CTransformManager::Reset(uint32_t id) {
         mExtended[id] = {};
         mExtras[id] = {};
     }
+    mRebuildLevels = true;
 }
 
 const glm::mat4& CTransformManager::GetLocal(Core::GameObjectId id) const {
@@ -130,6 +131,10 @@ const std::vector<Core::GameObjectId>& CTransformManager::GetRoots() const {
 
 CTransformHandle CTransformManager::CreateHandle(Core::GameObjectId id) {
     return CTransformHandle(*this, id);
+}
+void CTransformManager::Update() {
+    RebuildLevels();
+    UpdateDirties();
 }
 
 void CTransformManager::AddDirtyTransform(Core::GameObjectId id) {

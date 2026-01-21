@@ -11,7 +11,7 @@ class CGameObjectManager {
 public:
     explicit CGameObjectManager();
 
-    GameObjectId CreateObject();
+    GameObjectId CreateObject(const std::string& name);
     void Destroy(GameObjectId id);
 
     Renderer::CTransformManager& GetTransformManager();
@@ -20,6 +20,8 @@ public:
     void SetName(GameObjectId id, CStringID name);
 
     GameObjectId GetId(int index) const;
+
+    void Update();
 
 private:
     struct SGameObjectSlot {

@@ -53,14 +53,20 @@ void CSceneHierarchy::Render() {
             mSelectedItem = std::nullopt;
             ImGui::OpenPopup("ItemContext", ImGuiPopupFlags_MouseButtonRight);
         }
-        for (const auto& child : roots) {
-            DrawNodeRecursive(child);
+        std::string name = "Root";
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_OpenOnDoubleClick;
+        if (ImGui::TreeNodeEx(name.c_str(), flags)) {
+            for (const auto& child : roots) {
+                DrawNodeRecursive(child);
+            }
+            DrawContextMenu();
+            if (!isOpen && mModalName) {
+                ImGui::OpenPopup(mModalName->c_str());
+            }
+            DrawNameModal();
+            ImGui::TreePop();
         }
-        DrawContextMenu();
-        if (!isOpen && mModalName) {
-            ImGui::OpenPopup(mModalName->c_str());
-        }
-        DrawNameModal();
         mEntityWidget.Render();
 
         ImGui::End();
@@ -77,7 +83,7 @@ void CSceneHierarchy::DrawNodeRecursive(Core::GameObjectId obj) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    if (handle.HasChildren()) {
+    if (!handle.HasChildren()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
     std::string name = mGameObjectManager.GetName(obj).GetName();
@@ -101,7 +107,7 @@ void CSceneHierarchy::DrawNodeRecursive(Core::GameObjectId obj) {
     }
 
     // Draw children only if node is open AND has children
-    if (nodeOpen && !handle.HasChildren()) {
+    if (nodeOpen && handle.HasChildren()) {
         for (const auto& child : handle.GetChildren()) {
             DrawNodeRecursive(child);
         }

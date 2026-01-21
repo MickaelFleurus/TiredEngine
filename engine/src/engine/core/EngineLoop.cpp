@@ -71,6 +71,7 @@ bool CEngineLoop::Run() {
                 mWindow.GetImageIndex().value()));
 
             mWindow.EndRender();
+            mGameObjectManager.Update();
         }
         if (mPendingScene) {
             if (mCurrentScene) {

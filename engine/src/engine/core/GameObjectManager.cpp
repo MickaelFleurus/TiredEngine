@@ -11,7 +11,7 @@ CGameObjectManager::CGameObjectManager() : mTransformManager(*this) {
     mGameObjects.reserve(kDefaultVectorSize);
 }
 
-GameObjectId CGameObjectManager::CreateObject() {
+GameObjectId CGameObjectManager::CreateObject(const std::string& name) {
     GameObjectId id{};
     if (mNextAvailableObject.size() != 0) {
         id = mNextAvailableObject.front();
@@ -26,7 +26,7 @@ GameObjectId CGameObjectManager::CreateObject() {
     slot.mExists = true;
     slot.mGeneration = id.generation;
     slot.mObject =
-        SGameObject{.mId = {}, .mIsActive = true, .mName = CStringID("")};
+        SGameObject{.mId = id, .mIsActive = true, .mName = CStringID(name)};
 
     mTransformManager.Reset(id.index);
     return id;
@@ -58,6 +58,10 @@ void CGameObjectManager::SetName(GameObjectId id, CStringID name) {
 
 GameObjectId CGameObjectManager::GetId(int index) const {
     return mGameObjects.at(index).mObject.mId;
+}
+
+void CGameObjectManager::Update() {
+    mTransformManager.Update();
 }
 
 } // namespace Core

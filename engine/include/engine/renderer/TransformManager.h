@@ -46,6 +46,7 @@ public:
     const std::vector<Core::GameObjectId>& GetRoots() const;
 
     CTransformHandle CreateHandle(Core::GameObjectId id);
+    void Update();
 
 private:
     void AddDirtyTransform(Core::GameObjectId id);

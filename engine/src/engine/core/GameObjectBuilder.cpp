@@ -26,13 +26,13 @@ CGameObjectBuilder::CGameObjectBuilder(
     , mGameObjectManager(gameObjectManager) {
 }
 
-CGameObjectBuilder& CGameObjectBuilder::Start() {
-    if (!mCreatedObj) {
+CGameObjectBuilder& CGameObjectBuilder::Start(const std::string& name) {
+    if (mCreatedObj) {
         LOG_WARNING("A new gameobject creation was started while another one "
                     "was not finished yet.");
         mGameObjectManager.Destroy(*mCreatedObj);
     }
-    mCreatedObj = mGameObjectManager.CreateObject();
+    mCreatedObj = mGameObjectManager.CreateObject(name);
 
     return *this;
 }
@@ -120,8 +120,9 @@ Core::GameObjectId CGameObjectBuilder::Build() {
         LOG_ERROR("Trying to build a game object that was never started. Call "
                   "Start() before doing anything else.");
     }
-
-    return *mCreatedObj;
+    auto created = *mCreatedObj;
+    mCreatedObj = std::nullopt;
+    return created;
 }
 
 } // namespace Core

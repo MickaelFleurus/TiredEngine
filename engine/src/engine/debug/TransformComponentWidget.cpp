@@ -22,6 +22,7 @@ void CTransformWidget::Render() {
     }
 
     auto rot = mTransform.GetRotation();
+    
     if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f, -360.0f, 360.0f, "%.1f°")) {
         mTransform.SetRotation(rot);
     }

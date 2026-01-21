@@ -34,7 +34,7 @@ public:
                                 CMeshManager& meshFactory,
                                 CGameObjectManager& gameObjectManager);
 
-    CGameObjectBuilder& Start();
+    CGameObjectBuilder& Start(const std::string& name);
     CGameObjectBuilder& AddText(const std::string& text, unsigned int size,
                                 std::string fontName = "Arial");
     CGameObjectBuilder& AddSprite(std::string spriteName);
