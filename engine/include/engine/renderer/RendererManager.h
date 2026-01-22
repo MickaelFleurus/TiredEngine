@@ -15,11 +15,18 @@ namespace Vulkan {
 class CBufferHandler;
 } // namespace Vulkan
 
+namespace Component {
+class CComponentManager;
+}
+
 namespace Renderer {
+class CTransformManager;
+
 class CRendererManager {
 public:
     CRendererManager(Vulkan::CBufferHandler& bufferHandler,
-                     Material::CMaterialManager& materialManager);
+                     Material::CMaterialManager& materialManager,
+                     CTransformManager& transformManager);
     ~CRendererManager();
 
     void FreeSceneData();
@@ -27,9 +34,7 @@ public:
 
     CMeshRenderer& GetMeshRenderer();
     CTextRenderer& GetTextRenderer();
-    void GenerateInstances(
-        Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
-        Renderer::CRenderables<Renderer::STextRenderable>& textRenderables);
+    void GenerateInstances(Component::CComponentManager& componentManager);
     void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
                 Core::CCamera& camera, Core::CCamera& uiCamera);
 
@@ -45,6 +50,7 @@ private:
     Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mUIVertexBuffer;
 
     Material::CMaterialManager& mMaterialManager;
+    CTransformManager& mTransformManager;
     CMeshRenderer mMeshRenderer;
     CTextRenderer mTextRenderer;
 

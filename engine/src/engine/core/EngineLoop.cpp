@@ -14,25 +14,28 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                          Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext)
     , mVulkanRendering(vulkanContext)
-    , mCameraManager(system.GetFileHandler())
+    , mGameObjectManager()
+    , mCameraManager(mGameObjectManager.GetTransformManager(),
+                     system.GetFileHandler())
     , mDescriptorStorage(mVulkanContext)
     , mMemoryAllocator(mVulkanContext)
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
     , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
-    , mRendererManager(mBufferHandler, mMaterialManager)
     , mSpriteManager(system.GetFileHandler(), mTextureManager)
-    , mMeshManager(mRendererManager.GetMeshRenderer())
-    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mMaterialManager, mDescriptorStorage, mRendererManager,
-              mCameraManager)
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
                    mThreadPool)
-    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
-                        mMaterialManager, mSpriteManager, mCameraManager)
+    , mComponentManager(mFontHandler, mMaterialManager, mSpriteManager,
+                        mCameraManager,
+                        mGameObjectManager.GetTransformManager())
+    , mRendererManager(mBufferHandler, mMaterialManager,
+                       mGameObjectManager.GetTransformManager())
+    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
+              mMaterialManager, mDescriptorStorage, mRendererManager,
+              mCameraManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
@@ -61,6 +64,7 @@ bool CEngineLoop::Run() {
 
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
+        mGameObjectManager.Update();
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);

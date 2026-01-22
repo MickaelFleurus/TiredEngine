@@ -9,27 +9,16 @@ namespace Scene {
 CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
                                Font::CFontHandler& fontHandler,
                                Core::CMeshManager& meshManager,
-                               const System::CSystem& system)
-    : mComponentManager(componentManager)
-    , mSystem(system)
-    , mGameObjectBuilder(componentManager, fontHandler, meshManager) {
-    const auto& windowData = mSystem.GetDisplayParameters();
-    mSceneRoot = Core::CGameObjectBuilder::CreateRoot(componentManager);
+                               const System::CSystem& system,
+                               Core::CGameObjectManager& gameObjectManager)
+    : mGameObjectBuilder(componentManager, fontHandler, meshManager,
+                         gameObjectManager) {
 }
 
 CAbstractScene::~CAbstractScene() = default;
 
-Core::CGameObjectBuilder::CBuilder
-CAbstractScene::CreateGameObjectBuilder(const std::string& name,
-                                        Core::CGameObject* parent) {
-    if (!parent) {
-        parent = mSceneRoot.get();
-    }
-    return mGameObjectBuilder.CreateBuilder(name, *parent);
-}
-
-Core::CGameObject& CAbstractScene::GetRoot() {
-    return *mSceneRoot;
+Core::CGameObjectBuilder& CAbstractScene::GetObjectBuilder() {
+    return mGameObjectBuilder;
 }
 
 } // namespace Scene

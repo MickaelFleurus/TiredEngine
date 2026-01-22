@@ -28,12 +28,13 @@ CGameSceneLoader::CGameSceneLoader(
     Renderer::CSpriteManager& spriteManager,
     Component::CComponentManager& componentManager,
     Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
-    const System::CSystem& system)
+    const System::CSystem& system, Core::CGameObjectManager& gameObjectManager)
     : CSceneLoader(engineLoop, fileHandler, textureManager, spriteManager)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
     , mMeshManager(meshManager)
-    , mSystem(system) {
+    , mSystem(system)
+    , mGameObjectManager(gameObjectManager) {
 }
 
 CGameSceneLoader::~CGameSceneLoader() = default;
@@ -42,7 +43,8 @@ std::unique_ptr<Scene::CAbstractScene>
 CGameSceneLoader::LoadGameSpecificScenePart(const YAML::Node& sceneData) {
     std::unique_ptr<CGameplayScene> gameplayScene =
         std::make_unique<CGameplayScene>(mComponentManager, mFontHandler,
-                                         mMeshManager, mSystem);
+                                         mMeshManager, mSystem,
+                                         mGameObjectManager);
     if (!sceneData["grid"].IsDefined()) {
         LOG_FATAL("Gameplay scene must have a grid defined");
         return nullptr;
@@ -52,37 +54,37 @@ CGameSceneLoader::LoadGameSpecificScenePart(const YAML::Node& sceneData) {
         return nullptr;
     }
 
-    auto& grid = gameplayScene->CreateGrid(
-        sceneData["grid"]["size"]["width"].as<int>(),
-        sceneData["grid"]["size"]["height"].as<int>());
+    // auto& grid = gameplayScene->CreateGrid(
+    //     sceneData["grid"]["size"]["width"].as<int>(),
+    //     sceneData["grid"]["size"]["height"].as<int>());
 
-    std::unordered_map<char, SBrickDefinition> brickTypeMap;
+    // std::unordered_map<char, SBrickDefinition> brickTypeMap;
 
-    for (const auto& brickDef : sceneData["grid"]["brickDefinitions"]) {
-        Core::EBrickType type = magic_enum::enum_cast<Core::EBrickType>(
-                                    brickDef["type"].as<std::string>())
-                                    .value();
-        Core::EBrickColor color = magic_enum::enum_cast<Core::EBrickColor>(
-                                      brickDef["color"].as<std::string>())
-                                      .value();
-        int hitPoints = brickDef["hitPoints"].as<int>();
-        char key = brickDef["key"].as<char>();
-        brickTypeMap[key] = {hitPoints, type, color};
-    }
-    std::string layout = sceneData["grid"]["layout"].as<std::string>();
-    for (const auto& c : layout) {
-        if (c == '\n') {
-            grid.NextRow();
-        } else {
-            auto it = brickTypeMap.find(c);
-            if (it != brickTypeMap.end()) {
-                const auto& def = it->second;
-                grid.AddBrickToRow(def.hitPoints, def.type, def.color);
-            }
-        }
-    }
-    grid.GenerateGrid(Core::CGrid::EGridHorizontalAlignment::Center,
-                      Core::CGrid::EGridVerticalAlignment::Center);
+    // for (const auto& brickDef : sceneData["grid"]["brickDefinitions"]) {
+    //     Core::EBrickType type = magic_enum::enum_cast<Core::EBrickType>(
+    //                                 brickDef["type"].as<std::string>())
+    //                                 .value();
+    //     Core::EBrickColor color = magic_enum::enum_cast<Core::EBrickColor>(
+    //                                   brickDef["color"].as<std::string>())
+    //                                   .value();
+    //     int hitPoints = brickDef["hitPoints"].as<int>();
+    //     char key = brickDef["key"].as<char>();
+    //     brickTypeMap[key] = {hitPoints, type, color};
+    // }
+    // std::string layout = sceneData["grid"]["layout"].as<std::string>();
+    // for (const auto& c : layout) {
+    //     if (c == '\n') {
+    //         grid.NextRow();
+    //     } else {
+    //         auto it = brickTypeMap.find(c);
+    //         if (it != brickTypeMap.end()) {
+    //             const auto& def = it->second;
+    //             grid.AddBrickToRow(def.hitPoints, def.type, def.color);
+    //         }
+    //     }
+    // }
+    // grid.GenerateGrid(Core::CGrid::EGridHorizontalAlignment::Center,
+    //                   Core::CGrid::EGridVerticalAlignment::Center);
 
     return std::move(gameplayScene);
 }

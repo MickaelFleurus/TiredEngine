@@ -4,6 +4,7 @@
 
 #include "engine/component/ComponentManager.h"
 #include "engine/core/CameraManager.h"
+#include "engine/core/GameObjectManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
 #include "engine/core/MeshManager.h"
@@ -16,6 +17,7 @@
 #include "engine/renderer/RendererManager.h"
 #include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/TransformManager.h"
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
 #include "engine/utils/FileHandler.h"
@@ -56,21 +58,22 @@ protected:
     Thread::CPool mThreadPool;
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
+    Core::CGameObjectManager mGameObjectManager;
     Core::CCameraManager mCameraManager;
     Vulkan::CDescriptorStorage mDescriptorStorage;
     Renderer::CMemoryAllocator mMemoryAllocator;
     Vulkan::CBufferHandler mBufferHandler;
 
     Material::CMaterialManager mMaterialManager;
-    Renderer::CRendererManager mRendererManager;
     Renderer::CSpriteManager mSpriteManager;
 
     Core::CMeshManager mMeshManager;
 
-    Renderer::CWindow mWindow;
     Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;
     Component::CComponentManager mComponentManager;
+    Renderer::CRendererManager mRendererManager;
+    Renderer::CWindow mWindow;
 
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;

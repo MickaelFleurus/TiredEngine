@@ -4,8 +4,9 @@
 #include <optional>
 #include <string>
 
-#include "engine/core/GameObject.h"
-#include "engine/input/InputCallback.h"
+#include <glm/vec3.hpp>
+
+#include "engine/core/GameObjectId.h"
 #include "engine/material/MaterialTypes.h"
 #include "engine/utils/Anchors.h"
 
@@ -21,67 +22,37 @@ namespace Font {
 class CFontHandler;
 }
 
+
 namespace Core {
 
 class CMeshManager;
+class CGameObjectManager;
 
 class CGameObjectBuilder {
 public:
-    struct CInputCallbacks {
-        std::optional<Input::InputFunc> onSpacePressed{std::nullopt};
-        std::optional<Input::InputFunc> onLeftPressed{std::nullopt};
-        std::optional<Input::InputFunc> onRightPressed{std::nullopt};
-    };
-
-    class CBuilder {
-    public:
-        CBuilder(const std::string& name,
-                 Component::CComponentManager& componentManager,
-                 Font::CFontHandler& fontHandler, CMeshManager& meshFactory,
-                 CGameObject& parent);
-
-        CBuilder& AddText(const std::string& text, unsigned int size,
-                          std::string fontName = "Arial");
-        CBuilder& AddSprite(std::string spriteName);
-        CBuilder& AddAABBCollisionData(float width, float height,
-                                       bool isStatic = true,
-                                       bool isTrigger = false);
-        CBuilder& AddCircleCollisionData(float radius, bool isStatic = true,
-                                         bool isTrigger = false);
-        CBuilder& AddCameraComponent();
-        // CBuilder& addCollisionCallback(
-        //     std::function<void(Physics::SCollisionInfo)> callback);
-        CBuilder& AddMovementData(float acceleration);
-        CBuilder& AddInputInfo(CInputCallbacks callbacks);
-        CBuilder& SetLocalPosition(const glm::vec3& position);
-        CBuilder& SetAnchor(Utils::EAnchors anchor);
-        CBuilder& Add3DCube(float size);
-        CBuilder& Add3DQuad(float width, float height, float depth);
-        CBuilder& SetMaterialType(Material::EMaterialType type);
-        CGameObject* Build();
-
-    private:
-        Component::CComponentManager& mComponentManager;
-        Font::CFontHandler& mFontHandler;
-        CMeshManager& mMeshManager;
-        CGameObject& mParent;
-        std::unique_ptr<CGameObject> mGameObject;
-    };
-
     explicit CGameObjectBuilder(Component::CComponentManager& componentManager,
                                 Font::CFontHandler& fontHandler,
-                                CMeshManager& meshFactory);
-    CBuilder CreateBuilder(const std::string& name, CGameObject& parent);
+                                CMeshManager& meshFactory,
+                                CGameObjectManager& gameObjectManager);
+
+    CGameObjectBuilder& Start(const std::string& name);
+    CGameObjectBuilder& AddText(const std::string& text, unsigned int size,
+                                std::string fontName = "Arial");
+    CGameObjectBuilder& AddSprite(std::string spriteName);
+    CGameObjectBuilder& AddCameraComponent();
+    CGameObjectBuilder& SetLocalPosition(const glm::vec3& position);
+    CGameObjectBuilder& SetAnchor(Utils::EAnchors anchor);
+    CGameObjectBuilder& Add3DCube(float size);
+    CGameObjectBuilder& Add3DQuad(float width, float height, float depth);
+    CGameObjectBuilder& SetMaterialType(Material::EMaterialType type);
+    GameObjectId Build();
 
 private:
-    static std::unique_ptr<CGameObject>
-    CreateRoot(Component::CComponentManager& componentManager);
-
     Component::CComponentManager& mComponentManager;
     Font::CFontHandler& mFontHandler;
     CMeshManager& mMeshManager;
-
-    friend class Scene::CAbstractScene;
+    CGameObjectManager& mGameObjectManager;
+    std::optional<GameObjectId> mCreatedObj{std::nullopt};
 };
 
 } // namespace Core

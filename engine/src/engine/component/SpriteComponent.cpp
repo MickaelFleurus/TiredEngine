@@ -4,14 +4,13 @@
 #include "engine/renderer/SpriteManager.h"
 
 namespace Component {
-CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
+CSpriteComponent::CSpriteComponent(Core::GameObjectId owner,
                                    CComponentManager& componentManager,
                                    Renderer::CSpriteManager& spriteManager)
-    : IComponent(owner, componentManager, Core::EDirtyType::None)
-    , mSpriteManager(spriteManager) {
+    : IComponent(owner, componentManager), mSpriteManager(spriteManager) {
 }
 
-CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
+CSpriteComponent::CSpriteComponent(Core::GameObjectId owner,
                                    CComponentManager& componentManager,
                                    const CSpriteComponent& other)
     : CSpriteComponent(owner, componentManager, other.mSpriteManager) {
@@ -21,7 +20,7 @@ CSpriteComponent::CSpriteComponent(Core::CGameObject& owner,
 CSpriteComponent& CSpriteComponent::operator=(const CSpriteComponent& other) {
     if (other.mCurrentSprite.has_value()) {
         mCurrentSprite = other.mCurrentSprite;
-        AddDirtyFlag(Core::EDirtyType::InstanceProperties);
+        AddDirtyFlag(Core::EDirtyFlag::InstanceProperties);
     }
     return *this;
 }
@@ -30,7 +29,7 @@ CSpriteComponent::~CSpriteComponent() = default;
 
 void CSpriteComponent::SetSprite(const std::string& spriteName) {
     mCurrentSprite = mSpriteManager.GetSpriteInfo(spriteName);
-    AddDirtyFlag(Core::EDirtyType::InstanceProperties);
+    AddDirtyFlag(Core::EDirtyFlag::InstanceProperties);
 }
 
 void CSpriteComponent::Update(float) {

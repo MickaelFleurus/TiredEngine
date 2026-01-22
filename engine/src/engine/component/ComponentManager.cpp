@@ -9,68 +9,46 @@
 #include "engine/component/MovementComponent.h"
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextUIComponent.h"
-#include "engine/component/TransformComponent.h"
 #include "engine/core/GameObject.h"
+#include "engine/renderer/TransformManager.h"
 #include "engine/utils/Logger.h"
 
 namespace Component {
 CComponentManager::CComponentManager(
-    Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
+    Font::CFontHandler& fontHandler,
     Material::CMaterialManager& materialManager,
     Renderer::CSpriteManager& spriteManager,
-    Core::CCameraManager& cameraManager)
+    Core::CCameraManager& cameraManager,
+    Renderer::CTransformManager& transformManager)
     : mFontHandler(fontHandler)
-    , mTextRenderer(textRenderer)
     , mMaterialManager(materialManager)
     , mSpriteManager(spriteManager)
     , mCameraManager(cameraManager)
     , mComponentPools(magic_enum::enum_count<Component::EComponentType>()) {
-}
-
-CInputComponent& CComponentManager::AddInputComponent(
-    Core::CGameObject& owner, std::optional<Input::InputFunc> onFirePressed,
-    std::optional<Input::InputFunc> onLeftPressed,
-    std::optional<Input::InputFunc> onRightPressed) {
-    return CreateComponent<CInputComponent>(owner, owner.GetId(), onFirePressed,
-                                            onLeftPressed, onRightPressed);
-}
-
-CMovementComponent&
-CComponentManager::AddMovementComponent(Core::CGameObject& owner,
-                                        float acceleration) {
-    return CreateComponent<CMovementComponent>(owner, owner.GetId(),
-                                               acceleration);
+    transformManager.RegisterObserver(*this, mToken);
 }
 
 CSpriteComponent&
-CComponentManager::AddSpriteComponent(Core::CGameObject& owner) {
-    return CreateComponent<CSpriteComponent>(owner, owner.GetId(),
-                                             mSpriteManager);
+CComponentManager::AddSpriteComponent(Core::GameObjectId owner) {
+    return CreateComponent<CSpriteComponent>(owner, mSpriteManager);
 }
 
 CTextUIComponent&
-CComponentManager::AddTextComponent(Core::CGameObject& owner) {
-    return CreateComponent<CTextUIComponent>(owner, owner.GetId());
-}
-
-CTransformComponent&
-CComponentManager::AddTransformComponent(Core::CGameObject& owner) {
-    return CreateComponent<CTransformComponent>(owner, owner.GetId());
+CComponentManager::AddTextComponent(Core::GameObjectId owner) {
+    return CreateComponent<CTextUIComponent>(owner);
 }
 
 CCamera3DComponent&
-CComponentManager::AddCameraComponent(Core::CGameObject& owner) {
-    return CreateComponent<CCamera3DComponent>(owner, owner.GetId(),
-                                               mCameraManager);
+CComponentManager::AddCameraComponent(Core::GameObjectId owner) {
+    return CreateComponent<CCamera3DComponent>(owner, mCameraManager);
 }
 
-CMeshComponent& CComponentManager::AddMeshComponent(Core::CGameObject& owner) {
-    return CreateComponent<CMeshComponent>(owner, owner.GetId(),
-                                           mMaterialManager);
+CMeshComponent& CComponentManager::AddMeshComponent(Core::GameObjectId owner) {
+    return CreateComponent<CMeshComponent>(owner, mMaterialManager);
 }
 
 void CComponentManager::AddComponent(EComponentType type,
-                                     Core::CGameObject& owner) {
+                                     Core::GameObjectId owner) {
     switch (type) {
     case EComponentType::Sprite:
         AddSpriteComponent(owner);
@@ -84,14 +62,7 @@ void CComponentManager::AddComponent(EComponentType type,
     case EComponentType::Mesh:
         AddMeshComponent(owner);
         break;
-    case EComponentType::Transform:
-        AddTransformComponent(owner);
-        break;
-    case EComponentType::Input:
-        AddInputComponent(owner, std::nullopt, std::nullopt, std::nullopt);
-        break;
-    case EComponentType::Movement:
-        AddMovementComponent(owner, 0.0f);
+    default:
         break;
     }
 }
@@ -102,13 +73,27 @@ void CComponentManager::RemoveComponents(Core::GameObjectId id) {
     }
 }
 
-void CComponentManager::CloneComponents(Core::CGameObject& dest,
-                                        const Core::CGameObject& src) {
+void CComponentManager::CloneComponents(Core::GameObjectId dest,
+                                        Core::GameObjectId src) {
     for (auto type : magic_enum::enum_values<Component::EComponentType>()) {
-        if (HasComponent(src.GetId(), type)) {
-            CreateComponentClone(type, dest, dest.GetId(),
-                                 *GetComponent(src.GetId(), type));
+        if (HasComponent(src, type)) {
+            CreateComponentClone(type, dest, *GetComponent(src, type));
         }
+    }
+}
+
+void CComponentManager::OnDirty(Core::GameObjectId id) {
+    auto* meshComp = GetComponent<CMeshComponent>(id);
+    if (meshComp) {
+        meshComp->AddDirtyFlag(Core::EDirtyFlag::Transform);
+    }
+    auto* textUi = GetComponent<CTextUIComponent>(id);
+    if (textUi) {
+        textUi->AddDirtyFlag(Core::EDirtyFlag::Transform);
+    }
+    auto* sprite = GetComponent<CSpriteComponent>(id);
+    if (sprite) {
+        sprite->AddDirtyFlag(Core::EDirtyFlag::Transform);
     }
 }
 
@@ -166,39 +151,34 @@ void CComponentManager::RemoveComponent(Core::GameObjectId id,
     pool.mEntityToIndex.erase(id);
 }
 
-bool CComponentManager::HasComponent(int entityId, EComponentType type) const {
+std::vector<std::unique_ptr<IComponent>>&
+CComponentManager::GetComponents(EComponentType type) {
+    return GetComponentPool(type).mComponents;
+}
+
+bool CComponentManager::HasComponent(Core::GameObjectId id,
+                                     EComponentType type) const {
     const auto& pool = GetComponentPool(type);
-    return pool.mEntityToIndex.contains(entityId);
+    return pool.mEntityToIndex.contains(id);
 }
 
 void CComponentManager::CreateComponentClone(EComponentType type,
-                                             Core::CGameObject& owner,
                                              Core::GameObjectId id,
                                              const IComponent& other) {
     switch (type) {
     case EComponentType::Sprite:
         CreateComponent<CSpriteComponent>(
-            owner, id, static_cast<const CSpriteComponent&>(other));
+            id, static_cast<const CSpriteComponent&>(other));
         break;
     case EComponentType::TextUI:
         CreateComponent<CTextUIComponent>(
-            owner, id, static_cast<const CTextUIComponent&>(other));
+            id, static_cast<const CTextUIComponent&>(other));
         break;
     case EComponentType::Mesh:
         CreateComponent<CMeshComponent>(
-            owner, id, static_cast<const CMeshComponent&>(other));
+            id, static_cast<const CMeshComponent&>(other));
         break;
-    case EComponentType::Transform:
-        CreateComponent<CTransformComponent>(
-            owner, id, static_cast<const CTransformComponent&>(other));
-        break;
-    case EComponentType::Input:
-        CreateComponent<CInputComponent>(
-            owner, id, static_cast<const CInputComponent&>(other));
-        break;
-    case EComponentType::Movement:
-        CreateComponent<CMovementComponent>(
-            owner, id, static_cast<const CMovementComponent&>(other));
+    default:
         break;
     }
 }
@@ -212,12 +192,6 @@ EComponentType CComponentManager::GetComponentType(std::type_index type) const {
         return EComponentType::Camera;
     } else if (type == typeid(CMeshComponent)) {
         return EComponentType::Mesh;
-    } else if (type == typeid(CTransformComponent)) {
-        return EComponentType::Transform;
-    } else if (type == typeid(CInputComponent)) {
-        return EComponentType::Input;
-    } else if (type == typeid(CMovementComponent)) {
-        return EComponentType::Movement;
     }
     LOG_FATAL("Unknown component type");
     return EComponentType::Sprite; // Default return to avoid compiler

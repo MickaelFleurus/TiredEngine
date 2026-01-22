@@ -2,8 +2,10 @@
 
 #include <set>
 
+#include "engine/component/MeshComponent.h"
 #include "engine/core/Mesh.h"
-#include "engine/renderer/Renderables.h"
+#include "engine/material/AbstractMaterial.h"
+#include "engine/renderer/TransformManager.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
 
@@ -16,11 +18,13 @@ CMeshRenderer::CMeshRenderer(
     Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
     Vulkan::CBufferHandleWrapper<Core::SInstanceData>& instancesBuffer,
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-        indirectDrawBuffer)
+        indirectDrawBuffer,
+    CTransformManager& transformManager)
     : mVertexBufferHandle(vertexBufferHandle)
     , mIndexesBufferHandle(indexesBufferHandle)
     , mInstancesBuffer(instancesBuffer)
-    , mIndirectDrawBuffer(indirectDrawBuffer) {
+    , mIndirectDrawBuffer(indirectDrawBuffer)
+    , mTransformManager(transformManager) {
 }
 
 CMeshRenderer::~CMeshRenderer() = default;
@@ -69,30 +73,61 @@ void CMeshRenderer::UnregisterMesh(const Core::CMesh* mesh) {
 }
 
 void CMeshRenderer::UpdateInstances(
-    Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
+    std::vector<std::unique_ptr<Component::IComponent>>& meshComponents,
     const std::vector<Core::GameObjectId>& hidden) {
 
     std::set<std::pair<std::size_t, std::size_t>> requireInstanceUpdate;
     std::set<std::pair<std::size_t, std::size_t>> requireIndirectUpdate;
 
-    for (const auto& renderable : renderables.GetUpdateRenderables()) {
-        auto key = std::make_pair(renderable.meshHash, renderable.materialId);
-        requireInstanceUpdate.emplace(key);
-        auto instanceIndex =
-            mInstanceCache[key].GetInstanceIndex(renderable.id);
-        if (instanceIndex.has_value()) {
-            auto& instanceData =
-                mInstanceCache[key].instancesData[*instanceIndex];
-            instanceData.modelMatrix = renderable.transform;
-            instanceData.color = renderable.color;
-            instanceData.materialId = renderable.materialId;
-            instanceData.textureId = renderable.textureIndex;
-        } else {
-            LOG_WARNING("Renderable with id {} not found in instance cache.",
-                        renderable.id);
+    for (std::size_t i = 0; i < meshComponents.size(); ++i) {
+        auto* meshComponent =
+            static_cast<Component::CMeshComponent*>(meshComponents[i].get());
+        if (!meshComponent->IsDirty()) {
+            continue;
         }
-    }
+        const auto* mesh = meshComponent->GetMesh();
+        const auto dirtyFlag = meshComponent->GetDirtyFlag();
+        const auto materialId = mesh->GetMaterial()->GetId();
+        const auto key = std::make_pair(mesh->GetHash(), materialId);
+        const auto goId = meshComponent->GetId();
+        const auto& modelMatrix = mTransformManager.GetWorld(goId);
+        if (Core::RequireReordering(dirtyFlag)) {
 
+            RegisterMesh(meshComponent->GetMesh());
+            requireInstanceUpdate.emplace(key);
+            requireIndirectUpdate.emplace(key);
+
+            auto& group = mInstanceCache[key];
+            Core::SInstanceData instanceData{};
+            instanceData.modelMatrix = modelMatrix;
+            instanceData.color = meshComponent->GetColor();
+            instanceData.materialId = materialId;
+            instanceData.textureId = meshComponent->GetTextureIndex();
+            if (auto instanceIndex = mInstanceCache[key].GetInstanceIndex(goId);
+                instanceIndex.has_value()) {
+                group.instancesData[*instanceIndex] = instanceData;
+
+            } else {
+                group.instancesData.push_back(instanceData);
+                group.gameObjectIds.push_back(goId);
+            }
+        } else {
+            requireInstanceUpdate.emplace(key);
+            auto instanceIndex = mInstanceCache[key].GetInstanceIndex(goId);
+            if (instanceIndex.has_value()) {
+                auto& instanceData =
+                    mInstanceCache[key].instancesData[*instanceIndex];
+                instanceData.modelMatrix = modelMatrix;
+                instanceData.color = meshComponent->GetColor();
+                instanceData.textureId = meshComponent->GetTextureIndex();
+            } else {
+                LOG_WARNING(
+                    "Renderable with id {} not found in instance cache.",
+                    goId.index);
+            }
+        }
+        meshComponent->Clean();
+    }
     for (const auto& id : hidden) {
         for (auto& [key, group] : mInstanceCache) {
             auto instanceIndex = group.GetInstanceIndex(id);
@@ -103,27 +138,6 @@ void CMeshRenderer::UpdateInstances(
                 group.gameObjectIds.erase(group.gameObjectIds.begin() +
                                           *instanceIndex);
             }
-        }
-    }
-
-    for (const auto& renderable : renderables.GetReorderRenderables()) {
-        auto key = std::make_pair(renderable.meshHash, renderable.materialId);
-        requireInstanceUpdate.emplace(key);
-        requireIndirectUpdate.emplace(key);
-
-        auto& group = mInstanceCache[key];
-        Core::SInstanceData instanceData{};
-        instanceData.modelMatrix = renderable.transform;
-        instanceData.color = renderable.color;
-        instanceData.materialId = renderable.materialId;
-        instanceData.textureId = renderable.textureIndex;
-        if (auto instanceIndex = group.GetInstanceIndex(renderable.id);
-            instanceIndex.has_value()) {
-            group.instancesData[*instanceIndex] = instanceData;
-
-        } else {
-            group.instancesData.push_back(instanceData);
-            group.gameObjectIds.push_back(renderable.id);
         }
     }
 

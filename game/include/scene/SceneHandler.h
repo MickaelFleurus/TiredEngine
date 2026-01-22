@@ -9,7 +9,8 @@ public:
                            Component::CComponentManager& componentManager,
                            Font::CFontHandler& fontHandler,
                            Core::CMeshManager& meshManager,
-                           const System::CSystem& system);
+                           const System::CSystem& system,
+                           Core::CGameObjectManager& gameObjectManager);
 
     void CreateAndSetScene(const std::string& sceneName) override;
     const std::vector<std::string>& GetSceneNames() const override;

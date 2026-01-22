@@ -14,6 +14,7 @@
 
 namespace Core {
 class CCameraManager;
+class CGameObjectManager;
 } // namespace Core
 
 namespace Utils {
@@ -51,7 +52,8 @@ public:
                          Vulkan::CBufferHandler& bufferHandler,
                          Renderer::CTextureManager& textureManager,
                          Scene::CSceneLoader& sceneLoaderOverlord,
-                         Core::CCameraManager& cameraManager);
+                         Core::CCameraManager& cameraManager,
+                         Core::CGameObjectManager& gameObjectManager);
 
     void Initialize();
 

@@ -1,17 +1,15 @@
 #pragma once
+
 #include "engine/core/DirtyTypeEnum.h"
-#include "engine/core/GameObject.h"
+#include "engine/core/GameObjectId.h"
 
 namespace Component {
 class CComponentManager;
 class IComponent {
 public:
-    explicit IComponent(Core::CGameObject& owner,
-                        CComponentManager& componentManager,
-                        Core::EDirtyType dirtyType)
-        : mOwner(owner)
-        , mComponentManager(componentManager)
-        , mDirtyType(dirtyType) {
+    explicit IComponent(Core::GameObjectId objId,
+                        CComponentManager& componentManager)
+        : mId(objId), mComponentManager(componentManager) {
     }
     virtual ~IComponent() = default;
 
@@ -19,26 +17,29 @@ public:
     }
 
     bool IsDirty() const {
+        return mIsDirty != Core::EDirtyFlag::None;
+    }
+
+    void AddDirtyFlag(Core::EDirtyFlag type) {
+        mIsDirty = mIsDirty | type;
+    }
+
+    void Clean() {
+        mIsDirty = Core::EDirtyFlag::None;
+    }
+
+    Core::EDirtyFlag GetDirtyFlag() const {
         return mIsDirty;
     }
 
-    virtual void SetDirty(bool dirty) {
-        mIsDirty = dirty;
-        if (dirty) {
-            mOwner.AddDirtyFlag(mDirtyType);
-        }
-    }
-
-    virtual void AddDirtyFlag(Core::EDirtyType flag) {
-        mIsDirty = flag != Core::EDirtyType::None;
-        mOwner.AddDirtyFlag(flag);
+    Core::GameObjectId GetId() const {
+        return mId;
     }
 
 protected:
-    Core::CGameObject& mOwner;
+    Core::GameObjectId mId;
     CComponentManager& mComponentManager;
 
-    bool mIsDirty{true};
-    const Core::EDirtyType mDirtyType;
+    Core::EDirtyFlag mIsDirty{Core::EDirtyFlag::New};
 };
 } // namespace Component

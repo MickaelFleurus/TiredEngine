@@ -12,7 +12,8 @@ class CFontHandler;
 
 namespace Core {
 class CMeshManager;
-}
+class CGameObjectManager;
+} // namespace Core
 
 namespace System {
 class CSystem;
@@ -29,7 +30,8 @@ public:
                      Component::CComponentManager& componentManager,
                      Font::CFontHandler& fontHandler,
                      Core::CMeshManager& meshManager,
-                     const System::CSystem& system);
+                     const System::CSystem& system,
+                     Core::CGameObjectManager& gameObjectManager);
     ~CGameSceneLoader() override;
 
     std::unique_ptr<Scene::CAbstractScene>
@@ -40,5 +42,6 @@ private:
     Font::CFontHandler& mFontHandler;
     Core::CMeshManager& mMeshManager;
     const System::CSystem& mSystem;
+    Core::CGameObjectManager& mGameObjectManager;
 };
 } // namespace Scene

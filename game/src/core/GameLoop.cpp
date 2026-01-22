@@ -8,13 +8,13 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                      Vulkan::CVulkanContext& vulkanContext)
     : CEngineLoop(system, window, vulkanContext)
     , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
-                    system)
+                    system, mGameObjectManager)
     , mSceneLoader(*this, system.GetFileHandler(), mTextureManager,
                    mSpriteManager, mComponentManager, mFontHandler,
-                   mMeshManager, system)
+                   mMeshManager, system, mGameObjectManager)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
                    mFontHandler, mBufferHandler, mTextureManager, mSceneLoader,
-                   mCameraManager) {
+                   mCameraManager, mGameObjectManager) {
 
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();

@@ -3,7 +3,7 @@
 
 namespace Core {
 
-enum class EDirtyType : uint8_t {
+enum class EDirtyFlag : uint8_t {
     None = 0,
     Transform = 1 << 0,
     InstanceProperties = 1 << 1,
@@ -15,35 +15,35 @@ enum class EDirtyType : uint8_t {
           TextSizeChange | Pipeline | Visibility
 };
 
-// Bitwise operators for EDirtyType
-inline EDirtyType operator|(EDirtyType lhs, EDirtyType rhs) {
-    return static_cast<EDirtyType>(static_cast<uint8_t>(lhs) |
+// Bitwise operators for EDirtyFlag
+inline EDirtyFlag operator|(EDirtyFlag lhs, EDirtyFlag rhs) {
+    return static_cast<EDirtyFlag>(static_cast<uint8_t>(lhs) |
                                    static_cast<uint8_t>(rhs));
 }
 
-inline EDirtyType operator&(EDirtyType lhs, EDirtyType rhs) {
-    return static_cast<EDirtyType>(static_cast<uint8_t>(lhs) &
+inline EDirtyFlag operator&(EDirtyFlag lhs, EDirtyFlag rhs) {
+    return static_cast<EDirtyFlag>(static_cast<uint8_t>(lhs) &
                                    static_cast<uint8_t>(rhs));
 }
 
-inline EDirtyType operator^(EDirtyType lhs, EDirtyType rhs) {
-    return static_cast<EDirtyType>(static_cast<uint8_t>(lhs) ^
+inline EDirtyFlag operator^(EDirtyFlag lhs, EDirtyFlag rhs) {
+    return static_cast<EDirtyFlag>(static_cast<uint8_t>(lhs) ^
                                    static_cast<uint8_t>(rhs));
 }
 
-inline EDirtyType& operator|=(EDirtyType& lhs, EDirtyType rhs) {
+inline EDirtyFlag& operator|=(EDirtyFlag& lhs, EDirtyFlag rhs) {
     lhs = lhs | rhs;
     return lhs;
 }
 
-inline EDirtyType& operator&=(EDirtyType& lhs, EDirtyType rhs) {
+inline EDirtyFlag& operator&=(EDirtyFlag& lhs, EDirtyFlag rhs) {
     lhs = lhs & rhs;
     return lhs;
 }
 
-inline bool RequireReordering(EDirtyType dirtyType) {
-    return (dirtyType & (EDirtyType::TextSizeChange | EDirtyType::Pipeline |
-                         EDirtyType::Visibility)) != EDirtyType::None;
+inline bool RequireReordering(EDirtyFlag dirtyType) {
+    return (dirtyType & (EDirtyFlag::TextSizeChange | EDirtyFlag::Pipeline |
+                         EDirtyFlag::Visibility)) != EDirtyFlag::None;
 }
 
 } // namespace Core

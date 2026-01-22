@@ -1,4 +1,5 @@
 #include "engine/scene/AbstractSceneHandler.h"
+
 #include "engine/core/EngineLoop.h"
 
 namespace Scene {
@@ -7,12 +8,13 @@ CAbstractSceneHandler::CAbstractSceneHandler(
     Core::CEngineLoop& engineLoop,
     Component::CComponentManager& componentManager,
     Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
-    const System::CSystem& system)
+    const System::CSystem& system, Core::CGameObjectManager& gameObjectManager)
     : mEngineLoop(engineLoop)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
     , mMeshManager(meshManager)
-    , mSystem(system) {
+    , mSystem(system)
+    , mGameObjectManager(gameObjectManager) {
 }
 
 void CAbstractSceneHandler::SetCurrentScene(

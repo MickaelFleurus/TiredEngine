@@ -10,7 +10,8 @@ public:
     explicit CDebugScene(Component::CComponentManager& componentManager,
                          Font::CFontHandler& fontHandler,
                          Core::CMeshManager& meshManager,
-                         const System::CSystem& system);
+                         const System::CSystem& system,
+                         Core::CGameObjectManager& gameObjectManager);
 
     void Update(float deltaTime) override;
     CAbstractScene* GetNextScene() const override;

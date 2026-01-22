@@ -10,16 +10,11 @@ namespace Material {
 class CAbstractMaterial;
 }
 
-namespace Renderer {
-class CMeshRenderer;
-}
-
 namespace Core {
 
 class CMesh {
 public:
-    CMesh(Renderer::CMeshRenderer& meshRenderer, std::size_t hash,
-          EMeshBaseType type, EMeshDynamicType dynamicType,
+    CMesh(std::size_t hash, EMeshBaseType type, EMeshDynamicType dynamicType,
           std::span<Core::SVertex> vertices,
           const std::span<const uint32_t> indexes);
     CMesh(CMesh&& other) noexcept;
@@ -43,7 +38,6 @@ private:
     std::vector<Core::SVertex> mVertices;
     std::vector<IndexType> mIndexes;
 
-    Renderer::CMeshRenderer& mMeshRenderer;
     const std::size_t mHash;
     Material::CAbstractMaterial* mMaterial{nullptr};
 };
