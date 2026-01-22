@@ -142,6 +142,7 @@ void CTextRenderer::UpdateInstances(
                     goId.index);
             }
         }
+        component->Clean();
     }
     for (const auto& id : hidden) {
         if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, id);

@@ -187,6 +187,7 @@ void CTransformManager::UpdateDirties() {
                 glm::mat4_cast(localTransforms.mRotation) *
                 glm::scale(glm::mat4{1.0f}, localTransforms.mScale);
         }
+        mDirtyLocal.clear();
     }
 
     if (mDirtyTransform.empty()) {

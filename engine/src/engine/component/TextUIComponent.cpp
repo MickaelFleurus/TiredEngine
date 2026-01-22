@@ -107,7 +107,6 @@ void CTextUIComponent::GenerateInstances(const glm::mat4& entityModel) {
     float baselineY = metrics.ascenderY * scale;
     float cursorX = 0.0f;
     float cursorY = 0.0f;
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
 
     for (char c : mText) {
         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
@@ -134,11 +133,11 @@ void CTextUIComponent::GenerateInstances(const glm::mat4& entityModel) {
                            cursorY + baselineY - glyph.offset.y * scale -
                                glyph.size.y * scale,
                            0.0f);
-        instance.modelMatrix = glm::translate(modelMatrix, glyphPos);
+        instance.modelMatrix = glm::translate(glm::mat4{1.0f}, glyphPos);
         instance.modelMatrix = glm::scale(
             instance.modelMatrix,
             glm::vec3(glyph.size.x * scale, glyph.size.y * scale, 1.0f));
-        instance.modelMatrix *= entityModel;
+        instance.modelMatrix = entityModel * instance.modelMatrix;
         instance.uvRect = uvRect;
         mInstances.push_back(instance);
 

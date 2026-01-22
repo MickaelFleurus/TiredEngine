@@ -24,18 +24,12 @@ void CTransformHandle::Move(glm::vec3 move) {
     mManager.SetPosition(mId, position + move);
 }
 
-// FIXME
-void CTransformHandle::SetRotation(glm::vec3 rotation) {
-    rotation = glm::radians(rotation);
-    mManager.SetRotation(
-        mId, glm::quat(glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)));
+void CTransformHandle::SetRotation(glm::quat rotation) {
+    mManager.SetRotation(mId, rotation);
 }
 
-glm::vec3 CTransformHandle::GetRotation() const {
-    auto quat = mManager.GetRotation(mId);
-    glm::mat4 rotMat = glm::mat4_cast(quat);
-    glm::vec3 euler = glm::eulerAngles(quat);
-    return glm::degrees(euler);
+glm::quat CTransformHandle::GetRotation() const {
+    return mManager.GetRotation(mId);
 }
 
 void CTransformHandle::SetScale(const glm::vec3& scale) {

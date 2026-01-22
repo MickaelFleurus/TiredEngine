@@ -62,6 +62,8 @@ void CComponentManager::AddComponent(EComponentType type,
     case EComponentType::Mesh:
         AddMeshComponent(owner);
         break;
+    default:
+        break;
     }
 }
 
@@ -175,6 +177,8 @@ void CComponentManager::CreateComponentClone(EComponentType type,
     case EComponentType::Mesh:
         CreateComponent<CMeshComponent>(
             id, static_cast<const CMeshComponent&>(other));
+        break;
+    default:
         break;
     }
 }

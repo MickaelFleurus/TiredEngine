@@ -208,24 +208,23 @@ void CEntityWidget::Render() {
 
     ImVec2 window_pos;
     window_pos.x = work_pos.x + work_size.x - 450;
-    window_pos.y = work_pos.y + 50;
-
-    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
+    window_pos.y = work_pos.y;
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Appearing);
     ImGui::SetNextWindowSize(ImVec2(430, 700), ImGuiCond_FirstUseEver);
 
     // Set window style for inspector look
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
 
-    if (ImGui::Begin("Inspector", &mVisible, ImGuiWindowFlags_NoMove)) {
+    if (ImGui::Begin("Inspector", &mVisible)) {
         if (mId) {
             RenderEntityHeader();
             RenderComponentsSection();
             RenderAddComponentSection();
             RenderAddComponentPopup();
         }
-        ImGui::End();
     }
+    ImGui::End();
 
     ImGui::PopStyleColor(2);
 }

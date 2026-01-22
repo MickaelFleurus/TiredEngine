@@ -13,5 +13,7 @@ public:
 
 private:
     Renderer::CTransformHandle mTransform;
+    bool mIsInitialized{false};
+    glm::vec3 mRotationAngles;
 };
 } // namespace Debug

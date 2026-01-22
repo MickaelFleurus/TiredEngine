@@ -141,24 +141,6 @@ void CMeshRenderer::UpdateInstances(
         }
     }
 
-    // for (const auto& renderable : renderables.GetUpdateRenderables()) {
-    //     auto key = std::make_pair(renderable.meshHash,
-    //     renderable.materialId); requireInstanceUpdate.emplace(key); auto
-    //     instanceIndex =
-    //         mInstanceCache[key].GetInstanceIndex(renderable.id);
-    //     if (instanceIndex.has_value()) {
-    //         auto& instanceData =
-    //             mInstanceCache[key].instancesData[*instanceIndex];
-    //         instanceData.modelMatrix = renderable.transform;
-    //         instanceData.color = renderable.color;
-    //         instanceData.materialId = renderable.materialId;
-    //         instanceData.textureId = renderable.textureIndex;
-    //     } else {
-    //         LOG_WARNING("Renderable with id {} not found in instance cache.",
-    //                     renderable.id.index);
-    //     }
-    // }
-
     for (const auto& key : requireInstanceUpdate) {
         auto& cachedGroup = mInstanceCache[key];
         if (!mInstancesBuffer.PrepareData(cachedGroup.instanceBufferRange,

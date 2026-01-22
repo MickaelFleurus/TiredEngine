@@ -22,6 +22,7 @@ namespace Font {
 class CFontHandler;
 }
 
+
 namespace Core {
 
 class CMeshManager;

@@ -10,14 +10,14 @@
 
 namespace Renderer {
 struct STransformBase {
-    glm::mat4 mLocal;
-    glm::mat4 mWorld;
+    glm::mat4 mLocal{glm::mat4(1.0f)};
+    glm::mat4 mWorld{glm::mat4(1.0f)};
 };
 
 struct STransformExtended {
-    glm::vec3 mPosition;
-    glm::vec3 mScale;
-    glm::quat mRotation;
+    glm::vec3 mPosition{0.0f};
+    glm::vec3 mScale{1.0f};
+    glm::quat mRotation{};
 };
 
 struct STransformExtra {

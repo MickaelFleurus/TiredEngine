@@ -1,13 +1,14 @@
 #include "engine/vulkan/VulkanInitializer.h"
 
+#include <set>
+#include <string>
+
+#include <SDL3/SDL_vulkan.h>
+
 #include "engine/renderer/RendererUtils.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
-
-#include <SDL3/SDL_vulkan.h>
-#include <set>
-#include <string>
 
 namespace {
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -371,7 +372,7 @@ VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& modes) {
     for (const auto& m : modes)
         if (m == VK_PRESENT_MODE_MAILBOX_KHR)
             return m;
-    return VK_PRESENT_MODE_FIFO_KHR; // guaranteed
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,

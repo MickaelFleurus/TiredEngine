@@ -64,6 +64,7 @@ bool CEngineLoop::Run() {
 
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
+        mGameObjectManager.Update();
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);
@@ -72,7 +73,6 @@ bool CEngineLoop::Run() {
                 mWindow.GetImageIndex().value()));
 
             mWindow.EndRender();
-            mGameObjectManager.Update();
         }
         if (mPendingScene) {
             if (mCurrentScene) {

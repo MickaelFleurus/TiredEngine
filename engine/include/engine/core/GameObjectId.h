@@ -15,21 +15,7 @@ struct GameObjectId {
         return !(*this != other);
     }
 
-    bool operator<(const GameObjectId& other) const {
-        return index < other.index && generation < other.generation;
-    }
-
-    bool operator<=(const GameObjectId& other) const {
-        return index <= other.index && generation <= other.generation;
-    }
-
-    bool operator>(const GameObjectId& other) const {
-        return index > other.index && generation > other.generation;
-    }
-
-    bool operator>=(const GameObjectId& other) const {
-        return index >= other.index && generation >= other.generation;
-    }
+    auto operator<=>(const GameObjectId& other) const = default;
 };
 
 struct GameObjectIdHash {
