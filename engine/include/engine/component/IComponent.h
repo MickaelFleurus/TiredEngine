@@ -1,12 +1,13 @@
 #pragma once
 
+#include "engine/core/DirtyTypeEnum.h"
 #include "engine/core/GameObjectId.h"
 
 namespace Component {
 class CComponentManager;
 class IComponent {
 public:
-    explicit IComponent(Core::GameObjectId& objId,
+    explicit IComponent(Core::GameObjectId objId,
                         CComponentManager& componentManager)
         : mId(objId), mComponentManager(componentManager) {
     }
@@ -16,17 +17,29 @@ public:
     }
 
     bool IsDirty() const {
+        return mIsDirty != Core::EDirtyFlag::None;
+    }
+
+    void AddDirtyFlag(Core::EDirtyFlag type) {
+        mIsDirty = mIsDirty | type;
+    }
+
+    void Clean() {
+        mIsDirty = Core::EDirtyFlag::None;
+    }
+
+    Core::EDirtyFlag GetDirtyFlag() const {
         return mIsDirty;
     }
 
-    virtual void SetDirty(bool dirty) {
-        mIsDirty = dirty;
+    Core::GameObjectId GetId() const {
+        return mId;
     }
 
 protected:
-    Core::GameObjectId& mId;
+    Core::GameObjectId mId;
     CComponentManager& mComponentManager;
 
-    bool mIsDirty{true};
+    Core::EDirtyFlag mIsDirty{Core::EDirtyFlag::New};
 };
 } // namespace Component

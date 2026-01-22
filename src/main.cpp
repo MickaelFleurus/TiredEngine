@@ -1,9 +1,10 @@
+#include <iostream>
+
 #include <SDL3/SDL.h>
 #include <core/GameLoop.h>
 #include <engine/system/System.h>
 #include <engine/vulkan/VulkanContext.h>
 #include <engine/vulkan/VulkanInitializer.h>
-#include <iostream>
 
 SDL_Window* CreateSDLWindow(const System::CSystem& system) {
     const std::string& gameName = system.GetGameName();
@@ -16,6 +17,7 @@ SDL_Window* CreateSDLWindow(const System::CSystem& system) {
     }
     auto* window = SDL_CreateWindow(gameName.c_str(), displayParams.width,
                                     displayParams.height, windowFlags);
+    SDL_SetWindowSurfaceVSync(window, 0);
     return window;
 }
 

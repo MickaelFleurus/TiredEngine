@@ -10,20 +10,22 @@
 #include "engine/component/SpriteComponent.h"
 #include "engine/component/TextUIComponent.h"
 #include "engine/core/GameObject.h"
+#include "engine/renderer/TransformManager.h"
 #include "engine/utils/Logger.h"
 
 namespace Component {
 CComponentManager::CComponentManager(
-    Font::CFontHandler& fontHandler, Renderer::CTextRenderer& textRenderer,
+    Font::CFontHandler& fontHandler,
     Material::CMaterialManager& materialManager,
     Renderer::CSpriteManager& spriteManager,
-    Core::CCameraManager& cameraManager)
+    Core::CCameraManager& cameraManager,
+    Renderer::CTransformManager& transformManager)
     : mFontHandler(fontHandler)
-    , mTextRenderer(textRenderer)
     , mMaterialManager(materialManager)
     , mSpriteManager(spriteManager)
     , mCameraManager(cameraManager)
     , mComponentPools(magic_enum::enum_count<Component::EComponentType>()) {
+    transformManager.RegisterObserver(*this, mToken);
 }
 
 CSpriteComponent&
@@ -75,6 +77,21 @@ void CComponentManager::CloneComponents(Core::GameObjectId dest,
         if (HasComponent(src, type)) {
             CreateComponentClone(type, dest, *GetComponent(src, type));
         }
+    }
+}
+
+void CComponentManager::OnDirty(Core::GameObjectId id) {
+    auto* meshComp = GetComponent<CMeshComponent>(id);
+    if (meshComp) {
+        meshComp->AddDirtyFlag(Core::EDirtyFlag::Transform);
+    }
+    auto* textUi = GetComponent<CTextUIComponent>(id);
+    if (textUi) {
+        textUi->AddDirtyFlag(Core::EDirtyFlag::Transform);
+    }
+    auto* sprite = GetComponent<CSpriteComponent>(id);
+    if (sprite) {
+        sprite->AddDirtyFlag(Core::EDirtyFlag::Transform);
     }
 }
 
@@ -130,6 +147,11 @@ void CComponentManager::RemoveComponent(Core::GameObjectId id,
     pool.mComponents.pop_back();
     pool.mEntityIds.pop_back();
     pool.mEntityToIndex.erase(id);
+}
+
+std::vector<std::unique_ptr<IComponent>>&
+CComponentManager::GetComponents(EComponentType type) {
+    return GetComponentPool(type).mComponents;
 }
 
 bool CComponentManager::HasComponent(Core::GameObjectId id,

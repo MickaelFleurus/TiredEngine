@@ -11,12 +11,12 @@
 #include "engine/utils/Logger.h"
 
 namespace Component {
-CTextUIComponent::CTextUIComponent(Core::GameObjectId& owner,
+CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
                                    CComponentManager& componentManager)
     : IComponent(owner, componentManager) {
 }
 
-CTextUIComponent::CTextUIComponent(Core::GameObjectId& owner,
+CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
                                    CComponentManager& componentManager,
                                    const CTextUIComponent& other)
     : CTextUIComponent(owner, componentManager) {
@@ -32,8 +32,8 @@ CTextUIComponent& CTextUIComponent::operator=(const CTextUIComponent& other) {
     mFontSize = other.mFontSize;
     mColor = other.mColor;
     mSize = other.mSize;
-    // AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
-    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
+    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
     return *this;
 }
 
@@ -46,7 +46,7 @@ void CTextUIComponent::SetText(const std::string& text) {
 
     mText = text;
     ResolveSize();
-    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
 }
 
 void CTextUIComponent::SetPolice(Font::CPolice* police) {
@@ -56,7 +56,7 @@ void CTextUIComponent::SetPolice(Font::CPolice* police) {
 
     mPolice = police;
     ResolveSize();
-    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
 }
 
 Font::CPolice* CTextUIComponent::GetPolice() const {
@@ -78,7 +78,7 @@ void CTextUIComponent::SetFontSize(int size) {
 
     mFontSize = size;
     ResolveSize();
-    // AddDirtyFlag(Core::EDirtyType::TextSizeChange);
+    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
 }
 
 const glm::vec4& CTextUIComponent::GetColor() const {
@@ -91,10 +91,10 @@ void CTextUIComponent::SetColor(const glm::vec4& color) {
     }
 
     mColor = color;
-    //  AddDirtyFlag(Core::EDirtyType::TextInstanceProperties);
+    AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
 }
 
-void CTextUIComponent::GenerateInstances() {
+void CTextUIComponent::GenerateInstances(const glm::mat4& entityModel) {
     mInstances.clear();
 
     if (!mPolice || mText.empty()) {
@@ -138,13 +138,12 @@ void CTextUIComponent::GenerateInstances() {
         instance.modelMatrix = glm::scale(
             instance.modelMatrix,
             glm::vec3(glyph.size.x * scale, glyph.size.y * scale, 1.0f));
+        instance.modelMatrix *= entityModel;
         instance.uvRect = uvRect;
         mInstances.push_back(instance);
 
         cursorX += glyph.advance * scale;
     }
-
-    SetDirty(false);
 }
 
 void CTextUIComponent::ResolveSize() {
@@ -180,9 +179,10 @@ glm::vec2 CTextUIComponent::GetSize() const {
     return mSize;
 }
 
-const std::vector<Core::SUIInstanceData>& CTextUIComponent::GetInstances() {
+const std::vector<Core::SUIInstanceData>&
+CTextUIComponent::GetInstances(const glm::mat4& entityModel) {
     if (IsDirty()) {
-        GenerateInstances();
+        GenerateInstances(entityModel);
     }
     return mInstances;
 }

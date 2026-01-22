@@ -65,15 +65,15 @@ protected:
     Vulkan::CBufferHandler mBufferHandler;
 
     Material::CMaterialManager mMaterialManager;
-    Renderer::CRendererManager mRendererManager;
     Renderer::CSpriteManager mSpriteManager;
 
     Core::CMeshManager mMeshManager;
 
-    Renderer::CWindow mWindow;
     Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;
     Component::CComponentManager mComponentManager;
+    Renderer::CRendererManager mRendererManager;
+    Renderer::CWindow mWindow;
 
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;

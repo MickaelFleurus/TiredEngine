@@ -23,13 +23,13 @@ void UpdatePosition(Core::CGameObject& current,
 } // namespace
 
 namespace Component {
-CMovementComponent::CMovementComponent(Core::GameObjectId& owner,
+CMovementComponent::CMovementComponent(Core::GameObjectId owner,
                                        CComponentManager& componentManager,
                                        float acceleration)
     : IComponent(owner, componentManager), mAcceleration(acceleration) {
 }
 
-CMovementComponent::CMovementComponent(Core::GameObjectId& owner,
+CMovementComponent::CMovementComponent(Core::GameObjectId owner,
                                        CComponentManager& componentManager,
                                        const CMovementComponent& other)
     : CMovementComponent(owner, componentManager, other.mAcceleration) {
@@ -41,7 +41,7 @@ CMovementComponent::operator=(const CMovementComponent& other) {
     mAcceleration = other.mAcceleration;
     mVelocity = {};
     mDirection = other.mDirection;
-    mIsDirty = true;
+    // mIsDirty = true;
     return *this;
 }
 

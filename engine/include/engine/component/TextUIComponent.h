@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include <glm/mat4x4.hpp>
+
 #include "engine/component/IComponent.h"
 #include "engine/core/DataTypes.h"
 
@@ -12,9 +14,9 @@ class CPolice;
 namespace Component {
 class CTextUIComponent : public IComponent {
 public:
-    explicit CTextUIComponent(Core::GameObjectId& owner,
+    explicit CTextUIComponent(Core::GameObjectId owner,
                               CComponentManager& componentManager);
-    explicit CTextUIComponent(Core::GameObjectId& owner,
+    explicit CTextUIComponent(Core::GameObjectId owner,
                               CComponentManager& componentManager,
                               const CTextUIComponent& other);
 
@@ -36,10 +38,11 @@ public:
 
     glm::vec2 GetSize() const;
 
-    const std::vector<Core::SUIInstanceData>& GetInstances();
+    const std::vector<Core::SUIInstanceData>&
+    GetInstances(const glm::mat4& entityModel = glm::mat4{1.0});
 
 private:
-    void GenerateInstances();
+    void GenerateInstances(const glm::mat4& entityModel);
     void ResolveSize();
 
     std::vector<Core::SUIInstanceData> mInstances;

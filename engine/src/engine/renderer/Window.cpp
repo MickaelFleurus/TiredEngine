@@ -62,67 +62,6 @@ VkRect2D GetScissor(VkViewport viewport) {
     return scissor;
 }
 
-void ExtractMeshes(
-    Core::CGameObject& root, Component::CComponentManager& componentManager,
-    Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
-    Renderer::CRenderables<Renderer::STextRenderable>& textRenderables,
-    glm::mat4 transform = glm::mat4(1.0f)) {
-    // if (!root.IsVisible()) {
-    //     return;
-    // }
-    // auto gameObjectId = root.GetId();
-    // auto& transformComponent =
-    //     *componentManager.GetComponent<Component::CTransformComponent>(
-    //         root.GetId());
-    // bool alreadyUpdated = false;
-    // if (root.GetDirtyFlags() != Core::EDirtyType::None) {
-    //     if (auto* meshComponent =
-    //             componentManager.GetComponent<Component::CMeshComponent>(
-    //                 root.GetId())) {
-    //         transformComponent.UpdateMatrix(transform,
-    //                                         meshComponent->GetSize());
-    //         Renderer::SMeshRenderable renderable{};
-    //         renderable.id = gameObjectId;
-    //         renderable.transform = transform;
-    //         renderable.materialId =
-    //             meshComponent->GetMesh()->GetMaterial()->GetId();
-    //         renderable.meshHash = meshComponent->GetMesh()->GetHash();
-    //         renderable.color = meshComponent->GetColor();
-    //         renderable.textureIndex = meshComponent->GetTextureIndex();
-
-    //         meshRenderables.AddRenderable(
-    //             renderable, Core::RequireReordering(root.GetDirtyFlags()));
-    //         alreadyUpdated = true;
-    //     }
-    //     if (auto* textComponent =
-    //             componentManager.GetComponent<Component::CTextUIComponent>(
-    //                 root.GetId())) {
-
-    //         Renderer::STextRenderable renderable{};
-    //         renderable.id = gameObjectId;
-    //         renderable.instancesData = textComponent->GetInstances();
-
-    //         transformComponent.UpdateMatrix(transform,
-    //                                         textComponent->GetSize());
-    //         for (auto& instance : renderable.instancesData) {
-    //             instance.modelMatrix = transform * instance.modelMatrix;
-    //         }
-    //         textRenderables.AddRenderable(
-    //             renderable, Core::RequireReordering(root.GetDirtyFlags()));
-    //         alreadyUpdated = true;
-    //     }
-    // }
-    // if (!alreadyUpdated) {
-    //     transformComponent.UpdateMatrix(transform);
-    // }
-    // root.ClearDirtyFlags();
-
-    // for (auto& child : root.GetChildren()) {
-    //     ExtractMeshes(*child, componentManager, meshRenderables,
-    //                   textRenderables, transform);
-    // }
-}
-
 } // namespace
 
 namespace Renderer {
@@ -157,15 +96,8 @@ CWindow::~CWindow() {
 
 void CWindow::Render(Scene::CAbstractScene& scene,
                      Component::CComponentManager& componentManager) {
-    Renderer::CRenderables<Renderer::SMeshRenderable> meshRenderables;
-    Renderer::CRenderables<Renderer::STextRenderable> textRenderables;
 
-    // for (auto& child : scene.GetRoot().GetChildren()) {
-    //     ExtractMeshes(*child, componentManager, meshRenderables,
-    //                   textRenderables);
-    // }
-
-    mRendererManager.GenerateInstances(meshRenderables, textRenderables);
+    mRendererManager.GenerateInstances(componentManager);
     VkCommandBuffer commandBuffer =
         mVulkanContext.GetCommandBuffer(mImageIndex.value());
     mRendererManager.Render(

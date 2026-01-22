@@ -10,12 +10,12 @@
 
 // class CInputComponent : public IComponent {
 // public:
-//     explicit CInputComponent(Core::GameObjectId& owner,
+//     explicit CInputComponent(Core::GameObjectId owner,
 //                              CComponentManager& componentManager,
 //                              std::optional<Input::InputFunc> onFirePressed,
 //                              std::optional<Input::InputFunc> onLeftPressed,
 //                              std::optional<Input::InputFunc> onRightPressed);
-//     CInputComponent(Core::GameObjectId& owner,
+//     CInputComponent(Core::GameObjectId owner,
 //                     CComponentManager& componentManager,
 //                     const CInputComponent& other);
 //     CInputComponent(const CInputComponent& other) = delete;

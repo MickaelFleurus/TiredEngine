@@ -6,9 +6,9 @@
 namespace Component {
 class CMovementComponent : public IComponent {
 public:
-    CMovementComponent(Core::GameObjectId& owner,
+    CMovementComponent(Core::GameObjectId owner,
                        CComponentManager& componentManager, float acceleration);
-    CMovementComponent(Core::GameObjectId& owner,
+    CMovementComponent(Core::GameObjectId owner,
                        CComponentManager& componentManager,
                        const CMovementComponent& other);
 

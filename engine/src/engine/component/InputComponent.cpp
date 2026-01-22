@@ -5,7 +5,7 @@
 // #include "engine/input/InputTypes.h"
 
 // namespace Component {
-// CInputComponent::CInputComponent(Core::GameObjectId& owner,
+// CInputComponent::CInputComponent(Core::GameObjectId owner,
 //                                  CComponentManager& componentManager,
 //                                  std::optional<Input::InputFunc>
 //                                  onFirePressed,
@@ -20,7 +20,7 @@
 // {
 // }
 
-// CInputComponent::CInputComponent(Core::GameObjectId& owner,
+// CInputComponent::CInputComponent(Core::GameObjectId owner,
 //                                  CComponentManager& componentManager,
 //                                  const CInputComponent& other)
 //     : CInputComponent(owner, componentManager, other.mOnFirePressed,

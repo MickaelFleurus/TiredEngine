@@ -13,9 +13,15 @@ namespace Core {
 class CMesh;
 } // namespace Core
 
+namespace Component {
+class IComponent;
+}
+
 namespace Renderer {
 template <typename T>
 class CRenderables;
+
+class CTransformManager;
 } // namespace Renderer
 
 namespace Vulkan {
@@ -41,7 +47,8 @@ public:
         Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
         Vulkan::CBufferHandleWrapper<Core::SInstanceData>& instancesBuffer,
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-            indirectDrawBuffer);
+            indirectDrawBuffer,
+        CTransformManager& transformManager);
     ~CMeshRenderer();
 
     void RegisterMesh(const Core::CMesh* mesh);
@@ -51,7 +58,7 @@ public:
     void Update() override;
 
     void UpdateInstances(
-        Renderer::CRenderables<Renderer::SMeshRenderable>& renderables,
+        std::vector<std::unique_ptr<Component::IComponent>>& meshComponents,
         const std::vector<Core::GameObjectId>& hidden);
 
     std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
@@ -84,6 +91,7 @@ private:
     Vulkan::CBufferHandleWrapper<Core::SInstanceData>& mInstancesBuffer;
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
         mIndirectDrawBuffer;
+    CTransformManager& mTransformManager;
 
     std::unordered_map<std::pair<std::size_t, std::size_t>, SMeshPipelineGroup,
                        SPairHash>

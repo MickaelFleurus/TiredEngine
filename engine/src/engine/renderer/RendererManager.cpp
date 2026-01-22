@@ -1,5 +1,6 @@
 #include "engine/renderer/RendererManager.h"
 
+#include "engine/component/ComponentManager.h"
 #include "engine/core/Camera.h"
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/Renderables.h"
@@ -12,7 +13,8 @@ namespace Renderer {
 std::vector<Core::GameObjectId> CRendererManager::mHiddenGameObjects;
 
 CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
-                                   Material::CMaterialManager& materialManager)
+                                   Material::CMaterialManager& materialManager,
+                                   CTransformManager& transformManager)
     : mVertexBuffer(
           bufferHandler.Get<Core::SVertex>(Vulkan::kVerticesBufferIndex))
     , mIndexesBuffer(
@@ -26,10 +28,11 @@ CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
     , mUIVertexBuffer(
           bufferHandler.Get<Core::SUIVertex>(Vulkan::kUIVerticesBufferIndex))
     , mMaterialManager(materialManager)
+    , mTransformManager(transformManager)
     , mMeshRenderer(mVertexBuffer, mIndexesBuffer, mInstanceBuffer,
-                    mIndirectDrawBuffer)
+                    mIndirectDrawBuffer, mTransformManager)
     , mTextRenderer(mUIVertexBuffer, mIndexesBuffer, mTextInstanceBuffer,
-                    mIndirectDrawBuffer) {
+                    mIndirectDrawBuffer, mTransformManager) {
 }
 
 CRendererManager::~CRendererManager() = default;
@@ -52,14 +55,13 @@ void CRendererManager::FreeSceneData() {
 }
 
 void CRendererManager::GenerateInstances(
-    Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
-    Renderer::CRenderables<Renderer::STextRenderable>& textRenderables) {
-    if (!meshRenderables.IsEmpty() || !mHiddenGameObjects.empty()) {
-        mMeshRenderer.UpdateInstances(meshRenderables, mHiddenGameObjects);
-    }
-    if (!textRenderables.IsEmpty() || !mHiddenGameObjects.empty()) {
-        mTextRenderer.UpdateInstances(textRenderables, mHiddenGameObjects);
-    }
+    Component::CComponentManager& componentManager) {
+    mMeshRenderer.UpdateInstances(
+        componentManager.GetComponents(Component::EComponentType::Mesh),
+        mHiddenGameObjects);
+    mTextRenderer.UpdateInstances(
+        componentManager.GetComponents(Component::EComponentType::TextUI),
+        mHiddenGameObjects);
 }
 
 void CRendererManager::Render(VkCommandBuffer commandBuffer,

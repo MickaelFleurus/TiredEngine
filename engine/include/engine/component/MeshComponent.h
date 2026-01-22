@@ -17,10 +17,10 @@ class CMesh;
 namespace Component {
 class CMeshComponent : public IComponent {
 public:
-    explicit CMeshComponent(Core::GameObjectId& owner,
+    explicit CMeshComponent(Core::GameObjectId owner,
                             CComponentManager& componentManager,
                             Material::CMaterialManager& materialManager);
-    CMeshComponent(Core::GameObjectId& owner,
+    CMeshComponent(Core::GameObjectId owner,
                    CComponentManager& componentManager,
                    const CMeshComponent& other);
     CMeshComponent& operator=(const CMeshComponent& other);

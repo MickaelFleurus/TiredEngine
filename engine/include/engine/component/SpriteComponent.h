@@ -12,10 +12,10 @@ class CSpriteManager;
 namespace Component {
 class CSpriteComponent : public IComponent {
 public:
-    explicit CSpriteComponent(Core::GameObjectId& owner,
+    explicit CSpriteComponent(Core::GameObjectId owner,
                               CComponentManager& componentManager,
                               Renderer::CSpriteManager& spriteManager);
-    CSpriteComponent(Core::GameObjectId& owner,
+    CSpriteComponent(Core::GameObjectId owner,
                      CComponentManager& componentManager,
                      const CSpriteComponent& other);
 

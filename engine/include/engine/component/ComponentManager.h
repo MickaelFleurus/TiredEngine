@@ -9,6 +9,8 @@
 #include "engine/component/IComponent.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/input/InputCallback.h"
+#include "engine/renderer/DirtyObserver.h"
+#include "engine/utils/Token.h"
 
 namespace Core {
 class CGameObject;
@@ -26,6 +28,7 @@ class CFontHandler;
 namespace Renderer {
 class CTextRenderer;
 class CSpriteManager;
+class CTransformManager;
 } // namespace Renderer
 
 namespace Component {
@@ -37,19 +40,22 @@ class CTextUIComponent;
 class CMovementComponent;
 class CMeshComponent;
 
-class CComponentManager {
+class CComponentManager : public Renderer::IDirtyObserver {
 public:
     CComponentManager(Font::CFontHandler& fontHandler,
-                      Renderer::CTextRenderer& textRenderer,
                       Material::CMaterialManager& materialManager,
                       Renderer::CSpriteManager& spriteManager,
-                      Core::CCameraManager& cameraManager);
+                      Core::CCameraManager& cameraManager,
+                      Renderer::CTransformManager& transformManager);
 
     template <typename T>
     T* GetComponent(Core::GameObjectId entityId) {
         return static_cast<T*>(
             GetComponent(entityId, GetComponentType(typeid(T))));
     }
+
+    std::vector<std::unique_ptr<IComponent>>&
+    GetComponents(EComponentType type);
 
     bool HasComponent(Core::GameObjectId entityId, EComponentType type) const;
 
@@ -64,6 +70,7 @@ public:
 
     void Update(float deltaTime);
     void CloneComponents(Core::GameObjectId dest, Core::GameObjectId src);
+    void OnDirty(Core::GameObjectId id) override;
 
 private:
     struct ComponentPool {
@@ -111,10 +118,10 @@ private:
                               const IComponent& other);
 
     Font::CFontHandler& mFontHandler;
-    Renderer::CTextRenderer& mTextRenderer;
     Material::CMaterialManager& mMaterialManager;
     Renderer::CSpriteManager& mSpriteManager;
     Core::CCameraManager& mCameraManager;
     std::vector<ComponentPool> mComponentPools;
+    CToken mToken;
 };
 } // namespace Component

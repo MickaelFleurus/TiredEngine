@@ -8,6 +8,7 @@
 #include "engine/font/Font.h"
 #include "engine/font/Police.h"
 #include "engine/renderer/Renderables.h"
+#include "engine/renderer/TransformManager.h"
 #include "engine/vulkan/BufferHandleWrapper.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
@@ -79,11 +80,13 @@ CTextRenderer::CTextRenderer(
     Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
     Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& textInstanceBuffer,
     Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-        indirectDrawBuffer)
+        indirectDrawBuffer,
+    CTransformManager& transformManager)
     : mTextInstanceBuffer(textInstanceBuffer)
     , mIndirectDrawBuffer(indirectDrawBuffer)
     , mVertexBufferHandle(vertexBufferHandle)
-    , mIndexesBufferHandle(indexesBufferHandle) {
+    , mIndexesBufferHandle(indexesBufferHandle)
+    , mTransformManager(transformManager) {
 }
 
 void CTextRenderer::Prepare() {
@@ -96,45 +99,55 @@ void CTextRenderer::Update() {
 }
 
 void CTextRenderer::UpdateInstances(
-    Renderer::CRenderables<Renderer::STextRenderable>& renderables,
+    std::vector<std::unique_ptr<Component::IComponent>>& textComponents,
     const std::vector<Core::GameObjectId>& hidden) {
     std::vector<std::size_t> requireInstanceUpdate;
     std::vector<std::size_t> requireIndirectUpdate;
     std::vector<std::size_t> toErase;
 
-    for (auto& renderable : renderables.GetUpdateRenderables()) {
-        auto instanceIndex = GetInstanceIndex(mGameObjectIds, renderable.id);
-        if (instanceIndex.has_value()) {
-            requireInstanceUpdate.push_back(*instanceIndex);
-            mInstancesData[*instanceIndex].swap(renderable.instancesData);
+    for (std::size_t i = 0; i < textComponents.size(); ++i) {
+        auto* component =
+            static_cast<Component::CTextUIComponent*>(textComponents[i].get());
+        if (!component->IsDirty()) {
+            continue;
+        }
+        const auto dirtyFlag = component->GetDirtyFlag();
+        const auto goId = component->GetId();
+        const auto& modelMatrix = mTransformManager.GetWorld(goId);
+        const auto& instances = component->GetInstances(modelMatrix);
+        if (Core::RequireReordering(component->GetDirtyFlag())) {
+            if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, goId);
+                instanceIndex.has_value()) {
+                requireIndirectUpdate.push_back(*instanceIndex);
+                requireInstanceUpdate.push_back(*instanceIndex);
+                mInstancesData[*instanceIndex] = instances;
+            } else {
+                requireIndirectUpdate.push_back(mInstancesData.size());
+                requireInstanceUpdate.push_back(mInstancesData.size());
+                mInstancesData.push_back(instances);
+                mGameObjectIds.push_back(goId);
+                mTextInstanceBufferRanges.push_back(
+                    Utils::SBufferIndexRange{0, 0});
+                mIndirectDrawBufferRanges.push_back(
+                    Utils::SBufferIndexRange{0, 0});
+            }
         } else {
-            LOG_WARNING("Renderable with id {} not found in instance cache.",
-                        renderable.id.index);
+            auto instanceIndex = GetInstanceIndex(mGameObjectIds, goId);
+            if (instanceIndex.has_value()) {
+                requireInstanceUpdate.push_back(*instanceIndex);
+                mInstancesData[*instanceIndex] = instances;
+            } else {
+                LOG_WARNING(
+                    "Renderable with id {} not found in instance cache.",
+                    goId.index);
+            }
         }
     }
-
     for (const auto& id : hidden) {
         if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, id);
             instanceIndex.has_value()) {
             requireIndirectUpdate.push_back(*instanceIndex);
             toErase.push_back(*instanceIndex);
-        }
-    }
-
-    for (auto& renderable : renderables.GetReorderRenderables()) {
-        if (auto instanceIndex =
-                GetInstanceIndex(mGameObjectIds, renderable.id);
-            instanceIndex.has_value()) {
-            requireIndirectUpdate.push_back(*instanceIndex);
-            requireInstanceUpdate.push_back(*instanceIndex);
-            mInstancesData[*instanceIndex].swap(renderable.instancesData);
-        } else {
-            requireIndirectUpdate.push_back(mInstancesData.size());
-            requireInstanceUpdate.push_back(mInstancesData.size());
-            mInstancesData.push_back(renderable.instancesData);
-            mGameObjectIds.push_back(renderable.id);
-            mTextInstanceBufferRanges.push_back(Utils::SBufferIndexRange{0, 0});
-            mIndirectDrawBufferRanges.push_back(Utils::SBufferIndexRange{0, 0});
         }
     }
 

@@ -12,8 +12,12 @@ template <typename T>
 class CBufferHandleWrapper;
 } // namespace Vulkan
 
-namespace Renderer {
+namespace Component {
+class IComponent;
+}
 
+namespace Renderer {
+class CTransformManager;
 template <typename T>
 class CRenderables;
 
@@ -24,14 +28,16 @@ public:
         Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
         Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& instanceBuffer,
         Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-            indirectDrawBuffer);
+            indirectDrawBuffer,
+        CTransformManager& transformManager);
     void Free() override {
     }
     void Prepare();
     void Update() override;
 
-    void UpdateInstances(CRenderables<STextRenderable>& renderables,
-                         const std::vector<Core::GameObjectId>& hidden);
+    void UpdateInstances(
+        std::vector<std::unique_ptr<Component::IComponent>>& textComponents,
+        const std::vector<Core::GameObjectId>& hidden);
 
     const std::vector<Utils::SBufferIndexRange>& GetIndirectDrawRange() const;
 
@@ -49,6 +55,7 @@ private:
 
     std::optional<Utils::SBufferIndexRange> mVerticesRange{std::nullopt};
     std::optional<Utils::SBufferIndexRange> mIndexesRange{std::nullopt};
+    CTransformManager& mTransformManager;
 };
 
 } // namespace Renderer

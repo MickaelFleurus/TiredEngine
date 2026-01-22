@@ -37,7 +37,7 @@ public:
 protected:
     virtual void EnsureUpToDate() = 0;
 
-    std::optional<Core::GameObjectId> mGameObjectId;
+    std::optional<Core::GameObjectId> mGameObjectId{std::nullopt};
 
     std::string mName;
 

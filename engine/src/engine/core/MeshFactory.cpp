@@ -109,8 +109,7 @@ namespace Core {
 
 CMeshFactory::CMeshFactory() = default;
 
-CMesh CMeshFactory::CreateTriangle(std::size_t hash,
-                                   Renderer::CMeshRenderer& meshRenderer) {
+CMesh CMeshFactory::CreateTriangle(std::size_t hash) {
     std::array<Core::SVertex, 3> triangleVertices{
         Core::SVertex{.position{0.0f, 0.5f, 0.0f},
                       .texCoord{0.5f, 1.0f},
@@ -124,37 +123,23 @@ CMesh CMeshFactory::CreateTriangle(std::size_t hash,
 
     std::array<uint32_t, 3> triangleIndices{0, 2, 1};
 
-    return CMesh{meshRenderer,
-                 hash,
-                 EMeshBaseType::Triangle,
-                 EMeshDynamicType::Static,
-                 triangleVertices,
-                 triangleIndices};
+    return CMesh{hash, EMeshBaseType::Triangle, EMeshDynamicType::Static,
+                 triangleVertices, triangleIndices};
 }
 
-CMesh CMeshFactory::CreateCube(float size, std::size_t hash,
-                               Renderer::CMeshRenderer& meshRenderer) {
+CMesh CMeshFactory::CreateCube(float size, std::size_t hash) {
     auto vertices = GenerateCubeVertices(size);
     return CMesh{
-        meshRenderer,
-        hash,
-        EMeshBaseType::Cube,
-        EMeshDynamicType::Static,
-        vertices,
+        hash, EMeshBaseType::Cube, EMeshDynamicType::Static, vertices,
         std::span<const uint32_t>(kCubeIndices.data(), kCubeIndices.size())};
 }
 
 CMesh CMeshFactory::CreateQuad(float width, float height, float depth,
-                               std::size_t hash,
-                               Renderer::CMeshRenderer& meshRenderer) {
+                               std::size_t hash) {
     auto vertices = Generate3DRectangleVertices(width, height, depth);
 
     return CMesh{
-        meshRenderer,
-        hash,
-        EMeshBaseType::Cube,
-        EMeshDynamicType::Static,
-        vertices,
+        hash, EMeshBaseType::Cube, EMeshDynamicType::Static, vertices,
         std::span<const uint32_t>(kCubeIndices.data(), kCubeIndices.size())};
 }
 

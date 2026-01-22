@@ -8,7 +8,7 @@
 #include "engine/core/GameObject.h"
 
 namespace Component {
-CCamera3DComponent::CCamera3DComponent(Core::GameObjectId& owner,
+CCamera3DComponent::CCamera3DComponent(Core::GameObjectId owner,
                                        CComponentManager& componentManager,
                                        Core::CCameraManager& cameraManager)
     : IComponent(owner, componentManager), mCameraManager(cameraManager) {

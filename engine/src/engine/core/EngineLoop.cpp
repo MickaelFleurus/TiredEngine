@@ -22,19 +22,20 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
     , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
-    , mRendererManager(mBufferHandler, mMaterialManager)
     , mSpriteManager(system.GetFileHandler(), mTextureManager)
-    , mMeshManager(mRendererManager.GetMeshRenderer())
-    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mMaterialManager, mDescriptorStorage, mRendererManager,
-              mCameraManager)
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage)
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
                    mThreadPool)
-    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
-                        mMaterialManager, mSpriteManager, mCameraManager)
+    , mComponentManager(mFontHandler, mMaterialManager, mSpriteManager,
+                        mCameraManager,
+                        mGameObjectManager.GetTransformManager())
+    , mRendererManager(mBufferHandler, mMaterialManager,
+                       mGameObjectManager.GetTransformManager())
+    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
+              mMaterialManager, mDescriptorStorage, mRendererManager,
+              mCameraManager)
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
