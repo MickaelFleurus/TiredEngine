@@ -17,14 +17,11 @@ class CComponentManager;
 
 namespace Core {
 class CGameObject;
-}
+class CGameObjectManager;
+} // namespace Core
 
 namespace Font {
 class CFontHandler;
-}
-
-namespace Renderer {
-class CTransformManager;
 }
 
 namespace Debug {
@@ -39,7 +36,7 @@ public:
     CEntityWidget(Component::CComponentManager& componentManager,
                   Utils::CFileHandler& fileHandler,
                   Font::CFontHandler& fontHandler,
-                  Renderer::CTransformManager& transformManager);
+                  Core::CGameObjectManager& gameObjectManager);
     ~CEntityWidget() override;
 
     void OnItemClicked(std::optional<Core::GameObjectId> id);
@@ -59,7 +56,7 @@ private:
     Component::CComponentManager& mComponentManager;
     Utils::CFileHandler& mFileHandler;
     Font::CFontHandler& mFontHandler;
-    Renderer::CTransformManager& mTransformManager;
+    Core::CGameObjectManager& mGameObjectManager;
 
     std::optional<Core::GameObjectId> mId{std::nullopt};
 

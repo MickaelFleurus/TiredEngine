@@ -6,18 +6,23 @@
 #include "engine/core/GameObjectId.h"
 #include "engine/renderer/TransformManager.h"
 
+namespace Component {
+class CComponentManager;
+}
+
 namespace Core {
 class CGameObjectManager {
 public:
     explicit CGameObjectManager();
 
     GameObjectId CreateObject(const std::string& name);
+    GameObjectId CreateObject(CStringId name);
     void Destroy(GameObjectId id);
 
     Renderer::CTransformManager& GetTransformManager();
 
-    CStringID GetName(GameObjectId id);
-    void SetName(GameObjectId id, CStringID name);
+    CStringId GetStringId(GameObjectId id);
+    void SetStringId(GameObjectId id, CStringId name);
 
     GameObjectId GetId(int index) const;
 

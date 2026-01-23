@@ -65,6 +65,8 @@ bool CEngineLoop::Run() {
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
         mGameObjectManager.Update();
+        mComponentManager.Update(deltaTime);
+
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);
@@ -87,6 +89,7 @@ bool CEngineLoop::Run() {
             mPendingScene.reset();
         }
         mInputHandler.Swap();
+        mComponentManager.CleanDeleted();
     }
     return true;
 }

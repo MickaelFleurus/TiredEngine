@@ -73,72 +73,83 @@ void CMeshRenderer::UnregisterMesh(const Core::CMesh* mesh) {
 }
 
 void CMeshRenderer::UpdateInstances(
-    std::vector<std::unique_ptr<Component::IComponent>>& meshComponents,
-    const std::vector<Core::GameObjectId>& hidden) {
+    std::vector<std::unique_ptr<Component::IComponent>>& meshComponents) {
 
     std::set<std::pair<std::size_t, std::size_t>> requireInstanceUpdate;
     std::set<std::pair<std::size_t, std::size_t>> requireIndirectUpdate;
 
     for (std::size_t i = 0; i < meshComponents.size(); ++i) {
-        auto* meshComponent =
+        auto* component =
             static_cast<Component::CMeshComponent*>(meshComponents[i].get());
-        if (!meshComponent->IsDirty()) {
+        if (!component->IsDirty()) {
             continue;
         }
-        const auto* mesh = meshComponent->GetMesh();
-        const auto dirtyFlag = meshComponent->GetDirtyFlag();
+        const auto* mesh = component->GetMesh();
+        const auto dirtyFlag = component->GetDirtyFlag();
         const auto materialId = mesh->GetMaterial()->GetId();
-        const auto key = std::make_pair(mesh->GetHash(), materialId);
-        const auto goId = meshComponent->GetId();
+        const auto componentKey = std::make_pair(mesh->GetHash(), materialId);
+        const auto goId = component->GetId();
         const auto& modelMatrix = mTransformManager.GetWorld(goId);
+        const auto instanceIndex =
+            mInstanceCache[componentKey].GetInstanceIndex(goId);
+        auto& group = mInstanceCache[componentKey];
         if (Core::RequireReordering(dirtyFlag)) {
 
-            RegisterMesh(meshComponent->GetMesh());
-            requireInstanceUpdate.emplace(key);
-            requireIndirectUpdate.emplace(key);
+            RegisterMesh(component->GetMesh());
+            requireInstanceUpdate.emplace(componentKey);
+            requireIndirectUpdate.emplace(componentKey);
 
-            auto& group = mInstanceCache[key];
             Core::SInstanceData instanceData{};
             instanceData.modelMatrix = modelMatrix;
-            instanceData.color = meshComponent->GetColor();
+            instanceData.color = component->GetColor();
             instanceData.materialId = materialId;
-            instanceData.textureId = meshComponent->GetTextureIndex();
-            if (auto instanceIndex = mInstanceCache[key].GetInstanceIndex(goId);
-                instanceIndex.has_value()) {
+            instanceData.textureId = component->GetTextureIndex();
+            if (instanceIndex.has_value()) {
                 group.instancesData[*instanceIndex] = instanceData;
 
             } else {
                 group.instancesData.push_back(instanceData);
                 group.gameObjectIds.push_back(goId);
             }
+        } else if (Core::IsDeleted(dirtyFlag)) {
+            if (instanceIndex.has_value()) {
+                requireIndirectUpdate.emplace(componentKey);
+                group.instancesData.erase(group.instancesData.begin() +
+                                          *instanceIndex);
+                group.gameObjectIds.erase(group.gameObjectIds.begin() +
+                                          *instanceIndex);
+            }
+        } else if (Core::VisibilityChanged(dirtyFlag)) {
+            if (!component->IsActive() && instanceIndex) {
+                requireIndirectUpdate.emplace(componentKey);
+                group.instancesData.erase(group.instancesData.begin() +
+                                          *instanceIndex);
+                group.gameObjectIds.erase(group.gameObjectIds.begin() +
+                                          *instanceIndex);
+            } else if (component->IsActive() && !instanceIndex) {
+                Core::SInstanceData instanceData{};
+                instanceData.modelMatrix = modelMatrix;
+                instanceData.color = component->GetColor();
+                instanceData.materialId = materialId;
+                instanceData.textureId = component->GetTextureIndex();
+                group.instancesData.push_back(instanceData);
+                group.gameObjectIds.push_back(goId);
+            }
         } else {
-            requireInstanceUpdate.emplace(key);
-            auto instanceIndex = mInstanceCache[key].GetInstanceIndex(goId);
+            requireInstanceUpdate.emplace(componentKey);
             if (instanceIndex.has_value()) {
                 auto& instanceData =
-                    mInstanceCache[key].instancesData[*instanceIndex];
+                    mInstanceCache[componentKey].instancesData[*instanceIndex];
                 instanceData.modelMatrix = modelMatrix;
-                instanceData.color = meshComponent->GetColor();
-                instanceData.textureId = meshComponent->GetTextureIndex();
+                instanceData.color = component->GetColor();
+                instanceData.textureId = component->GetTextureIndex();
             } else {
                 LOG_WARNING(
                     "Renderable with id {} not found in instance cache.",
                     goId.index);
             }
         }
-        meshComponent->Clean();
-    }
-    for (const auto& id : hidden) {
-        for (auto& [key, group] : mInstanceCache) {
-            auto instanceIndex = group.GetInstanceIndex(id);
-            if (instanceIndex.has_value()) {
-                requireIndirectUpdate.emplace(key);
-                group.instancesData.erase(group.instancesData.begin() +
-                                          *instanceIndex);
-                group.gameObjectIds.erase(group.gameObjectIds.begin() +
-                                          *instanceIndex);
-            }
-        }
+        component->Clean();
     }
 
     for (const auto& key : requireInstanceUpdate) {

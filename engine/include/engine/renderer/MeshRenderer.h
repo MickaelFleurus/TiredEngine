@@ -58,8 +58,7 @@ public:
     void Update() override;
 
     void UpdateInstances(
-        std::vector<std::unique_ptr<Component::IComponent>>& meshComponents,
-        const std::vector<Core::GameObjectId>& hidden);
+        std::vector<std::unique_ptr<Component::IComponent>>& meshComponents);
 
     std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
     GetIndirectDrawRanges() const;

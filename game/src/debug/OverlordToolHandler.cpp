@@ -17,7 +17,7 @@ COverlordToolHandler::COverlordToolHandler(
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
     , mSceneLoaderOverlord(sceneHandler)
     , mEntityWidget(componentManager, fileHandler, fontHandler,
-                    gameObjectManager.GetTransformManager())
+                    gameObjectManager)
     , mSceneHierarchy(componentManager, mEntityWidget, sceneHandler,
                       gameObjectManager)
     , mBufferWidget(bufferHandler)

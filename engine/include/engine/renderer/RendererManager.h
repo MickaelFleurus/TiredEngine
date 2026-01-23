@@ -53,7 +53,5 @@ private:
     CTransformManager& mTransformManager;
     CMeshRenderer mMeshRenderer;
     CTextRenderer mTextRenderer;
-
-    static std::vector<Core::GameObjectId> mHiddenGameObjects;
 };
 } // namespace Renderer

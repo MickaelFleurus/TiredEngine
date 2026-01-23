@@ -24,6 +24,10 @@ public:
         mIsDirty = mIsDirty | type;
     }
 
+    void SetDirtyFlag(Core::EDirtyFlag type) {
+        mIsDirty = type;
+    }
+
     void Clean() {
         mIsDirty = Core::EDirtyFlag::None;
     }
@@ -36,9 +40,21 @@ public:
         return mId;
     }
 
+    bool IsActive() const {
+        return mActive;
+    }
+
+    void SetActive(bool active) {
+        if (active != mActive) {
+            AddDirtyFlag(Core::EDirtyFlag::Visibility);
+            mActive = active;
+        }
+    }
+
 protected:
     Core::GameObjectId mId;
     CComponentManager& mComponentManager;
+    bool mActive{true};
 
     Core::EDirtyFlag mIsDirty{Core::EDirtyFlag::New};
 };

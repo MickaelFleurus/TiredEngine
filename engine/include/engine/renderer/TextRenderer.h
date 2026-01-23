@@ -36,8 +36,7 @@ public:
     void Update() override;
 
     void UpdateInstances(
-        std::vector<std::unique_ptr<Component::IComponent>>& textComponents,
-        const std::vector<Core::GameObjectId>& hidden);
+        std::vector<std::unique_ptr<Component::IComponent>>& textComponents);
 
     const std::vector<Utils::SBufferIndexRange>& GetIndirectDrawRange() const;
 

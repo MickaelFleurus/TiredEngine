@@ -22,7 +22,6 @@ namespace Font {
 class CFontHandler;
 }
 
-
 namespace Core {
 
 class CMeshManager;
@@ -46,6 +45,8 @@ public:
     CGameObjectBuilder& Add3DQuad(float width, float height, float depth);
     CGameObjectBuilder& SetMaterialType(Material::EMaterialType type);
     GameObjectId Build();
+
+    GameObjectId CloneObject(GameObjectId cloned, const std::string& name = "");
 
 private:
     Component::CComponentManager& mComponentManager;

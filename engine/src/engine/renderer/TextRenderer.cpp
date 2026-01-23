@@ -99,8 +99,7 @@ void CTextRenderer::Update() {
 }
 
 void CTextRenderer::UpdateInstances(
-    std::vector<std::unique_ptr<Component::IComponent>>& textComponents,
-    const std::vector<Core::GameObjectId>& hidden) {
+    std::vector<std::unique_ptr<Component::IComponent>>& textComponents) {
     std::vector<std::size_t> requireInstanceUpdate;
     std::vector<std::size_t> requireIndirectUpdate;
     std::vector<std::size_t> toErase;
@@ -115,13 +114,34 @@ void CTextRenderer::UpdateInstances(
         const auto goId = component->GetId();
         const auto& modelMatrix = mTransformManager.GetWorld(goId);
         const auto& instances = component->GetInstances(modelMatrix);
-        if (Core::RequireReordering(component->GetDirtyFlag())) {
+        if (Core::RequireReordering(dirtyFlag)) {
             if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, goId);
                 instanceIndex.has_value()) {
                 requireIndirectUpdate.push_back(*instanceIndex);
                 requireInstanceUpdate.push_back(*instanceIndex);
                 mInstancesData[*instanceIndex] = instances;
             } else {
+                requireIndirectUpdate.push_back(mInstancesData.size());
+                requireInstanceUpdate.push_back(mInstancesData.size());
+                mInstancesData.push_back(instances);
+                mGameObjectIds.push_back(goId);
+                mTextInstanceBufferRanges.push_back(
+                    Utils::SBufferIndexRange{0, 0});
+                mIndirectDrawBufferRanges.push_back(
+                    Utils::SBufferIndexRange{0, 0});
+            }
+        } else if (Core::IsDeleted(dirtyFlag)) {
+            if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, goId);
+                instanceIndex.has_value()) {
+                requireIndirectUpdate.push_back(*instanceIndex);
+                toErase.push_back(*instanceIndex);
+            }
+        } else if (Core::VisibilityChanged(dirtyFlag)) {
+            auto instanceIndex = GetInstanceIndex(mGameObjectIds, goId);
+            if (!component->IsActive() && instanceIndex) {
+                requireIndirectUpdate.push_back(*instanceIndex);
+                toErase.push_back(*instanceIndex);
+            } else if (component->IsActive() && !instanceIndex) {
                 requireIndirectUpdate.push_back(mInstancesData.size());
                 requireInstanceUpdate.push_back(mInstancesData.size());
                 mInstancesData.push_back(instances);
@@ -144,19 +164,20 @@ void CTextRenderer::UpdateInstances(
         }
         component->Clean();
     }
-    for (const auto& id : hidden) {
-        if (auto instanceIndex = GetInstanceIndex(mGameObjectIds, id);
-            instanceIndex.has_value()) {
-            requireIndirectUpdate.push_back(*instanceIndex);
-            toErase.push_back(*instanceIndex);
-        }
-    }
 
     for (const auto& key : requireInstanceUpdate) {
         if (!mTextInstanceBuffer.PrepareData(mTextInstanceBufferRanges[key],
                                              mInstancesData[key])) {
             LOG_WARNING("Failed to prepare instance data!");
         }
+    }
+    for (auto it = toErase.rbegin(); it != toErase.rend(); ++it) {
+        mInstancesData.erase(mInstancesData.begin() + *it);
+        mGameObjectIds.erase(mGameObjectIds.begin() + *it);
+        mTextInstanceBufferRanges.erase(mTextInstanceBufferRanges.begin() +
+                                        *it);
+        mIndirectDrawBufferRanges.erase(mIndirectDrawBufferRanges.begin() +
+                                        *it);
     }
 
     for (const auto& key : requireIndirectUpdate) {
@@ -171,15 +192,6 @@ void CTextRenderer::UpdateInstances(
                                              cmd)) {
             LOG_WARNING("Failed to prepare indirect draw command!");
         }
-    }
-
-    for (auto it = toErase.rbegin(); it != toErase.rend(); ++it) {
-        mInstancesData.erase(mInstancesData.begin() + *it);
-        mGameObjectIds.erase(mGameObjectIds.begin() + *it);
-        mTextInstanceBufferRanges.erase(mTextInstanceBufferRanges.begin() +
-                                        *it);
-        mIndirectDrawBufferRanges.erase(mIndirectDrawBufferRanges.begin() +
-                                        *it);
     }
 }
 

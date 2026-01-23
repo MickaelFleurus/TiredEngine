@@ -10,7 +10,6 @@
 #include <glm/gtx/string_cast.hpp>
 
 namespace Renderer {
-std::vector<Core::GameObjectId> CRendererManager::mHiddenGameObjects;
 
 CRendererManager::CRendererManager(Vulkan::CBufferHandler& bufferHandler,
                                    Material::CMaterialManager& materialManager,
@@ -57,11 +56,9 @@ void CRendererManager::FreeSceneData() {
 void CRendererManager::GenerateInstances(
     Component::CComponentManager& componentManager) {
     mMeshRenderer.UpdateInstances(
-        componentManager.GetComponents(Component::EComponentType::Mesh),
-        mHiddenGameObjects);
+        componentManager.GetComponents(Component::EComponentType::Mesh));
     mTextRenderer.UpdateInstances(
-        componentManager.GetComponents(Component::EComponentType::TextUI),
-        mHiddenGameObjects);
+        componentManager.GetComponents(Component::EComponentType::TextUI));
 }
 
 void CRendererManager::Render(VkCommandBuffer commandBuffer,
@@ -162,10 +159,6 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
             }
         }
     }
-}
-
-void CRendererManager::NotifyGameObjectHidden(Core::GameObjectId id) {
-    mHiddenGameObjects.push_back(id);
 }
 
 } // namespace Renderer

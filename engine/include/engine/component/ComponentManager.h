@@ -59,8 +59,8 @@ public:
 
     bool HasComponent(Core::GameObjectId entityId, EComponentType type) const;
 
-    void RemoveComponent(Core::GameObjectId id, EComponentType type);
-    void RemoveComponents(Core::GameObjectId id);
+    void MarkAsDeleted(Core::GameObjectId id, EComponentType type);
+    void MarkAsDeleted(Core::GameObjectId id);
 
     CTextUIComponent& AddTextComponent(Core::GameObjectId owner);
     CCamera3DComponent& AddCameraComponent(Core::GameObjectId owner);
@@ -71,12 +71,14 @@ public:
     void Update(float deltaTime);
     void CloneComponents(Core::GameObjectId dest, Core::GameObjectId src);
     void OnDirty(Core::GameObjectId id) override;
+    void CleanDeleted();
 
 private:
     struct ComponentPool {
         std::vector<std::unique_ptr<IComponent>> mComponents;
         std::vector<Core::GameObjectId> mEntityIds;
-        std::unordered_map<Core::GameObjectId, size_t, Core::GameObjectIdHash>
+        std::unordered_map<Core::GameObjectId, std::size_t,
+                           Core::GameObjectIdHash>
             mEntityToIndex;
     };
 
@@ -94,7 +96,7 @@ private:
             std::make_unique<T>(id, *this, std::forward<Args>(args)...);
         T* rawPtr = component.get();
 
-        size_t newIndex = pool.mComponents.size();
+        const std::size_t newIndex = pool.mComponents.size();
         pool.mComponents.emplace_back(std::move(component));
         pool.mEntityIds.emplace_back(id);
         pool.mEntityToIndex[id] = newIndex;
@@ -122,6 +124,8 @@ private:
     Renderer::CSpriteManager& mSpriteManager;
     Core::CCameraManager& mCameraManager;
     std::vector<ComponentPool> mComponentPools;
+    std::unordered_map<EComponentType, std::optional<std::size_t>>
+        mNewComponentCount;
     CToken mToken;
 };
 } // namespace Component

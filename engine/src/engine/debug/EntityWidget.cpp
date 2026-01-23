@@ -8,21 +8,21 @@
 #include "engine/component/MeshComponent.h"
 #include "engine/component/TextUIComponent.h"
 #include "engine/core/GameObject.h"
+#include "engine/core/GameObjectManager.h"
 #include "engine/debug/CameraComponentWidget.h"
 #include "engine/debug/MeshComponentWidget.h"
 #include "engine/debug/TextUIComponentWidget.h"
 #include "engine/debug/TransformComponentWidget.h"
-#include "engine/renderer/TransformManager.h"
 
 namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
                              Utils::CFileHandler& fileHandler,
                              Font::CFontHandler& fontHandler,
-                             Renderer::CTransformManager& transformManager)
+                             Core::CGameObjectManager& gameObjectManager)
     : mComponentManager(componentManager)
     , mFileHandler(fileHandler)
     , mFontHandler(fontHandler)
-    , mTransformManager(transformManager) {
+    , mGameObjectManager(gameObjectManager) {
 }
 
 CEntityWidget::~CEntityWidget() = default;
@@ -48,7 +48,7 @@ void CEntityWidget::OnItemClicked(std::optional<Core::GameObjectId> id) {
     SetVisible(true);
 
     mTransformWidget = std::make_unique<Debug::CTransformWidget>(
-        mTransformManager.CreateHandle(*mId));
+        mGameObjectManager.GetTransformManager().CreateHandle(*mId));
 
     if (auto* textComponent =
             mComponentManager.GetComponent<Component::CTextUIComponent>(*mId)) {
@@ -68,7 +68,7 @@ void CEntityWidget::OnItemClicked(std::optional<Core::GameObjectId> id) {
 }
 
 void CEntityWidget::RenderEntityHeader() {
-    // Entity name header with background
+
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
 
@@ -76,7 +76,8 @@ void CEntityWidget::RenderEntityHeader() {
                       ImGuiWindowFlags_NoMove);
     ImGui::TextUnformatted("Entity Properties");
     ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-    ImGui::TextWrapped("Name: %s", "Unknown"); // TODO
+    ImGui::TextWrapped("Name: %s",
+                       mGameObjectManager.GetStringId(*mId).GetName().c_str());
     ImGui::EndChild();
 
     ImGui::PopStyleVar();
@@ -131,7 +132,7 @@ void CEntityWidget::RenderComponentWithHeader(
             ImGui::PopStyleColor(2);
             ImGui::PopID();
             ImGui::PopStyleColor(2);
-            mComponentManager.RemoveComponent(*mId, componentType);
+            mComponentManager.MarkAsDeleted(*mId, componentType);
             OnItemClicked(mId);
             ImGui::Spacing();
             ImGui::TreePop();

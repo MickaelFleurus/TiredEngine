@@ -209,6 +209,12 @@ void CTransformManager::UpdateDirties() {
     mDirtyTransform.clear();
 }
 
+void CTransformManager::Clone(Core::GameObjectId dest, Core::GameObjectId src) {
+    mBases[dest.index] = mBases[src.index];
+    mExtras[dest.index] = mExtras[src.index];
+    mExtended[dest.index] = mExtended[src.index];
+}
+
 void CTransformManager::NotifyAll(Core::GameObjectId id) {
     for (auto& observer : mObservers) {
         observer.OnDirty(id);

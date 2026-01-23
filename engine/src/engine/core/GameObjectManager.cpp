@@ -1,5 +1,6 @@
 #include "engine/core/GameObjectManager.h"
 
+#include "engine/component/ComponentManager.h"
 #include "engine/renderer/TransformManager.h"
 
 namespace {
@@ -12,6 +13,10 @@ CGameObjectManager::CGameObjectManager() : mTransformManager(*this) {
 }
 
 GameObjectId CGameObjectManager::CreateObject(const std::string& name) {
+    return CreateObject(CStringId(name));
+}
+
+GameObjectId CGameObjectManager::CreateObject(CStringId name) {
     GameObjectId id{};
     if (mNextAvailableObject.size() != 0) {
         id = mNextAvailableObject.front();
@@ -25,8 +30,7 @@ GameObjectId CGameObjectManager::CreateObject(const std::string& name) {
     SGameObjectSlot& slot = mGameObjects[id.index];
     slot.mExists = true;
     slot.mGeneration = id.generation;
-    slot.mObject =
-        SGameObject{.mId = id, .mIsActive = true, .mName = CStringID(name)};
+    slot.mObject = SGameObject{.mId = id, .mIsActive = true, .mName = name};
 
     mTransformManager.Reset(id.index);
     return id;
@@ -48,11 +52,11 @@ Renderer::CTransformManager& CGameObjectManager::GetTransformManager() {
     return mTransformManager;
 }
 
-CStringID CGameObjectManager::GetName(GameObjectId id) {
+CStringId CGameObjectManager::GetStringId(GameObjectId id) {
     return mGameObjects.at(id.index).mObject.mName;
 }
 
-void CGameObjectManager::SetName(GameObjectId id, CStringID name) {
+void CGameObjectManager::SetStringId(GameObjectId id, CStringId name) {
     mGameObjects[id.index].mObject.mName = name;
 }
 

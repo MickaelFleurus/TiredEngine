@@ -86,7 +86,7 @@ void CSceneHierarchy::DrawNodeRecursive(Core::GameObjectId obj) {
     if (!handle.HasChildren()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
-    std::string name = mGameObjectManager.GetName(obj).GetName();
+    std::string name = mGameObjectManager.GetStringId(obj).GetName();
     bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
@@ -121,7 +121,7 @@ void CSceneHierarchy::DrawContextMenu() {
                                        ImGuiPopupFlags_MouseButtonRight)) {
         if (mSelectedItem) {
             std::string name =
-                mGameObjectManager.GetName(*mSelectedItem).GetName();
+                mGameObjectManager.GetStringId(*mSelectedItem).GetName();
             if (ImGui::MenuItem("Rename")) {
                 FillDefaultNameBuffer(name);
                 mModalName = "Rename Entity";
@@ -194,8 +194,8 @@ void CSceneHierarchy::DrawNameModal() {
         }
 
         if (renamed && mSelectedItem) {
-            mGameObjectManager.SetName(*mSelectedItem,
-                                       CStringID(kDefaultNameBuffer));
+            mGameObjectManager.SetStringId(*mSelectedItem,
+                                           CStringId(kDefaultNameBuffer));
             isOpen = false;
             mModalName = std::nullopt;
             ImGui::CloseCurrentPopup();

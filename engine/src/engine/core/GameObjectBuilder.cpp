@@ -13,6 +13,7 @@
 #include "engine/font/FontHandler.h"
 #include "engine/renderer/TransformManager.h"
 #include "engine/utils/Logger.h"
+#include "engine/utils/StringId.h"
 
 namespace Core {
 
@@ -123,6 +124,18 @@ Core::GameObjectId CGameObjectBuilder::Build() {
     auto created = *mCreatedObj;
     mCreatedObj = std::nullopt;
     return created;
+}
+
+Core::GameObjectId CGameObjectBuilder::CloneObject(GameObjectId cloned,
+                                                   const std::string& name) {
+    CStringId objName{name};
+    if (name.empty()) {
+        objName = mGameObjectManager.GetStringId(cloned) + "_cloned";
+    }
+    auto clone = mGameObjectManager.CreateObject(objName);
+    mComponentManager.CloneComponents(clone, cloned);
+    mGameObjectManager.GetTransformManager().Clone(clone, cloned);
+    return clone;
 }
 
 } // namespace Core

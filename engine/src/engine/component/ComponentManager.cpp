@@ -67,9 +67,9 @@ void CComponentManager::AddComponent(EComponentType type,
     }
 }
 
-void CComponentManager::RemoveComponents(Core::GameObjectId id) {
+void CComponentManager::MarkAsDeleted(Core::GameObjectId id) {
     for (auto type : magic_enum::enum_values<Component::EComponentType>()) {
-        RemoveComponent(id, type);
+        MarkAsDeleted(id, type);
     }
 }
 
@@ -125,8 +125,8 @@ CComponentManager::GetComponentPool(EComponentType type) const {
     return mComponentPools.at(static_cast<int>(type));
 }
 
-void CComponentManager::RemoveComponent(Core::GameObjectId id,
-                                        EComponentType type) {
+void CComponentManager::MarkAsDeleted(Core::GameObjectId id,
+                                      EComponentType type) {
     auto& pool = GetComponentPool(type);
     auto it = pool.mEntityToIndex.find(id);
     if (it == pool.mEntityToIndex.end()) {
@@ -134,19 +134,23 @@ void CComponentManager::RemoveComponent(Core::GameObjectId id,
     }
 
     const size_t indexToRemove = it->second;
-    const size_t lastIndex = pool.mComponents.size() - 1;
-
+    size_t lastIndex = pool.mComponents.size() - 1;
+    while (Core::IsDeleted(pool.mComponents[lastIndex]->GetDirtyFlag()) &&
+           lastIndex != 0) {
+        lastIndex--;
+    }
     // Swap with last element if not already the last
     if (indexToRemove != lastIndex) {
-        pool.mComponents[indexToRemove] =
-            std::move(pool.mComponents[lastIndex]);
+        pool.mComponents[indexToRemove].swap(pool.mComponents[lastIndex]);
         pool.mEntityIds[indexToRemove] = pool.mEntityIds[lastIndex];
 
-        // Update the moved component's index in the map
         pool.mEntityToIndex[pool.mEntityIds[indexToRemove]] = indexToRemove;
     }
-
-    pool.mComponents.pop_back();
+    pool.mComponents[lastIndex]->SetDirtyFlag(Core::EDirtyFlag::Deleted);
+    auto& toDeleteIndex = mNewComponentCount[type];
+    if (!toDeleteIndex.has_value() || toDeleteIndex > lastIndex) {
+        toDeleteIndex = lastIndex;
+    }
     pool.mEntityIds.pop_back();
     pool.mEntityToIndex.erase(id);
 }
@@ -196,5 +200,18 @@ EComponentType CComponentManager::GetComponentType(std::type_index type) const {
     LOG_FATAL("Unknown component type");
     return EComponentType::Sprite; // Default return to avoid compiler
                                    // warning
+}
+
+void CComponentManager::CleanDeleted() {
+    if (!mNewComponentCount.empty()) {
+        for (const auto& [type, optIndex] : mNewComponentCount) {
+            if (optIndex) {
+                auto& pool = GetComponentPool(type);
+
+                pool.mComponents.resize(*optIndex);
+            }
+        }
+        mNewComponentCount.clear();
+    }
 }
 } // namespace Component

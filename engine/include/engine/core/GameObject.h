@@ -5,7 +5,7 @@
 
 namespace Core {
 struct SGameObject {
-    CStringID mName{""};
+    CStringId mName{""};
     GameObjectId mId;
     bool mIsActive;
 };

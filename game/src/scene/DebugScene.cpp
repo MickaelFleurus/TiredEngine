@@ -35,7 +35,9 @@ CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
             .SetMaterialType(Material::EMaterialType::Normal)
             .Build();
 
-        objBuilder.Start("Text").AddText("Hello Debug! \nYo", 60).Build();
+        auto id =
+            objBuilder.Start("Text").AddText("Hello Debug! \nYo", 60).Build();
+        objBuilder.CloneObject(id);
     };
 }
 

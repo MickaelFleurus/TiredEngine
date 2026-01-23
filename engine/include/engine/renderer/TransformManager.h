@@ -48,6 +48,8 @@ public:
     CTransformHandle CreateHandle(Core::GameObjectId id);
     void Update();
 
+    void Clone(Core::GameObjectId dest, Core::GameObjectId src);
+
 private:
     void AddDirtyTransform(Core::GameObjectId id);
     void RebuildLevels();

@@ -11,8 +11,9 @@ enum class EDirtyFlag : uint8_t {
     TextSizeChange = 1 << 3,
     Pipeline = 1 << 4,
     Visibility = 1 << 5,
+    Deleted = 1 << 6,
     New = Transform | InstanceProperties | TextInstanceProperties |
-          TextSizeChange | Pipeline | Visibility
+          TextSizeChange | Pipeline
 };
 
 // Bitwise operators for EDirtyFlag
@@ -42,8 +43,16 @@ inline EDirtyFlag& operator&=(EDirtyFlag& lhs, EDirtyFlag rhs) {
 }
 
 inline bool RequireReordering(EDirtyFlag dirtyType) {
-    return (dirtyType & (EDirtyFlag::TextSizeChange | EDirtyFlag::Pipeline |
-                         EDirtyFlag::Visibility)) != EDirtyFlag::None;
+    return (dirtyType & (EDirtyFlag::TextSizeChange | EDirtyFlag::Pipeline)) !=
+           EDirtyFlag::None;
+}
+
+inline bool IsDeleted(EDirtyFlag dirtyType) {
+    return (dirtyType & EDirtyFlag::Deleted) != EDirtyFlag::None;
+}
+
+inline bool VisibilityChanged(EDirtyFlag dirtyType) {
+    return (dirtyType & EDirtyFlag::Visibility) != EDirtyFlag::None;
 }
 
 } // namespace Core
