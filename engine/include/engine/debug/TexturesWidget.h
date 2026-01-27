@@ -11,18 +11,16 @@ class CTextureManager;
 } // namespace Renderer
 
 namespace Debug {
-
+class CTextureImGuiContainer;
 class CTexturesWidget : public IOverlordItem {
 public:
-    CTexturesWidget(Renderer::CTextureManager& textureManager);
-    ~CTexturesWidget() override;
+    CTexturesWidget(CTextureImGuiContainer& textureContainer);
 
     const char* GetName() const override;
     void Render() override;
 
 private:
-    Renderer::CTextureManager& mTextureManager;
-    std::unordered_map<int, ImTextureID> mImGuiTextureIDs;
+    CTextureImGuiContainer& mTextureContainer;
 };
 
 } // namespace Debug

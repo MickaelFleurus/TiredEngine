@@ -8,6 +8,7 @@
 #include <engine/debug/OverlordSettingsWidget.h>
 #include <engine/debug/SceneHierarchy.h>
 #include <engine/debug/SceneLoaderOverlord.h>
+#include <engine/debug/TextureImGuiContainer.h>
 #include <engine/debug/TexturesWidget.h>
 #include <engine/utils/OverlordSettings.h>
 #include <engine/utils/Token.h>
@@ -15,6 +16,7 @@
 namespace Core {
 class CCameraManager;
 class CGameObjectManager;
+class CMeshManager;
 } // namespace Core
 
 namespace Utils {
@@ -38,9 +40,7 @@ namespace Vulkan {
 class CBufferHandler;
 } // namespace Vulkan
 
-namespace Renderer {
-class CTextureManager;
-} // namespace Renderer
+class CAssetParser;
 
 namespace Debug {
 class COverlordToolHandler {
@@ -53,7 +53,9 @@ public:
                          Renderer::CTextureManager& textureManager,
                          Scene::CSceneLoader& sceneLoaderOverlord,
                          Core::CCameraManager& cameraManager,
-                         Core::CGameObjectManager& gameObjectManager);
+                         Core::CGameObjectManager& gameObjectManager,
+                         Core::CMeshManager& meshManager,
+                         const CAssetParser& assetParser);
 
     void Initialize();
 
@@ -63,6 +65,7 @@ private:
     Utils::COverlordSettings mSettings;
 
     COverlordSettingsWidget mOverlordSettings;
+    CTextureImGuiContainer mTextureContainer;
     CSceneLoaderOverlord mSceneLoaderOverlord;
     CEntityWidget mEntityWidget;
     CSceneHierarchy mSceneHierarchy;

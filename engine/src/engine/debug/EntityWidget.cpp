@@ -18,11 +18,17 @@ namespace Debug {
 CEntityWidget::CEntityWidget(Component::CComponentManager& componentManager,
                              Utils::CFileHandler& fileHandler,
                              Font::CFontHandler& fontHandler,
-                             Core::CGameObjectManager& gameObjectManager)
+                             Core::CGameObjectManager& gameObjectManager,
+                             Core::CMeshManager& meshManager,
+                             CTextureImGuiContainer& textureContainer,
+                             const CAssetParser& assetParser)
     : mComponentManager(componentManager)
     , mFileHandler(fileHandler)
     , mFontHandler(fontHandler)
-    , mGameObjectManager(gameObjectManager) {
+    , mGameObjectManager(gameObjectManager)
+    , mMeshManager(meshManager)
+    , mTextureContainer(textureContainer)
+    , mAssetParser(assetParser) {
 }
 
 CEntityWidget::~CEntityWidget() = default;
@@ -53,7 +59,7 @@ void CEntityWidget::OnItemClicked(std::optional<Core::GameObjectId> id) {
     if (auto* textComponent =
             mComponentManager.GetComponent<Component::CTextUIComponent>(*mId)) {
         mTextWidget = std::make_unique<Debug::CTextUIComponentWidget>(
-            *textComponent, mFileHandler, mFontHandler);
+            *textComponent, mFileHandler, mFontHandler, mAssetParser);
     }
     if (auto* cameraComponent =
             mComponentManager.GetComponent<Component::CCamera3DComponent>(
@@ -62,8 +68,8 @@ void CEntityWidget::OnItemClicked(std::optional<Core::GameObjectId> id) {
     }
     if (auto* meshComponent =
             mComponentManager.GetComponent<Component::CMeshComponent>(*mId)) {
-        mMeshWidget =
-            std::make_unique<Debug::CMeshComponentWidget>(*meshComponent);
+        mMeshWidget = std::make_unique<Debug::CMeshComponentWidget>(
+            *meshComponent, mMeshManager, mTextureContainer);
     }
 }
 

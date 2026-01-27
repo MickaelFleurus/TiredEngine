@@ -20,7 +20,6 @@
 #include "engine/renderer/TransformManager.h"
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
-#include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
@@ -40,6 +39,8 @@ namespace System {
 class CSystem;
 }
 
+class CAssetParser;
+
 namespace Core {
 class CEngineLoop {
 public:
@@ -58,6 +59,7 @@ protected:
     Thread::CPool mThreadPool;
     Vulkan::CVulkanContext& mVulkanContext;
     Vulkan::CVulkanRendering mVulkanRendering;
+    CAssetParser& mAssetParser;
     Core::CGameObjectManager mGameObjectManager;
     Core::CCameraManager mCameraManager;
     Vulkan::CDescriptorStorage mDescriptorStorage;

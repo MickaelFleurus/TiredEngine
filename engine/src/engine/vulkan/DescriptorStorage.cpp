@@ -46,23 +46,23 @@ void CDescriptorStorage::Init() {
     textureBinding.pImmutableSamplers = nullptr;
     mBindingInfos.push_back(textureBinding);
 
-    VkDescriptorSetLayoutBinding instancesBinding{};
-    instancesBinding.binding = kInstanceBufferBinding;
-    instancesBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    instancesBinding.descriptorCount = Vulkan::kInstanceAmountPerBuffer;
-    instancesBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    instancesBinding.pImmutableSamplers = nullptr;
-    mBindingInfos.push_back(instancesBinding);
+    // VkDescriptorSetLayoutBinding instancesBinding{};
+    // instancesBinding.binding = kInstanceBufferBinding;
+    // instancesBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    // instancesBinding.descriptorCount = Vulkan::kInstanceAmountPerBuffer;
+    // instancesBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    // instancesBinding.pImmutableSamplers = nullptr;
+    // mBindingInfos.push_back(instancesBinding);
 
     VkDescriptorBindingFlags bindingFlag =
         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-    VkDescriptorBindingFlags bindingFlags[2] = {bindingFlag, bindingFlag};
+    VkDescriptorBindingFlags bindingFlags[1] = {bindingFlag};
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
     bindingFlagsInfo.sType =
         VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-    bindingFlagsInfo.bindingCount = 2;
+    bindingFlagsInfo.bindingCount = 1;
     bindingFlagsInfo.pBindingFlags = bindingFlags;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};

@@ -1,8 +1,9 @@
 #include "engine/utils/OverlordSettings.h"
 
+#include <nlohmann/json.hpp>
+
 #include "engine/scene/ISceneHandler.h"
 #include "engine/utils/FileHandler.h"
-#include <nlohmann/json.hpp>
 
 namespace {
 constexpr const char* kSettingsFile = "overlord_settings";
@@ -34,7 +35,7 @@ void COverlordSettings::LoadSettings() {
 void COverlordSettings::SaveSettings() const {
     nlohmann::json config;
     config[kDefaultSceneKey] = mDefaultSceneToLoad;
-    mFileHandler.SaveJson(mPath, config);
+    mFileHandler.SaveJson(mPath, "", config);
 }
 
 void COverlordSettings::ApplySettings() {

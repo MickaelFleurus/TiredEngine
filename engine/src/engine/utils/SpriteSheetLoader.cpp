@@ -4,6 +4,7 @@
 
 #include "engine/core/Sprite.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
 
@@ -13,19 +14,18 @@ constexpr const char* kSpriteFolder = "sprite_sheets";
 
 namespace Utils {
 
-std::unordered_map<std::string, Core::SSpriteInfo>
-LoadSpriteSheet(Utils::CFileHandler& fileHandler,
-                Renderer::CTextureManager& textureManager,
-                const std::string& name) {
+std::unordered_map<std::string, Core::SSpriteInfo> LoadSpriteSheet(
+    const CAssetParser& assetParser, const CFileHandler& fileHandler,
+    Renderer::CTextureManager& textureManager, const std::string& name) {
     std::unordered_map<std::string, Core::SSpriteInfo> sprites;
-
-    if (!fileHandler.DoesFileExist(name, ".png") ||
-        !fileHandler.DoesFileExist(name, ".yaml")) {
-        LOG_ERROR("Sprite sheet files not found: {}", name);
+    auto asset = assetParser.Get(EAssetType::Texture, name);
+    if (!asset || !asset->get().mMetadata.has_value()) {
+        LOG_ERROR("Could not locate file named {}", name);
         return {};
     }
-    int textureIndex = textureManager.LoadTexture(name);
-    auto spriteDesc = fileHandler.LoadYAML(name);
+
+    int textureIndex = textureManager.LoadTexture(asset->get());
+    auto spriteDesc = fileHandler.LoadYAML(asset->get().mMetadata->string());
     if (!spriteDesc.IsDefined()) {
         LOG_ERROR("Failed to load sprite sheet description: {}", name);
         return {};

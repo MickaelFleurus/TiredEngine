@@ -7,6 +7,7 @@
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/TextureManager.h"
 #include "engine/thread/Pool.h"
+#include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
 
@@ -100,10 +101,10 @@ msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
     return fontMetrics;
 }
 
-void LoadExistingFontData(const std::string& filePath, SFontData& fontData,
+void LoadExistingFontData(const SAsset& asset, SFontData& fontData,
                           Utils::CFileHandler& fileHandler) {
-    fontData.surface = fileHandler.LoadTextureFile(filePath);
-    nlohmann::json jsonData = fileHandler.LoadJson(filePath);
+    fontData.surface = fileHandler.LoadTextureFile(asset.mPath);
+    nlohmann::json jsonData = fileHandler.LoadJson(asset.mMetadata.value());
     fontData.glyphInfos = JsonToGlyphs(jsonData);
     fontData.fontMetrics = JsonToFontMetrics(jsonData);
 }
@@ -218,11 +219,13 @@ namespace Font {
 CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
                            Utils::CFileHandler& fileHandler,
                            Material::CMaterialManager& materialManager,
-                           Thread::CPool& threadPool)
+                           Thread::CPool& threadPool,
+                           const CAssetParser& assetParser)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
     , mMaterialManager(materialManager)
-    , mThreadPool(threadPool) {
+    , mThreadPool(threadPool)
+    , mAssetParser(assetParser) {
 }
 
 CFontHandler::~CFontHandler() {
@@ -234,18 +237,15 @@ CPolice& CFontHandler::GetPolice(std::string name) {
         return it->second;
     }
 
-    const std::string glyphTexFilePath =
-        std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
+    auto fontTexturePath = mAssetParser.Get(EAssetType::Texture, name);
+    if (!fontTexturePath || !fontTexturePath->get().mMetadata.has_value()) {
+        LOG_FATAL("Font {} does not seems to exists or has not be loaded yet: "
+                  "file not found",
+                  name);
+    }
 
     SFontData fontData;
-    if (mFileHandler.DoesFileExist(glyphTexFilePath, ".png")) {
-        LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
-    } else {
-        LOG_FATAL("Font should be loaded before being used: {}", name);
-    }
-    if (!fontData.surface) {
-        LOG_FATAL(std::format("Failed to load or create font: {}", name));
-    }
+    LoadExistingFontData(fontTexturePath->get(), fontData, mFileHandler);
     auto textureIndex =
         mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 
@@ -269,11 +269,11 @@ void CFontHandler::LoadAllThePolices() {
 
     LOG_INFO("Loading fonts...");
     std::vector<std::function<void()>> jobs;
-    const auto fontFiles = mFileHandler.GetFileNames(".ttf", "fonts", false);
+    const auto fontFiles = mAssetParser.Get(EAssetType::Font);
     for (const auto& fontFile : fontFiles) {
-
-        const std::string glyphTexFilePath = std::format(
-            "{}/font_textures/{}", mFileHandler.GetTempFolder(), fontFile);
+        const std::string glyphTexFilePath =
+            std::format("{}/textures/{}", mFileHandler.GetTempFolder(),
+                        fontFile.mPath.stem().string());
         if (!mFileHandler.DoesFileExist(glyphTexFilePath, ".png")) {
             jobs.push_back(
                 [this, fontFile, freeType]() { LoadFont(fontFile, freeType); });
@@ -284,29 +284,31 @@ void CFontHandler::LoadAllThePolices() {
     LOG_INFO("All fonts loaded.");
 }
 
-bool CFontHandler::LoadFont(const std::string& name,
+bool CFontHandler::LoadFont(const SAsset& fontAsset,
                             msdfgen::FreetypeHandle* freeType) {
 
+    const auto fontName = fontAsset.mPath.stem().string();
     if (!freeType) {
         freeType = msdfgen::initializeFreetype();
         if (!freeType) {
-            LOG_ERROR("Failed to initialize FreeType for font: {}", name);
+            LOG_ERROR("Failed to initialize FreeType for font: {}", fontName);
             return false;
         }
     }
 
-    const std::string glyphTexFilePath =
-        std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
+    SFontData fontData = CreateFontData(freeType, fontAsset.mPath.string());
 
-    const std::string fontPath =
-        std::format("{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name);
-
-    SFontData fontData = CreateFontData(freeType, fontPath);
-
-    mFileHandler.SaveTextureFile(glyphTexFilePath, fontData.surface, ".png");
-    mFileHandler.SaveJson(glyphTexFilePath, GlyphsToJson(fontData.glyphInfos,
-                                                         fontData.fontMetrics));
-    LOG_INFO("Loaded font: {}", name);
+    if (!mFileHandler.SaveTextureFile(fontName, fontData.surface)) {
+        LOG_ERROR("Could not save font texture {}.", fontName);
+        return false;
+    }
+    if (!mFileHandler.SaveJson(
+            fontName, "textures",
+            GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics))) {
+        LOG_ERROR("Could not save font metadata {}.", fontName);
+        return false;
+    }
+    LOG_INFO("Loaded font: {}", fontName);
     return true;
 }
 

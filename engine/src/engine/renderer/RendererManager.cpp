@@ -64,6 +64,10 @@ void CRendererManager::GenerateInstances(
 void CRendererManager::Render(VkCommandBuffer commandBuffer,
                               VkDescriptorSet descriptorSet,
                               Core::CCamera& camera, Core::CCamera& uiCamera) {
+    if (descriptorSet == VK_NULL_HANDLE) {
+        LOG_ERROR("Invalid descriptor set passed to Render!");
+        return;
+    }
     mVertexBuffer.Upload();
     mIndexesBuffer.Upload();
     mInstanceBuffer.Upload();
@@ -88,6 +92,7 @@ void CRendererManager::Render(VkCommandBuffer commandBuffer,
         auto pipeline = currentMaterial->GetPipeline();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                           pipeline);
+
         VkPipelineLayout pipelineLayout = currentMaterial->GetPipelineLayout();
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout, 0, 1, &descriptorSet, 0,

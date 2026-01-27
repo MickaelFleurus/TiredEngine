@@ -3,18 +3,18 @@
 #include <imgui.h>
 
 #include "engine/scene/SceneLoader.h"
-#include "engine/utils/FileHandler.h"
+#include "engine/utils/AssetParser.h"
 
 namespace Debug {
 
 CLevelSceneLoaderWidget::CLevelSceneLoaderWidget(
-    Utils::CFileHandler& fileHandler, Scene::CSceneLoader& sceneLoader)
-    : mFileHandler(fileHandler), mSceneLoader(sceneLoader) {
+    const CAssetParser& assetParser, Scene::CSceneLoader& sceneLoader)
+    : mAssetParser(assetParser), mSceneLoader(sceneLoader) {
 }
 
 void CLevelSceneLoaderWidget::Render() {
     if (mNeedsRefresh) {
-        mSceneFiles = mFileHandler.GetFileNames(".yaml", "/levels");
+        mLevels = mAssetParser.Get(EAssetType::Level);
         mSelectedSceneIndex = -1;
         mNeedsRefresh = false;
     }
@@ -27,15 +27,14 @@ void CLevelSceneLoaderWidget::Render() {
 
     // Display the list of scenes
     if (ImGui::BeginListBox("##scenes", ImVec2(-1, 200))) {
-        for (int i = 0; i < static_cast<int>(mSceneFiles.size()); ++i) {
-            const char* sceneName = mSceneFiles[i].c_str();
+        for (int i = 0; i < static_cast<int>(mLevels.size()); ++i) {
+            auto sceneName = mLevels[i].mPath.stem().string();
             bool isSelected = (mSelectedSceneIndex == i);
 
-            if (ImGui::Selectable(sceneName, isSelected,
+            if (ImGui::Selectable(sceneName.c_str(), isSelected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
                 mSelectedSceneIndex = i;
-                mSelectedScenePath = mFileHandler.GetAssetsFolder() +
-                                     "/levels/" + mSceneFiles[i];
+                mSelectedScenePath = mLevels[i].mPath;
                 // Load on double-click
                 if (ImGui::IsMouseDoubleClicked(0)) {
                     mSceneLoader.LoadSceneFromFile(mSelectedScenePath);
@@ -54,7 +53,7 @@ void CLevelSceneLoaderWidget::Render() {
     // Load button
     if (ImGui::Button("Load Scene", ImVec2(120, 0))) {
         if (mSelectedSceneIndex >= 0 &&
-            mSelectedSceneIndex < static_cast<int>(mSceneFiles.size())) {
+            mSelectedSceneIndex < static_cast<int>(mLevels.size())) {
             mSceneLoader.LoadSceneFromFile(mSelectedScenePath);
         }
     }

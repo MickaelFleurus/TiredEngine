@@ -4,31 +4,28 @@
 #include <vector>
 
 #include "engine/debug/IOverlordItem.h"
-
-namespace Utils {
-class CFileHandler;
-}
+#include "engine/utils/Asset.h"
 
 namespace Scene {
 class CSceneLoader;
 }
-
+class CAssetParser;
 namespace Debug {
 
 class CLevelSceneLoaderWidget : public IOverlordItem {
 public:
-    explicit CLevelSceneLoaderWidget(Utils::CFileHandler& fileHandler,
+    explicit CLevelSceneLoaderWidget(const CAssetParser& assetParser,
                                      Scene::CSceneLoader& sceneLoader);
     void Render() override;
     const char* GetName() const override;
 
 private:
-    Utils::CFileHandler& mFileHandler;
+    const CAssetParser& mAssetParser;
     Scene::CSceneLoader& mSceneLoader;
 
-    std::vector<std::string> mSceneFiles;
+    std::vector<SAsset> mLevels;
     int mSelectedSceneIndex{-1};
     bool mNeedsRefresh{true};
-    std::string mSelectedScenePath;
+    std::filesystem::path mSelectedScenePath;
 };
 } // namespace Debug

@@ -20,6 +20,9 @@ class CDescriptorStorage;
 class CBufferHandler;
 } // namespace Vulkan
 
+class CAssetParser;
+struct SAsset;
+
 namespace Renderer {
 
 struct VulkanTexture {
@@ -32,7 +35,6 @@ struct VulkanTexture {
 };
 
 class CMemoryAllocator;
-
 class CTextureManager {
 public:
     CTextureManager(const Vulkan::CVulkanContext& context,
@@ -40,9 +42,11 @@ public:
                     Renderer::CMemoryAllocator& memoryAllocator,
                     Vulkan::CBufferHandler& bufferHandler,
                     Utils::CFileHandler& fileHandler,
-                    Vulkan::CDescriptorStorage& descriptorStorage);
+                    Vulkan::CDescriptorStorage& descriptorStorage,
+                    const CAssetParser& assetParser);
     ~CTextureManager();
 
+    int LoadTexture(const SAsset& asset);
     int LoadTexture(const std::string& filename);
     int LoadTextureFromSurface(const std::string& filename,
                                SDL_Surface* surface);
@@ -64,6 +68,7 @@ private:
     Vulkan::CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;
     Vulkan::CDescriptorStorage& mDescriptorStorage;
+    const CAssetParser& mAssetParser;
 
     std::vector<VulkanTexture> mLoadedTextures;
     std::unordered_map<std::string, int> mLoadedTexturesIndices;

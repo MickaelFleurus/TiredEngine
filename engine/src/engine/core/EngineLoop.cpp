@@ -14,6 +14,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                          Vulkan::CVulkanContext& vulkanContext)
     : mVulkanContext(vulkanContext)
     , mVulkanRendering(vulkanContext)
+    , mAssetParser(system.GetAssetParser())
     , mGameObjectManager()
     , mCameraManager(mGameObjectManager.GetTransformManager(),
                      system.GetFileHandler())
@@ -22,12 +23,13 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mBufferHandler(mVulkanContext, mMemoryAllocator)
     , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
                        mDescriptorStorage)
-    , mSpriteManager(system.GetFileHandler(), mTextureManager)
+    , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
+                     mTextureManager)
     , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
-                      mDescriptorStorage)
+                      mDescriptorStorage, system.GetAssetParser())
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
-                   mThreadPool)
+                   mThreadPool, mAssetParser)
     , mComponentManager(mFontHandler, mMaterialManager, mSpriteManager,
                         mCameraManager,
                         mGameObjectManager.GetTransformManager())
@@ -39,6 +41,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
     , mOverlordManager(mVulkanContext, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
+    mTextureManager.LoadTexture("WhitePixel");
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -90,6 +93,7 @@ bool CEngineLoop::Run() {
         }
         mInputHandler.Swap();
         mComponentManager.CleanDeleted();
+        mAssetParser.CheckAndUpdateAssets();
     }
     return true;
 }

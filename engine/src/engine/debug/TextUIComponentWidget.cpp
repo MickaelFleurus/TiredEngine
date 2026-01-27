@@ -6,16 +6,16 @@
 #include "engine/component/TextUIComponent.h"
 #include "engine/font/FontHandler.h"
 #include "engine/font/Police.h"
+#include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/StringUtils.h"
 
 namespace {
-constexpr const char* kFontExtension = ".ttf";
-
-int GetFontIndexByName(const std::vector<std::string>& availableFonts,
+int GetFontIndexByName(const std::vector<SAsset>& availableFonts,
                        const std::string& policeName) {
     for (size_t i = 0; i < availableFonts.size(); ++i) {
-        if (Utils::CompareIgnoreCase(availableFonts[i], policeName)) {
+        if (Utils::CompareIgnoreCase(availableFonts[i].mPath.stem().string(),
+                                     policeName)) {
             return static_cast<int>(i);
         }
     }
@@ -26,15 +26,19 @@ int GetFontIndexByName(const std::vector<std::string>& availableFonts,
 namespace Debug {
 CTextUIComponentWidget::CTextUIComponentWidget(
     Component::CTextUIComponent& textComponent,
-    Utils::CFileHandler& fileHandler, Font::CFontHandler& fontHandler)
+    Utils::CFileHandler& fileHandler, Font::CFontHandler& fontHandler,
+    const CAssetParser& fileParser)
     : mTextComponent(textComponent)
     , mFontHandler(fontHandler)
-    , mAvailableFonts(fileHandler.GetFileNames(kFontExtension, "", false))
+    , mFileParser(fileParser)
+    , mAvailableFonts(fileParser.Get(EAssetType::Font))
     , mCurrentText(textComponent.GetText())
     , mFontSize(mTextComponent.GetFontSize())
     , mFontColor(textComponent.GetColor())
     , mFontChoiceIndex(GetFontIndexByName(
-          mAvailableFonts, mTextComponent.GetPolice()->GetName())) {
+          mAvailableFonts, mTextComponent.GetPolice()
+                               ? mTextComponent.GetPolice()->GetName()
+                               : "None")) {
     SetVisible(true);
 }
 
@@ -43,13 +47,15 @@ void CTextUIComponentWidget::Render() {
     if (ImGui::InputTextMultiline("Text", &mCurrentText)) {
         mTextComponent.SetText(mCurrentText);
     }
-    if (ImGui::BeginCombo("Font", mAvailableFonts[mFontChoiceIndex].c_str())) {
+    if (ImGui::BeginCombo(
+            "Font", mAvailableFonts[mFontChoiceIndex].mPath.stem().c_str())) {
         for (int n = 0; n < static_cast<int>(mAvailableFonts.size()); n++) {
             const bool isSelected = (mFontChoiceIndex == n);
-            if (ImGui::Selectable(mAvailableFonts[n].c_str(), isSelected)) {
+            if (ImGui::Selectable(mAvailableFonts[n].mPath.stem().c_str(),
+                                  isSelected)) {
                 mFontChoiceIndex = n;
-                mTextComponent.SetPolice(
-                    &mFontHandler.GetPolice(mAvailableFonts[n].c_str()));
+                mTextComponent.SetPolice(&mFontHandler.GetPolice(
+                    mAvailableFonts[n].mPath.stem().string()));
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();

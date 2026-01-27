@@ -18,11 +18,18 @@ class CComponentManager;
 namespace Core {
 class CGameObject;
 class CGameObjectManager;
+class CMeshManager;
 } // namespace Core
 
 namespace Font {
 class CFontHandler;
 }
+
+namespace Renderer {
+class CTextureManager;
+}
+
+class CAssetParser;
 
 namespace Debug {
 
@@ -30,13 +37,16 @@ class CTransformWidget;
 class CTextUIComponentWidget;
 class CCameraComponentWidget;
 class CMeshComponentWidget;
-
+class CTextureImGuiContainer;
 class CEntityWidget : public IOverlordItem {
 public:
     CEntityWidget(Component::CComponentManager& componentManager,
                   Utils::CFileHandler& fileHandler,
                   Font::CFontHandler& fontHandler,
-                  Core::CGameObjectManager& gameObjectManager);
+                  Core::CGameObjectManager& gameObjectManager,
+                  Core::CMeshManager& meshManager,
+                  CTextureImGuiContainer& textureContainer,
+                  const CAssetParser& assetParser);
     ~CEntityWidget() override;
 
     void OnItemClicked(std::optional<Core::GameObjectId> id);
@@ -57,6 +67,9 @@ private:
     Utils::CFileHandler& mFileHandler;
     Font::CFontHandler& mFontHandler;
     Core::CGameObjectManager& mGameObjectManager;
+    Core::CMeshManager& mMeshManager;
+    CTextureImGuiContainer& mTextureContainer;
+    const CAssetParser& mAssetParser;
 
     std::optional<Core::GameObjectId> mId{std::nullopt};
 

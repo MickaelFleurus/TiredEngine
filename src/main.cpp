@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <core/GameLoop.h>
 #include <engine/system/System.h>
+#include <engine/utils/AssetParser.h>
 #include <engine/vulkan/VulkanContext.h>
 #include <engine/vulkan/VulkanInitializer.h>
 

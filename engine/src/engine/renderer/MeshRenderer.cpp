@@ -85,6 +85,9 @@ void CMeshRenderer::UpdateInstances(
             continue;
         }
         const auto* mesh = component->GetMesh();
+        if (!mesh) {
+            continue;
+        }
         const auto dirtyFlag = component->GetDirtyFlag();
         const auto materialId = mesh->GetMaterial()->GetId();
         const auto componentKey = std::make_pair(mesh->GetHash(), materialId);

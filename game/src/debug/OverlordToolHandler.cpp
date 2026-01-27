@@ -12,17 +12,20 @@ COverlordToolHandler::COverlordToolHandler(
     Renderer::CTextureManager& textureManager,
     Scene::CSceneLoader& sceneLoaderOverlord,
     Core::CCameraManager& cameraManager,
-    Core::CGameObjectManager& gameObjectManager)
+    Core::CGameObjectManager& gameObjectManager,
+    Core::CMeshManager& meshManager, const CAssetParser& assetParser)
     : mSettings(fileHandler, sceneHandler)
     , mOverlordSettings(mSettings, fileHandler, sceneHandler)
+    , mTextureContainer(textureManager)
     , mSceneLoaderOverlord(sceneHandler)
     , mEntityWidget(componentManager, fileHandler, fontHandler,
-                    gameObjectManager)
+                    gameObjectManager, meshManager, mTextureContainer,
+                    assetParser)
     , mSceneHierarchy(componentManager, mEntityWidget, sceneHandler,
                       gameObjectManager)
     , mBufferWidget(bufferHandler)
-    , mTexturesWidget(textureManager)
-    , mLevelSceneLoaderWidget(fileHandler, sceneLoaderOverlord)
+    , mTexturesWidget(mTextureContainer)
+    , mLevelSceneLoaderWidget(assetParser, sceneLoaderOverlord)
     , mCamera3DWidget(cameraManager)
     , mCameraUIWidget(cameraManager) {
 }

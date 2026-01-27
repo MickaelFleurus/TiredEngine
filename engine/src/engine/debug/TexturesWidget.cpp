@@ -2,18 +2,12 @@
 
 #include <imgui_impl_vulkan.h>
 
+#include "engine/debug/TextureImGuiContainer.h"
 #include "engine/renderer/TextureManager.h"
 
 namespace Debug {
-CTexturesWidget::CTexturesWidget(Renderer::CTextureManager& textureManager)
-    : mTextureManager(textureManager) {
-}
-
-CTexturesWidget::~CTexturesWidget() {
-    for (const auto& [index, imguiTextureID] : mImGuiTextureIDs) {
-        ImGui_ImplVulkan_RemoveTexture(
-            reinterpret_cast<VkDescriptorSet>(imguiTextureID));
-    }
+CTexturesWidget::CTexturesWidget(CTextureImGuiContainer& textureContainer)
+    : mTextureContainer(textureContainer) {
 }
 
 const char* CTexturesWidget::GetName() const {
@@ -22,20 +16,10 @@ const char* CTexturesWidget::GetName() const {
 
 void CTexturesWidget::Render() {
     if (ImGui::Begin("Textures", &mVisible)) {
-        for (const auto& [name, index] :
-             mTextureManager.GetAllTextureIndices()) {
-            ImGui::Text("Name: %s", name.c_str());
-            const auto& tex = mTextureManager.GetTexture(index);
-            ImGui::Text("VkImage: 0x%llX", (uint64_t)tex.image);
-
-            if (!mImGuiTextureIDs.contains(index)) {
-                ImTextureID imguiTextureID =
-                    reinterpret_cast<ImTextureID>(ImGui_ImplVulkan_AddTexture(
-                        tex.sampler, tex.imageView,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-                mImGuiTextureIDs.emplace(index, imguiTextureID);
-            }
-            ImGui::Image(mImGuiTextureIDs.at(index), ImVec2(128, 128));
+        for (const auto& info : mTextureContainer.Get()) {
+            ImGui::Text("Name: %s", info.name.c_str());
+            ImGui::Text("VkImage: 0x%llX", (uint64_t)info.vkInfo.image);
+            ImGui::Image(info.imguiTexId, ImVec2(128, 128));
 
             ImGui::Separator();
         }

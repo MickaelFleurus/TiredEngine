@@ -304,6 +304,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
 
     // deviceFeatures.multiDrawIndirect = VK_TRUE;

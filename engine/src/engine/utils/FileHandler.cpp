@@ -33,7 +33,9 @@ void CFileHandler::CreateTempFolder(const std::string& gameName) {
     const std::string tempPath =
         HandleSDLPath(SDL_GetPrefPath(kCompanyName, gameName.c_str()));
     mTempFolder = tempPath;
-    CreateDirectories(mTempFolder);
+    std::filesystem::create_directories(mTempFolder);
+    std::filesystem::create_directories(mTempFolder + "/textures/");
+    std::filesystem::create_directories(mTempFolder + "/logs/");
 }
 
 std::string CFileHandler::GetTempFolder() const {
@@ -49,40 +51,29 @@ bool CFileHandler::DoesFileExist(const std::string& filePath,
     return std::filesystem::exists(filePath + extension);
 }
 
-bool CFileHandler::DoesDirectoryExists(const std::string& filePath) const {
-    return std::filesystem::exists(filePath) &&
-           std::filesystem::is_directory(filePath);
-}
-
-void CFileHandler::CreateDirectories(const std::string& path) const {
-    std::filesystem::create_directories(path);
-}
-
-void CFileHandler::CreateDirectories(const std::filesystem::path& path) const {
-    std::filesystem::create_directories(path);
-}
-
-bool CFileHandler::DeleteFile(const std::string& filePath,
-                              const char* extension) {
-    return std::filesystem::remove(filePath + extension);
-}
-
-bool CFileHandler::SaveTextureFile(const std::string& filePath,
+bool CFileHandler::SaveTextureFile(const std::string& fileName,
                                    SDL_Surface* surface,
-                                   std::string extension) {
-    if (const auto parent = std::filesystem::path(filePath).parent_path();
-        !DoesDirectoryExists(parent.string())) {
-        CreateDirectories(parent);
+                                   ETextureExtension ext) const {
+
+    auto completePath = mTempFolder + "/textures/" + fileName;
+    if (ext == ETextureExtension::JPG) {
+        completePath += ".jpg";
+        return IMG_SaveJPG(surface, completePath.c_str(), 100);
+    } else {
+        completePath += ".png";
+        return IMG_SavePNG(surface, completePath.c_str());
     }
-    const auto completePath = filePath + extension;
-    return IMG_SavePNG(surface, completePath.c_str());
 }
 
-bool CFileHandler::SaveJson(const std::string& filePath,
-                            const nlohmann::json& data) {
+bool CFileHandler::SaveJson(const std::string& fileName,
+                            const std::string& folderName,
+                            const nlohmann::json& data) const {
 
-    const auto completePath = filePath + ".json";
-    std::ofstream fileStream(completePath, std::ios::out);
+    const std::filesystem::path completePath =
+        mTempFolder + "/" + folderName + "/" + fileName + ".json";
+    std::filesystem::create_directories(completePath.parent_path());
+
+    std::ofstream fileStream(completePath.c_str(), std::ios::out);
     if (!fileStream.is_open()) {
         return false;
     }
@@ -92,42 +83,20 @@ bool CFileHandler::SaveJson(const std::string& filePath,
     return true;
 }
 
-nlohmann::json CFileHandler::LoadJson(const std::string& filePath) {
-    const auto completePath = filePath + ".json";
-    std::ifstream fileStream(completePath, std::ios::in);
+nlohmann::json CFileHandler::LoadJson(const std::string& filePath) const {
+    std::ifstream fileStream(filePath, std::ios::in);
     if (!fileStream.is_open()) {
         return nlohmann::json{};
     }
     return nlohmann::json::parse(fileStream);
 }
 
-YAML::Node CFileHandler::LoadYAML(const std::string& filePath) {
-    const auto completePath = filePath + ".yaml";
-    return YAML::LoadFile(completePath);
+YAML::Node CFileHandler::LoadYAML(const std::string& filePath) const {
+    return YAML::LoadFile(filePath);
 }
 
-SDL_Surface* CFileHandler::LoadTextureFile(const std::string& filePath) {
-    const auto completePath = filePath + ".png";
-
-    return IMG_Load(completePath.c_str());
-}
-
-std::vector<std::string>
-CFileHandler::GetFileNames(const char* extension, std::string specificFolder,
-                           bool includeExtensionInResult) const {
-    const std::string fullPath = mAssetFolder + specificFolder;
-    std::vector<std::string> files;
-    for (auto const& dir_entry :
-         std::filesystem::recursive_directory_iterator{fullPath}) {
-        if (dir_entry.path().extension() == extension) {
-            if (includeExtensionInResult) {
-                files.push_back(dir_entry.path().filename().string());
-            } else {
-                files.push_back(dir_entry.path().stem().string());
-            }
-        }
-    }
-    return files;
+SDL_Surface* CFileHandler::LoadTextureFile(const std::string& filePath) const {
+    return IMG_Load(filePath.c_str());
 }
 
 } // namespace Utils

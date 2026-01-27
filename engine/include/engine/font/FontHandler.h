@@ -24,6 +24,8 @@ class CTextureManager;
 namespace msdfgen {
 class FreetypeHandle;
 }
+struct SAsset;
+class CAssetParser;
 
 namespace Font {
 class CFontHandler {
@@ -31,12 +33,12 @@ public:
     CFontHandler(Renderer::CTextureManager& textureManager,
                  Utils::CFileHandler& fileHandler,
                  Material::CMaterialManager& materialManager,
-                 Thread::CPool& threadPool);
+                 Thread::CPool& threadPool, const CAssetParser& assetParser);
     ~CFontHandler();
 
     CPolice& GetPolice(std::string name);
     void LoadAllThePolices();
-    bool LoadFont(const std::string& name,
+    bool LoadFont(const SAsset& fontAsset,
                   msdfgen::FreetypeHandle* freeType = nullptr);
 
 private:
@@ -45,5 +47,6 @@ private:
     Utils::CFileHandler& mFileHandler;
     Material::CMaterialManager& mMaterialManager;
     Thread::CPool& mThreadPool;
+    const CAssetParser& mAssetParser;
 };
 } // namespace Font

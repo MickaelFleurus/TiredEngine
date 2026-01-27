@@ -11,32 +11,24 @@ namespace Utils {
 
 class CFileHandler {
 public:
+    enum class ETextureExtension { PNG, JPG };
     CFileHandler();
 
     void CreateTempFolder(const std::string& gameName);
+    bool DoesFileExist(const std::string& filePath,
+                       const char* extension) const;
 
     std::string GetTempFolder() const;
     std::string GetAssetsFolder() const;
 
-    bool DoesFileExist(const std::string& filePath,
-                       const char* extension) const;
-    bool DoesDirectoryExists(const std::string& filePath) const;
-    void CreateDirectories(const std::string& path) const;
-    void CreateDirectories(const std::filesystem::path& path) const;
+    bool SaveTextureFile(const std::string& fileName, SDL_Surface* surface,
+                         ETextureExtension ext = ETextureExtension::PNG) const;
+    bool SaveJson(const std::string& fileName, const std::string& folderName,
+                  const nlohmann::json& data) const;
 
-    bool DeleteFile(const std::string& filePath, const char* extension);
-
-    bool SaveTextureFile(const std::string& filePath, SDL_Surface* surface,
-                         std::string extension = ".png");
-    bool SaveJson(const std::string& filePath, const nlohmann::json& data);
-
-    nlohmann::json LoadJson(const std::string& filePath);
-    YAML::Node LoadYAML(const std::string& filePath);
-    SDL_Surface* LoadTextureFile(const std::string& filePath);
-
-    std::vector<std::string>
-    GetFileNames(const char* extension, std::string specificFolder = "",
-                 bool includeExtensionInResult = true) const;
+    nlohmann::json LoadJson(const std::string& filePath) const;
+    YAML::Node LoadYAML(const std::string& filePath) const;
+    SDL_Surface* LoadTextureFile(const std::string& filePath) const;
 
 private:
     std::string mTempFolder;

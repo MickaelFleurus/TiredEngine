@@ -3,6 +3,7 @@
 #include <SDL3/SDL_surface.h>
 
 #include "engine/renderer/RendererUtils.h"
+#include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/Constants.h"
@@ -29,13 +30,15 @@ CTextureManager::CTextureManager(const Vulkan::CVulkanContext& context,
                                  Renderer::CMemoryAllocator& memoryAllocator,
                                  Vulkan::CBufferHandler& bufferHandler,
                                  Utils::CFileHandler& fileHandler,
-                                 Vulkan::CDescriptorStorage& descriptorStorage)
+                                 Vulkan::CDescriptorStorage& descriptorStorage,
+                                 const CAssetParser& assetParser)
     : mContext(context)
     , mRenderer(renderer)
     , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
     , mFileHandler(fileHandler)
-    , mDescriptorStorage(descriptorStorage) {
+    , mDescriptorStorage(descriptorStorage)
+    , mAssetParser(assetParser) {
     mLoadedTextures.reserve(Vulkan::kMaxTextures);
 }
 
@@ -49,21 +52,28 @@ CTextureManager::~CTextureManager() {
     }
 }
 
+int CTextureManager::LoadTexture(const SAsset& asset) {
+    std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
+        mFileHandler.LoadTextureFile(asset.mPath.string()), kGPUSurfaceDeleter};
+    if (!surface) {
+        return -1;
+    }
+    auto textureIndex =
+        LoadTextureFromSurface(asset.mPath.stem().string(), surface.get());
+
+    return textureIndex;
+}
+
 int CTextureManager::LoadTexture(const std::string& filename) {
     auto it = mLoadedTexturesIndices.find(filename);
     if (it != mLoadedTexturesIndices.end()) {
         return it->second;
     }
-
-    std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
-        mFileHandler.LoadTextureFile(filename), kGPUSurfaceDeleter};
-    if (!surface) {
+    auto textureAsset = mAssetParser.Get(EAssetType::Texture, filename);
+    if (!textureAsset) {
         return -1;
     }
-    auto textureIndex =
-        LoadTextureFromSurface(filename + ".png", surface.get());
-
-    return textureIndex;
+    return LoadTexture(textureAsset->get());
 }
 
 int CTextureManager::LoadTextureFromSurface(const std::string& filename,

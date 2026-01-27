@@ -55,6 +55,7 @@ glm::vec4 CMeshComponent::GetColor() const {
     return mColor;
 }
 
+
 glm::vec2 CMeshComponent::GetSize() {
     if (mSize != glm::vec2(0.0f)) {
         return mSize;

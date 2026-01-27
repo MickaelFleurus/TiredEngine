@@ -1,7 +1,7 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
-#include <string>
 
 namespace Core {
 class CEngineLoop;
@@ -30,7 +30,7 @@ public:
                  Renderer::CSpriteManager& spriteManager);
     virtual ~CSceneLoader();
 
-    void LoadSceneFromFile(const std::string& filePath);
+    void LoadSceneFromFile(const std::filesystem::path& path);
     virtual std::unique_ptr<CAbstractScene>
     LoadGameSpecificScenePart(const YAML::Node& sceneData) = 0;
 

@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec2 vertexUV;
@@ -14,16 +15,18 @@ layout(push_constant) uniform PushConstants {
     mat4 view;
 } pc;
 
-layout(location = 0) out vec4 fragColor;
-layout(location = 1) out vec2 fragUV;
-layout(location = 2) out vec3 fragNormal;
+layout(location = 0) out vec2 vUV;
+layout(location = 1) out vec3 vNormal;
+layout(location = 2) out vec4 vColor;
+layout(location = 3) flat out uint vTextureIndex;
+
 
 void main() {
     gl_Position = pc.projection * pc.view * modelMatrix * vec4(vertexPosition, 1.0);
             
-    // Transform normal by inverse transpose of model matrix
-    fragNormal = normalize(mat3(transpose(inverse(modelMatrix))) * vertexNormal);
-    
-    fragColor = vec4(fragNormal * 0.5 + 0.5, 1.0); 
-    fragUV = vertexUV;
+    vNormal = normalize(mat3(transpose(inverse(modelMatrix))) * vertexNormal);
+    vUV = vertexUV;
+    vColor = instanceColor;
+    vTextureIndex = instanceTextureIndex;
+
 }

@@ -14,14 +14,13 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                    mMeshManager, system, mGameObjectManager)
     , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
                    mFontHandler, mBufferHandler, mTextureManager, mSceneLoader,
-                   mCameraManager, mGameObjectManager) {
+                   mCameraManager, mGameObjectManager, mMeshManager,
+                   mAssetParser) {
 
     mOverlordManager.CreateOverlord(window);
     mToolHandler.Initialize();
     mFontHandler.LoadAllThePolices();
-    auto filePath = std::format("{}/common/textures/bricks",
-                                system.GetFileHandler().GetAssetsFolder());
-    mSpriteManager.LoadSpriteSheet(filePath);
+    mSpriteManager.LoadSpriteSheet("bricks");
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

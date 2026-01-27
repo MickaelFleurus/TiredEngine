@@ -48,7 +48,7 @@ private:
     std::vector<Core::SUIInstanceData> mInstances;
 
     std::string mText;
-    Font::CPolice* mPolice = nullptr;
+    Font::CPolice* mPolice{nullptr};
     int mFontSize = 24;
     glm::vec2 mSize{0.0f, 0.0f};
     glm::vec4 mColor{1.0f, 1.0f, 1.0f, 1.0f};
