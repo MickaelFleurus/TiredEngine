@@ -272,9 +272,9 @@ void CFontHandler::LoadAllThePolices() {
     const auto fontFiles = mAssetParser.Get(EAssetType::Font);
     for (const auto& fontFile : fontFiles) {
         const std::string glyphTexFilePath =
-            std::format("{}/textures/{}", mFileHandler.GetTempFolder(),
+            std::format("{}/textures/{}.png", mFileHandler.GetTempFolder(),
                         fontFile.mPath.stem().string());
-        if (!mFileHandler.DoesFileExist(glyphTexFilePath, ".png")) {
+        if (!mFileHandler.DoesFileExist(glyphTexFilePath)) {
             jobs.push_back(
                 [this, fontFile, freeType]() { LoadFont(fontFile, freeType); });
         }

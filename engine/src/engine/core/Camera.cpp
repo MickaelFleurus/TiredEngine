@@ -10,7 +10,7 @@ CCamera::CCamera(std::string cameraName) : mName(std::move(cameraName)) {
 
 void CCamera::SetAttachedGameObject(
     std::optional<Core::GameObjectId> gameobjectId) {
-    if (mGameObjectId.has_value()) {
+    if (mGameObjectId.has_value() && gameobjectId.has_value()) {
         LOG_WARNING("Having two camera is not supported yet. The last "
                     "registered component will set the transform. This is most "
                     "likely going to be an issue.");

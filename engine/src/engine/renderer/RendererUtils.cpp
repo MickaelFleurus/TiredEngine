@@ -180,17 +180,17 @@ Renderer::VertexLayoutInfo CreateMeshVertexLayout() {
     color.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     color.offset = sizeof(float) * 16;
 
-    VkVertexInputAttributeDescription materialId{};
-    materialId.location = 8;
-    materialId.binding = 1;
-    materialId.format = VK_FORMAT_R32_UINT;
-    materialId.offset = sizeof(float) * 20;
-
     VkVertexInputAttributeDescription texId{};
-    texId.location = 9;
+    texId.location = 8;
     texId.binding = 1;
     texId.format = VK_FORMAT_R32_UINT;
-    texId.offset = sizeof(float) * 20 + sizeof(uint32_t);
+    texId.offset = sizeof(float) * 20;
+
+    VkVertexInputAttributeDescription materialId{};
+    materialId.location = 9;
+    materialId.binding = 1;
+    materialId.format = VK_FORMAT_R32_UINT;
+    materialId.offset = sizeof(float) * 20 + sizeof(uint32_t);
 
     info.attributes = {vertexPosition,
                        vertexUV,

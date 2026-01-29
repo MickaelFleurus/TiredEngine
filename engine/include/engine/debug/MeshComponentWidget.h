@@ -19,10 +19,9 @@ namespace Debug {
 class CTextureImGuiContainer;
 class CMeshComponentWidget : public IOverlordItem {
 public:
-    explicit CMeshComponentWidget(
-        Component::CMeshComponent& meshComponent,
-        Core::CMeshManager& meshManager,
-        CTextureImGuiContainer& textureContainer);
+    explicit CMeshComponentWidget(Component::CMeshComponent& meshComponent,
+                                  Core::CMeshManager& meshManager,
+                                  CTextureImGuiContainer& textureContainer);
     void Render() override;
     const char* GetName() const override;
 
@@ -33,7 +32,7 @@ private:
 
     glm::vec4 mColor;
     std::string mCurrentMeshName{"Cube"};
-    std::string mCurrentTextureName{"None"};
+    std::string mCurrentTextureName;
     int mCurrentTextureId{-1};
 };
 } // namespace Debug

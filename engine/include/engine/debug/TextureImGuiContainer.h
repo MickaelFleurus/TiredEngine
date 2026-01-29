@@ -13,6 +13,7 @@ class CTextureImGuiContainer {
 public:
     struct SImGuiTextureInfo {
         std::string name;
+        int id;
         const Renderer::VulkanTexture& vkInfo;
         ImTextureID imguiTexId;
     };

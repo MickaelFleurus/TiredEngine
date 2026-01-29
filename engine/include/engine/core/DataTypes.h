@@ -26,8 +26,8 @@ struct SUIVertex {
 struct SInstanceData {
     glm::mat4 modelMatrix;
     glm::vec4 color;
-    uint32_t materialId;
     uint32_t textureId;
+    uint32_t materialId;
     float padding[2];
 };
 

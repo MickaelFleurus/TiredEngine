@@ -15,8 +15,7 @@ public:
     CFileHandler();
 
     void CreateTempFolder(const std::string& gameName);
-    bool DoesFileExist(const std::string& filePath,
-                       const char* extension) const;
+    bool DoesFileExist(const std::string& filePath) const;
 
     std::string GetTempFolder() const;
     std::string GetAssetsFolder() const;

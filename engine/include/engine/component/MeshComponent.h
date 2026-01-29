@@ -47,6 +47,6 @@ private:
     Core::CMesh* mMesh{nullptr};
     glm::vec4 mColor{1.0f, 0.0f, 1.0f, 1.0f};
     glm::vec2 mSize{0.0f, 0.0f};
-    int mTextureIndex{-1};
+    int mTextureIndex{0};
 };
 } // namespace Component

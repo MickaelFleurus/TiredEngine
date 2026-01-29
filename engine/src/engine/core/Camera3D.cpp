@@ -17,6 +17,7 @@ CCamera3D::CCamera3D(Renderer::CTransformManager& transformManager)
     , mSmoothingEnabled(false)
     , mSmoothingFactor(5.0f) {
     mTransformManager.RegisterObserver(*this, mToken);
+    
 }
 
 void CCamera3D::SetTarget(const glm::vec2& t) {

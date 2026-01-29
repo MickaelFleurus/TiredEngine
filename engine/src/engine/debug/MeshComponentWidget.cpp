@@ -41,16 +41,25 @@ void CMeshComponentWidget::Render() {
     ImGui::Separator();
     ImGui::Text("Texture");
     const auto& textures = mTextureContainer.Get();
+    if (mCurrentTextureName.empty()) {
+        const auto id = mMeshComponent.GetTextureIndex();
+        const auto it =
+            std::find_if(textures.cbegin(), textures.cend(),
+                         [id](const auto& info) { return info.id == id; });
+        mCurrentTextureName = it->name;
+        mCurrentTextureId = std::distance(textures.cbegin(), it);
+    }
     if (ImGui::BeginCombo("##TextureSelect", mCurrentTextureName.c_str())) {
-        int id = 0;
+
+        int i = 0;
         for (const auto& info : textures) {
             if (ImGui::Selectable(info.name.c_str(),
                                   mCurrentTextureName == info.name)) {
-                mMeshComponent.SetTextureIndex(id);
+                mMeshComponent.SetTextureIndex(info.id);
                 mCurrentTextureName = info.name;
-                mCurrentTextureId = id;
+                mCurrentTextureId = i;
             }
-            id++;
+            i++;
         }
         ImGui::EndCombo();
     }

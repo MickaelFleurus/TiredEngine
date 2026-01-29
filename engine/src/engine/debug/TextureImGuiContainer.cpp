@@ -22,7 +22,9 @@ CTextureImGuiContainer::Get() {
         for (const auto& [name, index] :
              mTextureManager.GetAllTextureIndices()) {
             CTextureImGuiContainer::SImGuiTextureInfo info{
-                .name = name, .vkInfo = mTextureManager.GetTexture(index)};
+                .name = name,
+                .id = index,
+                .vkInfo = mTextureManager.GetTexture(index)};
 
             const auto& tex = mTextureManager.GetTexture(index);
             info.imguiTexId =

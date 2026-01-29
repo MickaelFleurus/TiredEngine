@@ -46,9 +46,8 @@ std::string CFileHandler::GetAssetsFolder() const {
     return mAssetFolder;
 }
 
-bool CFileHandler::DoesFileExist(const std::string& filePath,
-                                 const char* extension) const {
-    return std::filesystem::exists(filePath + extension);
+bool CFileHandler::DoesFileExist(const std::string& filePath) const {
+    return std::filesystem::exists(filePath);
 }
 
 bool CFileHandler::SaveTextureFile(const std::string& fileName,
