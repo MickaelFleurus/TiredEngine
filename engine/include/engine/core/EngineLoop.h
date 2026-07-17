@@ -24,10 +24,8 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
 
-struct SDL_Window;
-
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
 } // namespace Vulkan
 
 namespace Scene {
@@ -44,8 +42,8 @@ class CAssetParser;
 namespace Core {
 class CEngineLoop {
 public:
-    CEngineLoop(System::CSystem& system, SDL_Window* window,
-                Vulkan::CVulkanContext& vulkanContext);
+    CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
+                Vulkan::CSwapchain& swapchain);
     virtual ~CEngineLoop();
 
     void SetPendingScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
@@ -57,7 +55,8 @@ public:
 
 protected:
     Thread::CPool mThreadPool;
-    Vulkan::CVulkanContext& mVulkanContext;
+    Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering mVulkanRendering;
     CAssetParser& mAssetParser;
     Core::CGameObjectManager mGameObjectManager;

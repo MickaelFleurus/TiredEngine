@@ -7,7 +7,8 @@
 #include "engine/vulkan/PipelineFactory.h"
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CDescriptorStorage;
 } // namespace Vulkan
 
@@ -27,7 +28,8 @@ class CMaterialFactory {
 public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Vulkan::CVulkanContext& contextGetter,
+                              const Vulkan::SContext& context,
+                              Vulkan::CSwapchain& swapchain,
                               Vulkan::CDescriptorStorage& descriptorStorage);
     ~CMaterialFactory();
 

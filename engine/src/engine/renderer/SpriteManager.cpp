@@ -19,6 +19,13 @@ void CSpriteManager::LoadSpriteSheet(const std::string& spriteSheetName) {
     mSprites.insert(sprites.begin(), sprites.end());
 }
 
+void CSpriteManager::LoadSprite(const std::string& spriteName) {
+    // auto sprite = Utils::LoadSprite(mAssetParser, mFileHandler,
+    // mTextureManager,
+    //                                 spriteSheetName);
+    // mSprites.push(sprite);
+}
+
 std::optional<Core::SSpriteInfo>
 CSpriteManager::GetSpriteInfo(const std::string& spriteName) const {
     auto it = mSprites.find(spriteName);

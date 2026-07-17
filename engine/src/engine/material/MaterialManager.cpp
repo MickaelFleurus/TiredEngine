@@ -7,9 +7,9 @@ namespace Material {
 
 CMaterialManager::CMaterialManager(
     Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
-    const Vulkan::CVulkanContext& contextGetter,
+    const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
     Vulkan::CDescriptorStorage& descriptorStorage)
-    : mMaterialFactory(textureManager, fileHandler, contextGetter,
+    : mMaterialFactory(textureManager, fileHandler, context, swapchain,
                        descriptorStorage) {
 }
 

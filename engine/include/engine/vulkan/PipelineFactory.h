@@ -8,12 +8,14 @@ struct SPipelineConfig;
 } // namespace Renderer
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CDescriptorStorage;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(const Vulkan::CVulkanContext& contextGetter);
+    CPipelineFactory(const Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain);
     ~CPipelineFactory();
 
     Renderer::SPipelineDescriptors

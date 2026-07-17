@@ -12,11 +12,11 @@ class CMemoryAllocator;
 
 namespace Vulkan {
 
-class CVulkanContext;
+struct SContext;
 
 class CBufferHandler {
 public:
-    CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
+    CBufferHandler(const Vulkan::SContext& context,
                    Renderer::CMemoryAllocator& memoryAllocator);
     ~CBufferHandler();
 
@@ -31,11 +31,11 @@ public:
 
     template <typename T>
     CBufferHandleWrapper<T>* CreateTemp() {
-        return new CBufferHandleWrapper<T>(mVulkanContext, mMemoryAllocator);
+        return new CBufferHandleWrapper<T>(mContext, mMemoryAllocator);
     }
 
 private:
-    const Vulkan::CVulkanContext& mVulkanContext;
+    const Vulkan::SContext& mContext;
     Renderer::CMemoryAllocator& mMemoryAllocator;
 
     std::unordered_map<int, std::unique_ptr<IBufferHandleWrapper>>

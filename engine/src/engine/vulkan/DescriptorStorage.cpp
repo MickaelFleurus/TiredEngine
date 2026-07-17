@@ -6,16 +6,14 @@
 
 namespace Vulkan {
 
-CDescriptorStorage::CDescriptorStorage(
-    const Vulkan::CVulkanContext& contextGetter)
-    : mContextGetter(contextGetter) {
+CDescriptorStorage::CDescriptorStorage(const Vulkan::SContext& context)
+    : mContext(context) {
     Init();
 }
 
 CDescriptorStorage::~CDescriptorStorage() {
-    vkDestroyDescriptorSetLayout(mContextGetter.GetDevice(), mLayout, nullptr);
-    vkDestroyDescriptorPool(mContextGetter.GetDevice(), mDescriptorPool,
-                            nullptr);
+    vkDestroyDescriptorSetLayout(mContext.device, mLayout, nullptr);
+    vkDestroyDescriptorPool(mContext.device, mDescriptorPool, nullptr);
 }
 
 void CDescriptorStorage::Init() {
@@ -32,7 +30,7 @@ void CDescriptorStorage::Init() {
     poolInfo.maxSets = kMaxTextures + kMaxUBO + kMaxSSBO;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
-    if (vkCreateDescriptorPool(mContextGetter.GetDevice(), &poolInfo, nullptr,
+    if (vkCreateDescriptorPool(mContext.device, &poolInfo, nullptr,
                                &mDescriptorPool) != VK_SUCCESS) {
         LOG_FATAL("Failed to create texture descriptor pool!");
     }
@@ -73,8 +71,8 @@ void CDescriptorStorage::Init() {
     layoutInfo.flags =
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-    if (vkCreateDescriptorSetLayout(mContextGetter.GetDevice(), &layoutInfo,
-                                    nullptr, &mLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(mContext.device, &layoutInfo, nullptr,
+                                    &mLayout) != VK_SUCCESS) {
         LOG_ERROR("Failed to create descriptor set layout!");
         return;
     }
@@ -85,7 +83,7 @@ void CDescriptorStorage::Init() {
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &mLayout;
 
-    if (vkAllocateDescriptorSets(mContextGetter.GetDevice(), &allocInfo,
+    if (vkAllocateDescriptorSets(mContext.device, &allocInfo,
                                  &mDescriptorSet) != VK_SUCCESS) {
         LOG_FATAL("Failed to allocate texture descriptor set!");
     }

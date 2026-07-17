@@ -6,11 +6,11 @@
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
 
 class CShaderFactory {
 public:
-    CShaderFactory(const CVulkanContext& contextGetter);
+    CShaderFactory(const SContext& context);
     ~CShaderFactory();
 
     VkShaderModule CreateFragmentShader(std::string name, std::string path);

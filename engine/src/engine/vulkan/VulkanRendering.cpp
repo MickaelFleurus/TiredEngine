@@ -4,11 +4,11 @@
 
 namespace Vulkan {
 
-CVulkanRendering::CVulkanRendering(CVulkanContext& vulkanContext)
-    : mVulkanContext(vulkanContext) {
-    VkDevice device = mVulkanContext.GetDevice();
-    vkGetDeviceQueue(device, mVulkanContext.GetGraphicsQueueFamilyIndex(), 0,
-                     &mQueue);
+CVulkanRendering::CVulkanRendering(const SContext& context,
+                                   CSwapchain& swapchain)
+    : mContext(context), mSwapchain(swapchain) {
+    VkDevice device = mContext.device;
+    vkGetDeviceQueue(device, mContext.graphicsQueueFamilyIndex, 0, &mQueue);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -21,7 +21,7 @@ CVulkanRendering::CVulkanRendering(CVulkanContext& vulkanContext)
     }
 
     // Create fence
-    for (int i = 0; i < mVulkanContext.GetImageCount(); ++i) {
+    for (int i = 0; i < mSwapchain.GetImagesCount(); ++i) {
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -38,7 +38,7 @@ CVulkanRendering::~CVulkanRendering() {
 }
 
 void CVulkanRendering::Destroy() {
-    VkDevice device = mVulkanContext.GetDevice();
+    VkDevice device = mContext.device;
     WaitIdle();
     vkDestroySemaphore(device, mRenderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, mImageAvailableSemaphore, nullptr);
@@ -50,14 +50,13 @@ void CVulkanRendering::Destroy() {
 std::optional<uint32_t> CVulkanRendering::AcquireNextImage() {
     uint32_t imageIndex;
     if (auto result = vkAcquireNextImageKHR(
-            mVulkanContext.GetDevice(), mVulkanContext.GetSwapchain(),
-            UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+            mContext.device, mSwapchain.GetSwapchain(), UINT64_MAX,
+            mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
         result != VK_SUCCESS) {
-        mVulkanContext.RecreateSwapchainResources();
+        mSwapchain.Recreate();
         if (auto result = vkAcquireNextImageKHR(
-                mVulkanContext.GetDevice(), mVulkanContext.GetSwapchain(),
-                UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE,
-                &imageIndex);
+                mContext.device, mSwapchain.GetSwapchain(), UINT64_MAX,
+                mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
             result != VK_SUCCESS) {
             LOG_ERROR("Failed to acquire swapchain image after recreation!");
             return std::nullopt;
@@ -74,7 +73,7 @@ void CVulkanRendering::SubmitSync(VkCommandBuffer commandBuffer,
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    VkDevice device = mVulkanContext.GetDevice();
+    VkDevice device = mContext.device;
     vkResetFences(device, 1, &mFrameFences[imageIndex]);
     if (vkQueueSubmit(mQueue, 1, &submitInfo, mFrameFences[imageIndex]) !=
         VK_SUCCESS) {
@@ -123,7 +122,7 @@ void CVulkanRendering::SubmitSyncSingleUse(
 }
 
 void CVulkanRendering::Present(uint32_t imageIndex) {
-    VkSwapchainKHR swapchain = mVulkanContext.GetSwapchain();
+    VkSwapchainKHR swapchain = mSwapchain.GetSwapchain();
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -137,7 +136,7 @@ void CVulkanRendering::Present(uint32_t imageIndex) {
     VkResult result = vkQueuePresentKHR(mQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        mVulkanContext.RecreateSwapchainResources();
+        mSwapchain.Recreate();
     } else if (result != VK_SUCCESS) {
         LOG_FATAL("Failed to present swapchain image: {}",
                   static_cast<int>(result));
@@ -150,25 +149,25 @@ void CVulkanRendering::WaitIdle() const {
 
 void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
                                        VkRect2D scissor) {
-    VkDevice device = mVulkanContext.GetDevice();
+    VkDevice device = mContext.device;
 
     // Wait for GPU to finish with this frame
     vkWaitForFences(device, 1, &mFrameFences[index], VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &mFrameFences[index]);
 
-    VkCommandBuffer commandBuffer = mVulkanContext.GetCommandBuffer(index);
+    VkCommandBuffer commandBuffer = mSwapchain.GetCommandBuffer(index);
     vkResetCommandBuffer(commandBuffer, 0);
 
     VkClearValue clearColor{};
     clearColor.color = {0.1f, 0.1f, 0.1f, 0.0f};
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = mVulkanContext.GetRenderPass();
+    renderPassInfo.renderPass = mSwapchain.GetRenderPass();
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = mVulkanContext.GetSwapchainExtent();
+    renderPassInfo.renderArea.extent = mSwapchain.GetExtent();
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
-    renderPassInfo.framebuffer = mVulkanContext.GetFramebuffer(index);
+    renderPassInfo.framebuffer = mSwapchain.GetFramebuffer(index);
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -184,7 +183,7 @@ void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
 }
 
 void CVulkanRendering::EndRenderPass(uint32_t index) {
-    VkCommandBuffer commandBuffer = mVulkanContext.GetCommandBuffer(index);
+    VkCommandBuffer commandBuffer = mSwapchain.GetCommandBuffer(index);
     vkCmdEndRenderPass(commandBuffer);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

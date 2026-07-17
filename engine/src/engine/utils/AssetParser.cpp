@@ -68,9 +68,11 @@ void CAssetParser::Parse() {
             if (type == EAssetType::Unknown || mAssets.contains(key)) {
                 continue;
             }
-            mAssets.emplace(key, SAsset{.mType = type,
-                                        .mPath = path,
-                                        .mMetadata = SearchMetaFile(path)});
+            mAssets.emplace(key, SAsset{
+                                     .mType = type,
+                                     .mMetadata = SearchMetaFile(path),
+                                     .mPath = path,
+                                 });
         }
         folder.lastWriteTime = fs::last_write_time(folder.path);
     }

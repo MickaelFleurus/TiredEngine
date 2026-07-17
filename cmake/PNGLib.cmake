@@ -2,7 +2,7 @@ function(setup_pnglib)
      FetchContent_Declare(
         libpng
         GIT_REPOSITORY https://github.com/glennrp/libpng.git
-        GIT_TAG v1.6.50
+        GIT_TAG v1.6.58
         SOURCE_DIR external/libpng
     )
     set(PNG_SHARED OFF CACHE BOOL "" FORCE)

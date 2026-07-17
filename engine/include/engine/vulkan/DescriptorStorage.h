@@ -5,10 +5,10 @@
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
 class CDescriptorStorage {
 public:
-    CDescriptorStorage(const Vulkan::CVulkanContext& contextGetter);
+    CDescriptorStorage(const Vulkan::SContext& context);
     ~CDescriptorStorage();
 
     void Init();
@@ -19,7 +19,7 @@ public:
     VkDescriptorPool GetDescriptorPool() const;
 
 private:
-    const Vulkan::CVulkanContext& mContextGetter;
+    const Vulkan::SContext& mContext;
     VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout mLayout = VK_NULL_HANDLE;
     VkDescriptorSet mDescriptorSet = VK_NULL_HANDLE;

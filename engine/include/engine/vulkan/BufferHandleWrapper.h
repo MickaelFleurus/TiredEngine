@@ -17,10 +17,10 @@ namespace Vulkan {
 template <typename T>
 class CBufferHandleWrapper : public IBufferHandleWrapper {
 public:
-    CBufferHandleWrapper(const CVulkanContext& vulkanContext,
+    CBufferHandleWrapper(const SContext& context,
                          Renderer::CMemoryAllocator& memoryAllocator)
         : mMemoryAllocator(memoryAllocator)
-        , mVulkanContext(vulkanContext)
+        , mContext(context)
         , mDataSize(sizeof(T)) {
     }
 
@@ -45,7 +45,7 @@ public:
         bufferInfo.size = bufferSize;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkDevice device = mVulkanContext.GetDevice();
+        VkDevice device = mContext.device;
         if (vkCreateBuffer(device, &bufferInfo, nullptr, &mBuffer) !=
             VK_SUCCESS) {
             LOG_FATAL("Failed to create buffer!");
@@ -150,11 +150,11 @@ public:
 private:
     void Destroy() {
         if (mBuffer != VK_NULL_HANDLE) {
-            vkDestroyBuffer(mVulkanContext.GetDevice(), mBuffer, nullptr);
+            vkDestroyBuffer(mContext.device, mBuffer, nullptr);
             mBuffer = VK_NULL_HANDLE;
         }
         if (mMemory != VK_NULL_HANDLE) {
-            vkFreeMemory(mVulkanContext.GetDevice(), mMemory, nullptr);
+            vkFreeMemory(mContext.device, mMemory, nullptr);
             mMemory = VK_NULL_HANDLE;
         }
         mMemoryBlocks.Reset();
@@ -166,8 +166,8 @@ private:
 
     void* PrepareUpdate(VkDeviceSize offset, VkDeviceSize size) {
         void* mappedData{nullptr};
-        auto result = vkMapMemory(mVulkanContext.GetDevice(), mMemory, offset,
-                                  size, 0, &mappedData);
+        auto result =
+            vkMapMemory(mContext.device, mMemory, offset, size, 0, &mappedData);
         if (result != VK_SUCCESS) {
             LOG_ERROR("Failed to map buffer memory for update! VkResult={}",
                       static_cast<int>(result));
@@ -183,11 +183,11 @@ private:
     }
 
     bool FinalizeUpdate() {
-        vkUnmapMemory(mVulkanContext.GetDevice(), mMemory);
+        vkUnmapMemory(mContext.device, mMemory);
         return true;
     }
 
-    const CVulkanContext& mVulkanContext;
+    const SContext& mContext;
     Renderer::CMemoryAllocator& mMemoryAllocator;
 
     Utils::CBufferMemoryBlocks mMemoryBlocks;

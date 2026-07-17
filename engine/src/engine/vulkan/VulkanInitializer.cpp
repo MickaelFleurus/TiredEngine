@@ -229,22 +229,67 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
+    // Scoring GPU to pick the best one
+
+    int bestScore = 0;
+    VkPhysicalDevice bestDevice = nullptr;
     for (const auto& device : devices) {
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        int score = 0;
+        switch (properties.deviceType) {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            score += 1000;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            score += 500;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            score += 0;
+            break;
+        default:
+            break;
+        }
+        score += VK_VERSION_MAJOR(properties.apiVersion) * 100;
+        score += VK_VERSION_MINOR(properties.apiVersion) * 10;
+
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+        for (uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
+            if (memProperties.memoryHeaps[i].flags &
+                VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+                score += static_cast<int>(memProperties.memoryHeaps[i].size /
+                                          (1024 * 1024 * 1024));
+            }
+        }
+
         auto [graphicsFamily, presentFamily] =
             FindQueueFamilies(device, surface);
+        if (graphicsFamily == -1 && presentFamily == -1) {
+            continue;
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestDevice = device;
+        }
+    }
+
+    if (bestDevice) {
+        auto [graphicsFamily, presentFamily] =
+            FindQueueFamilies(bestDevice, surface);
         if (graphicsFamily == -1 && presentFamily == -1) {
             LOG_FATAL("Selected GPU does not support required queue families!");
         }
         VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceProperties(bestDevice, &properties);
 
         VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceFeatures(device, &features);
+        vkGetPhysicalDeviceFeatures(bestDevice, &features);
 
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(bestDevice, &memProperties);
 
-        return {device,        properties,     features,
+        return {bestDevice,    properties,     features,
                 memProperties, graphicsFamily, presentFamily};
     }
 
@@ -394,51 +439,29 @@ VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,
     return actualExtent;
 }
 
-VkCommandPool CreateCommandBufferPool(VkDevice device,
-                                      uint32_t queueFamilyIndex) {
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndex;
-
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
-        VK_SUCCESS) {
-        LOG_FATAL("Failed to create command pool!");
-    }
-    return commandPool;
-}
-
 } // namespace
 
 namespace Vulkan {
-void InitializeVulkan(CVulkanContext& context, SDL_Window* window,
-                      const System::CSystem& system) {
+SContext
+InitializeVulkan(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
+                 const System::CSystem& system) {
     VkInstance instance = CreateVulkanInstance(system.GetGameName());
 
-    context.SetInstance(instance);
-    context.SetDebugMessenger(CreateDebugUtilsMessenger(instance));
-
-    VkSurfaceKHR surface = CreateVulkanSurface(window, instance);
-    context.SetSurface(surface);
+    VkSurfaceKHR surface = CreateVulkanSurface(window.get(), instance);
 
     auto [physicalDevice, properties, features, memoryProperties,
           graphicsFamily, presentFamily] =
         PickPhysicalDevice(instance, surface);
-    context.SetPhysicalDevice(physicalDevice);
-    context.SetPhysicalDeviceProperties(properties);
-    context.SetPhysicalDeviceFeatures(features);
-    context.SetPhysicalDeviceMemoryProperties(memoryProperties);
-    context.SetGraphicsQueueFamilyIndex(graphicsFamily);
-    context.SetPresentQueueFamilyIndex(presentFamily);
 
     auto [device, graphicsQueue, presentQueue] =
         CreateLogicalDevice(graphicsFamily, presentFamily, physicalDevice);
-    context.SetDevice(device);
-    context.SetGraphicsQueue(graphicsQueue);
-    context.SetPresentQueue(presentQueue);
-    VkCommandPool commandPool = CreateCommandBufferPool(device, graphicsFamily);
-    context.SetCommandPool(commandPool);
+
+    return {
+        std::move(window), instance,     CreateDebugUtilsMessenger(instance),
+        surface,           device,       physicalDevice,
+        properties,        features,     memoryProperties,
+        graphicsQueue,     presentQueue, graphicsFamily,
+        presentFamily};
 }
 
 std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,

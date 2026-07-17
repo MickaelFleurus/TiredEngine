@@ -7,7 +7,8 @@ class CToken;
 struct SDL_Window;
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CVulkanRendering;
 } // namespace Vulkan
 
@@ -17,7 +18,7 @@ class IOverlordItem;
 
 class COverlord : public IOverlord {
 public:
-    COverlord(const Vulkan::CVulkanContext& context,
+    COverlord(const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
               const Vulkan::CVulkanRendering& rendering);
     ~COverlord();
 
@@ -37,7 +38,8 @@ private:
     static CGuardedContainer<IOverlordItem> mWidgets;
     static CGuardedContainer<IOverlordItem> mMenus;
 
-    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     const Vulkan::CVulkanRendering& mRendering;
 
     VkDescriptorPool mImguiPool = VK_NULL_HANDLE;

@@ -47,42 +47,42 @@ constexpr auto kUIVertexBufferUsage =
 
 namespace Vulkan {
 
-CBufferHandler::CBufferHandler(const Vulkan::CVulkanContext& vulkanContext,
+CBufferHandler::CBufferHandler(const Vulkan::SContext& context,
                                Renderer::CMemoryAllocator& memoryAllocator)
-    : mVulkanContext(vulkanContext), mMemoryAllocator(memoryAllocator) {
+    : mContext(context), mMemoryAllocator(memoryAllocator) {
 
     mBufferWrappers[kVerticesBufferIndex] =
-        std::make_unique<CBufferHandleWrapper<Core::SVertex>>(mVulkanContext,
+        std::make_unique<CBufferHandleWrapper<Core::SVertex>>(mContext,
                                                               mMemoryAllocator);
     mBufferWrappers[kVerticesBufferIndex]->Init(kVertexBufferDefaultSize,
                                                 kVertexBufferUsage);
 
     mBufferWrappers[kIndicesBufferIndex] =
         std::make_unique<CBufferHandleWrapper<Core::IndexType>>(
-            mVulkanContext, mMemoryAllocator);
+            mContext, mMemoryAllocator);
     mBufferWrappers[kIndicesBufferIndex]->Init(kIndexBufferDefaultSize,
                                                kIndexBufferUsage);
     mBufferWrappers[kInstanceBufferIndex] =
         std::make_unique<CBufferHandleWrapper<Core::SInstanceData>>(
-            mVulkanContext, mMemoryAllocator);
+            mContext, mMemoryAllocator);
     mBufferWrappers[kInstanceBufferIndex]->Init(kInstanceBufferDefaultSize,
                                                 kInstanceBufferUsage);
 
     mBufferWrappers[kInstanceInfoBufferIndex] =
         std::make_unique<CBufferHandleWrapper<Core::SIndirectDrawCommand>>(
-            mVulkanContext, mMemoryAllocator);
+            mContext, mMemoryAllocator);
     mBufferWrappers[kInstanceInfoBufferIndex]->Init(
         kInstanceInfoBufferDefaultSize, kInstanceInfoBufferUsage);
 
     mBufferWrappers[kTextInstanceBufferIndex] =
         std::make_unique<CBufferHandleWrapper<Core::SUIInstanceData>>(
-            mVulkanContext, mMemoryAllocator);
+            mContext, mMemoryAllocator);
     mBufferWrappers[kTextInstanceBufferIndex]->Init(
         kTextInstanceBufferDefaultSize, kTextInstanceBufferUsage);
 
     mBufferWrappers[kUIVerticesBufferIndex] =
         std::make_unique<CBufferHandleWrapper<Core::SUIVertex>>(
-            mVulkanContext, mMemoryAllocator);
+            mContext, mMemoryAllocator);
     mBufferWrappers[kUIVerticesBufferIndex]->Init(kUIVertexBufferDefaultSize,
                                                   kUIVertexBufferUsage);
 }

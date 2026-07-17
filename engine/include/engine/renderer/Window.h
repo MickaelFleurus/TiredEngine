@@ -22,7 +22,7 @@ class CSystem;
 } // namespace System
 
 namespace Vulkan {
-class CVulkanContext;
+class CSwapchain;
 class CVulkanRendering;
 class CDescriptorStorage;
 class CBufferHandler;
@@ -43,8 +43,7 @@ class CRendererManager;
 class CWindow {
 public:
     CWindow(System::CSystem& system, SDL_Window* window,
-            Vulkan::CVulkanContext& vulkanContext,
-            Vulkan::CVulkanRendering& renderer,
+            Vulkan::CSwapchain& swapchain, Vulkan::CVulkanRendering& renderer,
             Vulkan::CBufferHandler& bufferHandler,
             Material::CMaterialManager& materialManager,
             Vulkan::CDescriptorStorage& descriptorStorage,
@@ -63,7 +62,7 @@ public:
 private:
     const System::CSystem& mSystem;
     SDL_Window* mSDLWindow;
-    Vulkan::CVulkanContext& mVulkanContext;
+    Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
     Vulkan::CBufferHandler& mBufferHandler;
     Vulkan::CDescriptorStorage& mDescriptorStorage;

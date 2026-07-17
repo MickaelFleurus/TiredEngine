@@ -2,13 +2,13 @@
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
 }
 
 namespace Renderer {
 class CMemoryAllocator {
 public:
-    CMemoryAllocator(Vulkan::CVulkanContext& vulkanContext);
+    CMemoryAllocator(Vulkan::SContext& context);
 
     VkDeviceMemory AllocateMemory(VkImage image,
                                   VkMemoryPropertyFlags properties);
@@ -20,6 +20,6 @@ public:
     VkDeviceSize AlignSize(VkDeviceSize size) const;
 
 private:
-    Vulkan::CVulkanContext& mVulkanContext;
+    Vulkan::SContext& mContext;
 };
 } // namespace Renderer

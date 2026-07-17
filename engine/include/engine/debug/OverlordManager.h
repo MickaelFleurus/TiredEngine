@@ -1,12 +1,15 @@
 #pragma once
 #include <memory>
+
 #include <vulkan/vulkan.h>
+
 struct SDL_Window;
 union SDL_Event;
 
 namespace Vulkan {
 class CVulkanRendering;
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 } // namespace Vulkan
 
 namespace Debug {
@@ -14,7 +17,8 @@ class IOverlord;
 
 class COverlordManager {
 public:
-    COverlordManager(const Vulkan::CVulkanContext& context,
+    COverlordManager(const Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain,
                      const Vulkan::CVulkanRendering& rendering);
     ~COverlordManager();
 
@@ -27,7 +31,8 @@ public:
 
 private:
     std::unique_ptr<IOverlord> mOverlordImpl;
-    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     const Vulkan::CVulkanRendering& mRendering;
 };
 } // namespace Debug

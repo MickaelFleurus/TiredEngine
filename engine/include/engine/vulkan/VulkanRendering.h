@@ -6,11 +6,12 @@
 #include <vulkan/vulkan.h>
 
 #include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace Vulkan {
 class CVulkanRendering {
 public:
-    CVulkanRendering(CVulkanContext& vulkanContext);
+    CVulkanRendering(const SContext& context, CSwapchain& swapchain);
     ~CVulkanRendering();
 
     void Destroy();
@@ -27,7 +28,8 @@ public:
     void EndRenderPass(uint32_t index);
 
 private:
-    CVulkanContext& mVulkanContext;
+    const SContext& mContext;
+    CSwapchain& mSwapchain;
     VkQueue mQueue = VK_NULL_HANDLE;
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
     VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;

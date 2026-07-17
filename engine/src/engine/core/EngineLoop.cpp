@@ -10,22 +10,23 @@
 
 namespace Core {
 
-CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
-                         Vulkan::CVulkanContext& vulkanContext)
-    : mVulkanContext(vulkanContext)
-    , mVulkanRendering(vulkanContext)
+CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
+                         Vulkan::CSwapchain& swapchain)
+    : mContext(context)
+    , mSwapchain(swapchain)
+    , mVulkanRendering(context, swapchain)
     , mAssetParser(system.GetAssetParser())
     , mGameObjectManager()
     , mCameraManager(mGameObjectManager.GetTransformManager(),
                      system.GetFileHandler())
-    , mDescriptorStorage(mVulkanContext)
-    , mMemoryAllocator(mVulkanContext)
-    , mBufferHandler(mVulkanContext, mMemoryAllocator)
-    , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
-                       mDescriptorStorage)
+    , mDescriptorStorage(mContext)
+    , mMemoryAllocator(mContext)
+    , mBufferHandler(mContext, mMemoryAllocator)
+    , mMaterialManager(mTextureManager, system.GetFileHandler(), context,
+                       swapchain, mDescriptorStorage)
     , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
                      mTextureManager)
-    , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
+    , mTextureManager(context, swapchain, mVulkanRendering, mMemoryAllocator,
                       mBufferHandler, system.GetFileHandler(),
                       mDescriptorStorage, system.GetAssetParser())
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
@@ -35,10 +36,10 @@ CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
                         mGameObjectManager.GetTransformManager())
     , mRendererManager(mBufferHandler, mMaterialManager,
                        mGameObjectManager.GetTransformManager())
-    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mMaterialManager, mDescriptorStorage, mRendererManager,
-              mCameraManager)
-    , mOverlordManager(mVulkanContext, mVulkanRendering)
+    , mWindow(system, context.window.get(), swapchain, mVulkanRendering,
+              mBufferHandler, mMaterialManager, mDescriptorStorage,
+              mRendererManager, mCameraManager)
+    , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
     mTextureManager.LoadTexture("WhitePixel");
@@ -74,8 +75,8 @@ bool CEngineLoop::Run() {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene, mComponentManager);
             }
-            mOverlordManager.Render(mVulkanContext.GetCommandBuffer(
-                mWindow.GetImageIndex().value()));
+            mOverlordManager.Render(
+                mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value()));
 
             mWindow.EndRender();
         }

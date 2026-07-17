@@ -4,9 +4,9 @@
 #include "engine/utils/Asserts.h"
 
 namespace Core {
-CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
-                     Vulkan::CVulkanContext& vulkanContext)
-    : CEngineLoop(system, window, vulkanContext)
+CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain)
+    : CEngineLoop(system, context, swapchain)
     , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
                     system, mGameObjectManager)
     , mSceneLoader(*this, system.GetFileHandler(), mTextureManager,
@@ -17,7 +17,7 @@ CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
                    mCameraManager, mGameObjectManager, mMeshManager,
                    mAssetParser) {
 
-    mOverlordManager.CreateOverlord(window);
+    mOverlordManager.CreateOverlord(context.window.get());
     mToolHandler.Initialize();
     mFontHandler.LoadAllThePolices();
     mSpriteManager.LoadSpriteSheet("bricks");

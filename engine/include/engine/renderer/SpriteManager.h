@@ -21,6 +21,7 @@ public:
     ~CSpriteManager();
 
     void LoadSpriteSheet(const std::string& spriteSheetName);
+    void LoadSprite(const std::string& spriteName);
 
     std::optional<Core::SSpriteInfo>
     GetSpriteInfo(const std::string& spriteName) const;

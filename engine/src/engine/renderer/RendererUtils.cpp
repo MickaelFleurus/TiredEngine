@@ -234,16 +234,17 @@ VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType) {
     }
 }
 
-VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context) {
+VkCommandBuffer BeginSingleTimeCommands(const Vulkan::SContext& context,
+                                        Vulkan::CSwapchain& swapchain) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = context.GetCommandPool();
+    allocInfo.commandPool = swapchain.GetCommandPool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    if (vkAllocateCommandBuffers(context.GetDevice(), &allocInfo,
-                                 &commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(context.device, &allocInfo, &commandBuffer) !=
+        VK_SUCCESS) {
         LOG_ERROR("Failed to allocate command buffer!");
         return VK_NULL_HANDLE;
     }
@@ -257,24 +258,25 @@ VkCommandBuffer BeginSingleTimeCommands(const Vulkan::CVulkanContext& context) {
     return commandBuffer;
 }
 
-void EndSingleTimeCommands(const Vulkan::CVulkanContext& context,
+void EndSingleTimeCommands(const Vulkan::SContext& context,
+                           Vulkan::CSwapchain& swapchain,
                            const Vulkan::CVulkanRendering& renderer,
                            VkCommandBuffer commandBuffer) {
 
     vkEndCommandBuffer(commandBuffer);
     renderer.SubmitSyncSingleUse(commandBuffer);
 
-    vkFreeCommandBuffers(context.GetDevice(), context.GetCommandPool(), 1,
+    vkFreeCommandBuffers(context.device, swapchain.GetCommandPool(), 1,
                          &commandBuffer);
 }
 
-VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
+VulkanImage CreateImage(const Vulkan::SContext& context,
                         Renderer::CMemoryAllocator& allocator, uint32_t width,
                         uint32_t height, VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
                         VkMemoryPropertyFlags properties) {
 
-    VkDevice device = context.GetDevice();
+    VkDevice device = context.device;
     VkImage image;
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -304,9 +306,10 @@ VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
 
 void TransitionImageLayout(VkImage image, VkFormat format,
                            VkImageLayout oldLayout, VkImageLayout newLayout,
-                           const Vulkan::CVulkanContext& context,
+                           const Vulkan::SContext& context,
+                           Vulkan::CSwapchain& swapchain,
                            Vulkan::CVulkanRendering& renderer) {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context, swapchain);
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -338,20 +341,21 @@ void TransitionImageLayout(VkImage image, VkFormat format,
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
         LOG_ERROR("Unsupported layout transition!");
-        EndSingleTimeCommands(context, renderer, commandBuffer);
+        EndSingleTimeCommands(context, swapchain, renderer, commandBuffer);
         return;
     }
 
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
                          nullptr, 0, nullptr, 1, &barrier);
 
-    EndSingleTimeCommands(context, renderer, commandBuffer);
+    EndSingleTimeCommands(context, swapchain, renderer, commandBuffer);
 }
 
 void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height, const Vulkan::CVulkanContext& context,
+                       uint32_t height, const Vulkan::SContext& context,
+                       Vulkan::CSwapchain& swapchain,
                        Vulkan::CVulkanRendering& renderer) {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context, swapchain);
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;   // Tightly packed
@@ -367,7 +371,7 @@ void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    EndSingleTimeCommands(context, renderer, commandBuffer);
+    EndSingleTimeCommands(context, swapchain, renderer, commandBuffer);
 }
 
 void CreateImageView(VkDevice device, VkImage image, VkFormat format,

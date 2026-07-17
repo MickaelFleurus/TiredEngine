@@ -12,6 +12,7 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 
@@ -86,16 +87,15 @@ namespace Vulkan {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const Vulkan::CVulkanContext& contextGetter)
-        : mContextGetter(contextGetter), mShaderFactory(contextGetter) {
+    CImpl(const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain)
+        : mContext(context), mSwapchain(swapchain), mShaderFactory(context) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            vkDestroyPipelineLayout(mContextGetter.GetDevice(),
-                                    pipeline.pipelineLayout, nullptr);
-            vkDestroyPipeline(mContextGetter.GetDevice(), pipeline.pipeline,
-                              nullptr);
+            vkDestroyPipelineLayout(mContext.device, pipeline.pipelineLayout,
+                                    nullptr);
+            vkDestroyPipeline(mContext.device, pipeline.pipeline, nullptr);
         }
     }
 
@@ -239,8 +239,8 @@ public:
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
             // Create the pipeline layout first
-            if (vkCreatePipelineLayout(mContextGetter.GetDevice(),
-                                       &pipelineLayoutInfo, nullptr,
+            if (vkCreatePipelineLayout(mContext.device, &pipelineLayoutInfo,
+                                       nullptr,
                                        &pipelineLayout) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create pipeline layout!");
                 return {};
@@ -274,13 +274,13 @@ public:
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
             pipelineInfo.pDepthStencilState = &depthStencil;
             pipelineInfo.layout = pipelineLayout;
-            pipelineInfo.renderPass = mContextGetter.GetRenderPass();
+            pipelineInfo.renderPass = mSwapchain.GetRenderPass();
             pipelineInfo.subpass = 0;
 
             VkPipeline graphicsPipeline;
-            if (vkCreateGraphicsPipelines(
-                    mContextGetter.GetDevice(), VK_NULL_HANDLE, 1,
-                    &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+            if (vkCreateGraphicsPipelines(mContext.device, VK_NULL_HANDLE, 1,
+                                          &pipelineInfo, nullptr,
+                                          &graphicsPipeline) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create graphics pipeline!");
                 return {};
             }
@@ -293,7 +293,8 @@ public:
     }
 
 private:
-    const Vulkan::CVulkanContext& mContextGetter;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     CShaderFactory mShaderFactory;
     std::unordered_map<Renderer::SPipelineConfig,
                        Renderer::SPipelineDescriptors,
@@ -301,8 +302,9 @@ private:
         mPipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(const Vulkan::CVulkanContext& contextGetter)
-    : mImpl(std::make_unique<CImpl>(contextGetter)) {
+CPipelineFactory::CPipelineFactory(const Vulkan::SContext& context,
+                                   Vulkan::CSwapchain& swapchain)
+    : mImpl(std::make_unique<CImpl>(context, swapchain)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;

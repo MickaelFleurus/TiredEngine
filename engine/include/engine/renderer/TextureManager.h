@@ -14,7 +14,8 @@ class CFileHandler;
 }
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CVulkanRendering;
 class CDescriptorStorage;
 class CBufferHandler;
@@ -37,7 +38,8 @@ struct VulkanTexture {
 class CMemoryAllocator;
 class CTextureManager {
 public:
-    CTextureManager(const Vulkan::CVulkanContext& context,
+    CTextureManager(const Vulkan::SContext& context,
+                    Vulkan::CSwapchain& swapchain,
                     Vulkan::CVulkanRendering& renderer,
                     Renderer::CMemoryAllocator& memoryAllocator,
                     Vulkan::CBufferHandler& bufferHandler,
@@ -61,7 +63,8 @@ public:
 private:
     void UpdateDescriptor(int index);
 
-    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
     Renderer::CMemoryAllocator& mMemoryAllocator;
 

@@ -11,14 +11,16 @@
 #include "engine/debug/IOverlordItem.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace Debug {
 CGuardedContainer<IOverlordItem> COverlord::mWidgets;
 CGuardedContainer<IOverlordItem> COverlord::mMenus;
 
-COverlord::COverlord(const Vulkan::CVulkanContext& context,
+COverlord::COverlord(const Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain,
                      const Vulkan::CVulkanRendering& rendering)
-    : mContext(context), mRendering(rendering) {
+    : mContext(context), mSwapchain(swapchain), mRendering(rendering) {
 }
 
 void COverlord::Initialize(SDL_Window* window) {
@@ -37,8 +39,7 @@ void COverlord::Initialize(SDL_Window* window) {
     pool_info.poolSizeCount = std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    vkCreateDescriptorPool(mContext.GetDevice(), &pool_info, nullptr,
-                           &mImguiPool);
+    vkCreateDescriptorPool(mContext.device, &pool_info, nullptr, &mImguiPool);
 
     io.ConfigFlags |=
         ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
@@ -49,20 +50,20 @@ void COverlord::Initialize(SDL_Window* window) {
 
     ImGui_ImplSDL3_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo info{};
-    info.Device = mContext.GetDevice();
-    info.Instance = mContext.GetInstance();
-    info.PhysicalDevice = mContext.GetPhysicalDevice();
-    info.Queue = mContext.GetGraphicsQueue();
-    info.QueueFamily = mContext.GetGraphicsQueueFamilyIndex();
+    info.Device = mContext.device;
+    info.Instance = mContext.instance;
+    info.PhysicalDevice = mContext.physicalDevice;
+    info.Queue = mContext.graphicsQueue;
+    info.QueueFamily = mContext.graphicsQueueFamilyIndex;
     info.DescriptorPool = mImguiPool;
     info.MinImageCount = 2;
-    info.ImageCount = static_cast<uint32_t>(mContext.GetImageCount());
-    info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    info.RenderPass = mContext.GetRenderPass();
+    info.ImageCount = static_cast<uint32_t>(mSwapchain.GetImagesCount());
+    info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    info.PipelineInfoMain.RenderPass = mSwapchain.GetRenderPass();
     info.Allocator = nullptr;
     info.CheckVkResultFn = nullptr;
     info.PipelineCache = VK_NULL_HANDLE;
-    info.Subpass = 0;
+    info.PipelineInfoMain.Subpass = 0;
 
     ImGui_ImplVulkan_Init(&info);
 }
@@ -72,7 +73,7 @@ COverlord::~COverlord() {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
-    vkDestroyDescriptorPool(mContext.GetDevice(), mImguiPool, nullptr);
+    vkDestroyDescriptorPool(mContext.device, mImguiPool, nullptr);
 }
 
 bool COverlord::PrepareRender(SDL_Window* window) {

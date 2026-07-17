@@ -7,14 +7,15 @@
 #include "scene/SceneHandler.h"
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 } // namespace Vulkan
 
 namespace Core {
 class CGameLoop : public CEngineLoop {
 public:
-    CGameLoop(System::CSystem& system, SDL_Window* window,
-              Vulkan::CVulkanContext& vulkanContext);
+    CGameLoop(System::CSystem& system, Vulkan::SContext& context,
+              Vulkan::CSwapchain& swapchain);
     void GameLoop(float deltaTime) override;
 
 private:

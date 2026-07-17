@@ -2,7 +2,11 @@
 
 #include <tuple>
 #include <vector>
+
 #include <vulkan/vulkan.h>
+
+#include "engine/vulkan/VulkanContext.h"
+
 struct SDL_Window;
 
 namespace System {
@@ -10,9 +14,11 @@ class CSystem;
 } // namespace System
 
 namespace Vulkan {
-class CVulkanContext;
-void InitializeVulkan(CVulkanContext& context, SDL_Window* window,
-                      const System::CSystem& system);
+
+SContext
+InitializeVulkan(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
+                 const System::CSystem& system);
+
 std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,
            std::vector<VkImageView>>
 CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,

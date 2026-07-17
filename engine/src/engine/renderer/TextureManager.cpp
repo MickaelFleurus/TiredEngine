@@ -25,7 +25,8 @@ uint32_t GetBytesPerPixel(SDL_PixelFormat format) {
 } // namespace
 
 namespace Renderer {
-CTextureManager::CTextureManager(const Vulkan::CVulkanContext& context,
+CTextureManager::CTextureManager(const Vulkan::SContext& context,
+                                 Vulkan::CSwapchain& swapchain,
                                  Vulkan::CVulkanRendering& renderer,
                                  Renderer::CMemoryAllocator& memoryAllocator,
                                  Vulkan::CBufferHandler& bufferHandler,
@@ -33,6 +34,7 @@ CTextureManager::CTextureManager(const Vulkan::CVulkanContext& context,
                                  Vulkan::CDescriptorStorage& descriptorStorage,
                                  const CAssetParser& assetParser)
     : mContext(context)
+    , mSwapchain(swapchain)
     , mRenderer(renderer)
     , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
@@ -43,12 +45,11 @@ CTextureManager::CTextureManager(const Vulkan::CVulkanContext& context,
 }
 
 CTextureManager::~CTextureManager() {
-    VkDevice device = mContext.GetDevice();
     for (auto& texture : mLoadedTextures) {
-        vkDestroyImageView(device, texture.imageView, nullptr);
-        vkDestroySampler(device, texture.sampler, nullptr);
-        vkDestroyImage(device, texture.image, nullptr);
-        vkFreeMemory(device, texture.memory, nullptr);
+        vkDestroyImageView(mContext.device, texture.imageView, nullptr);
+        vkDestroySampler(mContext.device, texture.sampler, nullptr);
+        vkDestroyImage(mContext.device, texture.image, nullptr);
+        vkFreeMemory(mContext.device, texture.memory, nullptr);
     }
 }
 
@@ -78,8 +79,6 @@ int CTextureManager::LoadTexture(const std::string& filename) {
 
 int CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                             SDL_Surface* surface) {
-    VkDevice device = mContext.GetDevice();
-
     int width = surface->w;
     int height = surface->h;
     uint64_t imageSize = static_cast<uint64_t>(width) * height *
@@ -107,18 +106,19 @@ int CTextureManager::LoadTextureFromSurface(const std::string& filename,
     // 3. Transition image layout and copy buffer to image
     TransitionImageLayout(image.image, format, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext,
-                          mRenderer);
+                          mSwapchain, mRenderer);
     CopyBufferToImage(bufferHandle->GetBuffer(), image.image, width, height,
-                      mContext, mRenderer);
-    TransitionImageLayout(
-        image.image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mContext, mRenderer);
+                      mContext, mSwapchain, mRenderer);
+    TransitionImageLayout(image.image, format,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mContext,
+                          mSwapchain, mRenderer);
 
     // 4. Create image view and sampler
     VkImageView imageView;
-    CreateImageView(device, image.image, format, VK_IMAGE_ASPECT_COLOR_BIT,
-                    imageView);
-    VkSampler sampler = CreateSampler(device);
+    CreateImageView(mContext.device, image.image, format,
+                    VK_IMAGE_ASPECT_COLOR_BIT, imageView);
+    VkSampler sampler = CreateSampler(mContext.device);
 
     VulkanTexture texture{image.image,
                           image.memory,
@@ -183,7 +183,7 @@ void CTextureManager::UpdateDescriptor(int index) {
     write.descriptorCount = 1;
     write.pImageInfo = &imageInfo;
 
-    vkUpdateDescriptorSets(mContext.GetDevice(), 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(mContext.device, 1, &write, 0, nullptr);
 }
 
 void CTextureManager::UnloadTexture(int index) {
@@ -191,13 +191,12 @@ void CTextureManager::UnloadTexture(int index) {
         return;
     }
 
-    VkDevice device = mContext.GetDevice();
     VulkanTexture& texture = mLoadedTextures[index];
 
-    vkDestroyImageView(device, texture.imageView, nullptr);
-    vkDestroySampler(device, texture.sampler, nullptr);
-    vkDestroyImage(device, texture.image, nullptr);
-    vkFreeMemory(device, texture.memory, nullptr);
+    vkDestroyImageView(mContext.device, texture.imageView, nullptr);
+    vkDestroySampler(mContext.device, texture.sampler, nullptr);
+    vkDestroyImage(mContext.device, texture.image, nullptr);
+    vkFreeMemory(mContext.device, texture.memory, nullptr);
     auto it = std::find_if(
         mLoadedTexturesIndices.begin(), mLoadedTexturesIndices.end(),
         [index](const auto& pair) { return pair.second == index; });

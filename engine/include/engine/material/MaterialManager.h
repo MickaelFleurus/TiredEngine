@@ -5,7 +5,8 @@
 #include "engine/material/MaterialTypes.h"
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CDescriptorStorage;
 } // namespace Vulkan
 
@@ -24,7 +25,8 @@ class CMaterialManager {
 public:
     explicit CMaterialManager(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Vulkan::CVulkanContext& contextGetter,
+                              const Vulkan::SContext& context,
+                              Vulkan::CSwapchain& swapchain,
                               Vulkan::CDescriptorStorage& descriptorStorage);
     ~CMaterialManager();
 

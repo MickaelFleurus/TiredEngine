@@ -33,8 +33,8 @@
 #include "engine/vulkan/BufferHandleWrapper.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/DescriptorStorage.h"
-#include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 
@@ -67,7 +67,7 @@ VkRect2D GetScissor(VkViewport viewport) {
 namespace Renderer {
 
 CWindow::CWindow(System::CSystem& system, SDL_Window* window,
-                 Vulkan::CVulkanContext& vulkanContext,
+                 Vulkan::CSwapchain& swapchain,
                  Vulkan::CVulkanRendering& renderer,
                  Vulkan::CBufferHandler& bufferHandler,
                  Material::CMaterialManager& materialManager,
@@ -75,7 +75,7 @@ CWindow::CWindow(System::CSystem& system, SDL_Window* window,
                  CRendererManager& rendererManager,
                  Core::CCameraManager& cameraManager)
     : mSystem(system)
-    , mVulkanContext(vulkanContext)
+    , mSwapchain(swapchain)
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
     , mMaterialManager(materialManager)
@@ -99,7 +99,7 @@ void CWindow::Render(Scene::CAbstractScene& scene,
 
     mRendererManager.GenerateInstances(componentManager);
     VkCommandBuffer commandBuffer =
-        mVulkanContext.GetCommandBuffer(mImageIndex.value());
+        mSwapchain.GetCommandBuffer(mImageIndex.value());
     mRendererManager.Render(
         commandBuffer, mDescriptorStorage.GetDescriptorSet(),
         mCameraManager.GetDefaultCamera3D(), mCameraManager.GetCameraUI());
@@ -119,9 +119,8 @@ void CWindow::EndRender() {
     if (mImageIndex.has_value()) {
         mRenderer.EndRenderPass(mImageIndex.value());
 
-        mRenderer.SubmitAsync(
-            mVulkanContext.GetCommandBuffer(mImageIndex.value()),
-            mImageIndex.value());
+        mRenderer.SubmitAsync(mSwapchain.GetCommandBuffer(mImageIndex.value()),
+                              mImageIndex.value());
         mRenderer.Present(mImageIndex.value());
         mRenderer.WaitIdle();
         mImageIndex = std::nullopt;

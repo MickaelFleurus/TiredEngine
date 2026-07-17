@@ -29,20 +29,23 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    SDL_Window* window = CreateSDLWindow(system);
+    std::unique_ptr<SDL_Window, void (*)(SDL_Window*)> window =
+        std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>(
+            CreateSDLWindow(system), SDL_DestroyWindow);
     if (!window) {
         std::cout << "Failed to create SDL window\n";
         return -1;
     }
 
     SDL_InitSubSystem(SDL_INIT_VIDEO);
-    Vulkan::CVulkanContext vulkanContext{window};
-    Vulkan::InitializeVulkan(vulkanContext, window, system);
-    vulkanContext.RecreateSwapchainResources();
 
-    Core::CGameLoop game(system, window, vulkanContext);
+    Vulkan::SContext context =
+        Vulkan::InitializeVulkan(std::move(window), system);
+    Vulkan::CSwapchain swapchain(context);
+    swapchain.Recreate();
+
+    Core::CGameLoop game(system, context, swapchain);
 
     game.Run();
-    SDL_DestroyWindow(window);
     return 0;
 }

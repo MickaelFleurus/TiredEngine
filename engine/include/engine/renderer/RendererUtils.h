@@ -16,7 +16,8 @@
 #include "engine/renderer/PipelineTypes.h"
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CVulkanRendering;
 } // namespace Vulkan
 
@@ -53,7 +54,7 @@ struct VertexLayoutInfo {
 
 VertexLayoutInfo CreateVertexLayout(Renderer::EVertexLayout layoutType);
 
-VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
+VulkanImage CreateImage(const Vulkan::SContext& context,
                         Renderer::CMemoryAllocator& allocator, uint32_t width,
                         uint32_t height, VkFormat format, VkImageTiling tiling,
                         VkImageUsageFlags usage,
@@ -61,11 +62,13 @@ VulkanImage CreateImage(const Vulkan::CVulkanContext& context,
 
 void TransitionImageLayout(VkImage image, VkFormat format,
                            VkImageLayout oldLayout, VkImageLayout newLayout,
-                           const Vulkan::CVulkanContext& context,
+                           const Vulkan::SContext& context,
+                           Vulkan::CSwapchain& swapchain,
                            Vulkan::CVulkanRendering& renderer);
 
 void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height, const Vulkan::CVulkanContext& context,
+                       uint32_t height, const Vulkan::SContext& context,
+                       Vulkan::CSwapchain& swapchain,
                        Vulkan::CVulkanRendering& renderer);
 
 void CreateImageView(VkDevice device, VkImage image, VkFormat format,

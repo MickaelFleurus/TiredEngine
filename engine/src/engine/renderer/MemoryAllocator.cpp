@@ -23,16 +23,16 @@ uint32_t FindMemoryType(uint32_t typeFilter,
 
 namespace Renderer {
 
-CMemoryAllocator::CMemoryAllocator(Vulkan::CVulkanContext& vulkanContext)
-    : mVulkanContext(vulkanContext) {
+CMemoryAllocator::CMemoryAllocator(Vulkan::SContext& context)
+    : mContext(context) {
 }
 
 VkDeviceMemory
 CMemoryAllocator::AllocateMemory(VkImage image,
                                  VkMemoryPropertyFlags properties) {
-    VkDevice device = mVulkanContext.GetDevice();
+    VkDevice device = mContext.device;
     VkPhysicalDeviceMemoryProperties memProperties =
-        mVulkanContext.GetPhysicalDeviceMemoryProperties();
+        mContext.physicalDeviceMemoryProperties;
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
@@ -53,9 +53,9 @@ CMemoryAllocator::AllocateMemory(VkImage image,
 VkDeviceMemory
 CMemoryAllocator::AllocateMemory(VkBuffer buffer,
                                  VkMemoryPropertyFlags properties) {
-    VkDevice device = mVulkanContext.GetDevice();
+    VkDevice device = mContext.device;
     VkPhysicalDeviceMemoryProperties memProperties =
-        mVulkanContext.GetPhysicalDeviceMemoryProperties();
+        mContext.physicalDeviceMemoryProperties;
 
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -75,7 +75,7 @@ CMemoryAllocator::AllocateMemory(VkBuffer buffer,
 
 VkDeviceSize CMemoryAllocator::GetBufferMemoryAlignment() const {
     VkPhysicalDeviceProperties deviceProperties =
-        mVulkanContext.GetPhysicalDeviceProperties();
+        mContext.physicalDeviceProperties;
     return deviceProperties.limits.nonCoherentAtomSize;
 }
 
