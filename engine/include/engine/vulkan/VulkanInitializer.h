@@ -33,4 +33,7 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
                    const std::vector<VkImageView>& imageViews,
                    VkExtent2D extent);
 
+std::tuple<VkDescriptorPool, VkDescriptorSetLayout, VkDescriptorSet>
+CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures);
+
 } // namespace Vulkan

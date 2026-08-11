@@ -2,6 +2,7 @@
 
 #ifdef EDITOR_MODE
 #include <string>
+
 class CStringId {
 public:
     explicit CStringId() = default;
@@ -22,6 +23,10 @@ public:
 
     CStringId operator+(const CStringId& append) {
         return CStringId{mName + append.mName};
+    }
+
+    bool operator==(const CStringId& other) const {
+        return mName == other.mName;
     }
 
 private:
@@ -49,6 +54,10 @@ public:
 
     CStringId operator+(const CStringId& append) {
         return CStringId{Utils::CreateHash(mHash + append.mHash)};
+    }
+
+    bool operator==(const CStringId& other) const {
+        return mHash == other.mHash;
     }
 
 private:

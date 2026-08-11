@@ -8,14 +8,12 @@
 
 namespace Material {
 
-CMaterialFactory::CMaterialFactory(
-    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
-    const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
-    Vulkan::CDescriptorStorage& descriptorStorage)
+CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
+                                   Utils::CFileHandler& fileHandler,
+                                   Vulkan::CPipelineFactory& pipelineFactory)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mPipelineFactory(context, swapchain)
-    , mDescriptorStorage(descriptorStorage) {
+    , mPipelineFactory(pipelineFactory) {
 }
 
 CMaterialFactory::~CMaterialFactory() = default;
@@ -24,8 +22,7 @@ std::unique_ptr<CAbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
-    auto pipeline =
-        mPipelineFactory.GetOrCreateGraphicsPipeline(info, mDescriptorStorage);
+    auto pipeline = mPipelineFactory.GetOrCreateGraphicsPipeline(info);
     return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
 }
 

@@ -8,6 +8,7 @@
 #include "engine/renderer/RendererUtils.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/Constants.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace {
@@ -182,8 +183,8 @@ VkSurfaceKHR CreateVulkanSurface(SDL_Window* window, VkInstance instance) {
     return surface;
 }
 
-std::tuple<int, int> FindQueueFamilies(VkPhysicalDevice device,
-                                       VkSurfaceKHR surface) {
+std::tuple<int, int, int> FindQueueFamilies(VkPhysicalDevice device,
+                                            VkSurfaceKHR surface) {
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
@@ -192,32 +193,51 @@ std::tuple<int, int> FindQueueFamilies(VkPhysicalDevice device,
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                              queueFamilies.data());
 
-    for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        int graphicsIndex = -1;
-        int presentIndex = -1;
-        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            graphicsIndex = i;
-        }
+    int graphicsFamily = -1;
+    int presentFamily = -1;
+    int transferFamily = -1;
 
-        // Presentation support
+    for (uint32_t i = 0; i < queueFamilyCount; i++) {
+        const bool hasGraphics =
+            queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+        const bool hasTransfer =
+            queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT;
+
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
                                              &presentSupport);
-        if (presentSupport) {
-            presentIndex = i;
+        const bool hasPresent = presentSupport == VK_TRUE;
+
+        if (hasGraphics && hasPresent && hasTransfer) {
+            return {static_cast<int>(i), static_cast<int>(i),
+                    static_cast<int>(i)};
         }
 
-        if (graphicsIndex != -1 && presentIndex != -1) {
-            return {graphicsIndex, presentIndex};
+        if (graphicsFamily == -1 && hasGraphics) {
+            graphicsFamily = static_cast<int>(i);
+        }
+        if (presentFamily == -1 && hasPresent) {
+            presentFamily = static_cast<int>(i);
+        }
+        if (transferFamily == -1 && hasTransfer) {
+            transferFamily = static_cast<int>(i);
         }
     }
 
-    return {-1, -1};
+    if (graphicsFamily == -1 || presentFamily == -1) {
+        return {-1, -1, -1};
+    }
+
+    if (transferFamily == -1) {
+        transferFamily = graphicsFamily;
+    }
+
+    return {graphicsFamily, presentFamily, transferFamily};
 }
 
 std::tuple<VkPhysicalDevice, VkPhysicalDeviceProperties,
            VkPhysicalDeviceFeatures, VkPhysicalDeviceMemoryProperties, uint32_t,
-           uint32_t>
+           uint32_t, uint32_t>
 PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -263,9 +283,9 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
             }
         }
 
-        auto [graphicsFamily, presentFamily] =
+        auto [graphicsFamily, presentFamily, transferFamily] =
             FindQueueFamilies(device, surface);
-        if (graphicsFamily == -1 && presentFamily == -1) {
+        if (graphicsFamily == -1 || presentFamily == -1) {
             continue;
         }
         if (score > bestScore) {
@@ -275,9 +295,9 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     }
 
     if (bestDevice) {
-        auto [graphicsFamily, presentFamily] =
+        auto [graphicsFamily, presentFamily, transferFamily] =
             FindQueueFamilies(bestDevice, surface);
-        if (graphicsFamily == -1 && presentFamily == -1) {
+        if (graphicsFamily == -1 || presentFamily == -1) {
             LOG_FATAL("Selected GPU does not support required queue families!");
         }
         VkPhysicalDeviceProperties properties;
@@ -289,21 +309,22 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(bestDevice, &memProperties);
 
-        return {bestDevice,    properties,     features,
-                memProperties, graphicsFamily, presentFamily};
+        return {bestDevice,     properties,    features,      memProperties,
+                graphicsFamily, presentFamily, transferFamily};
     }
 
     LOG_FATAL("Failed to find a suitable GPU!");
     return {};
 }
 
-std::tuple<VkDevice, VkQueue, VkQueue>
+std::tuple<VkDevice, VkQueue, VkQueue, VkQueue>
 CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
-                    VkPhysicalDevice physicalDevice) {
+                    uint32_t transferFamily, VkPhysicalDevice physicalDevice) {
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     // Use a set to avoid duplicate queue families
-    std::set<uint32_t> uniqueQueueFamilies = {graphicsFamily, presentFamily};
+    std::set<uint32_t> uniqueQueueFamilies = {graphicsFamily, presentFamily,
+                                              transferFamily};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -372,11 +393,12 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
         return {};
     }
 
-    VkQueue graphicsQueue, presentQueue;
+    VkQueue graphicsQueue, presentQueue, transferQueue;
     vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
     vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(device, transferFamily, 0, &transferQueue);
 
-    return {device, graphicsQueue, presentQueue};
+    return {device, graphicsQueue, presentQueue, transferQueue};
 }
 
 std::tuple<VkSurfaceCapabilitiesKHR, std::vector<VkSurfaceFormatKHR>,
@@ -439,6 +461,25 @@ VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,
     return actualExtent;
 }
 
+VmaAllocator InitializeVmaAllocator(VkInstance instance,
+                                    VkPhysicalDevice physicalDevice,
+                                    VkDevice device) {
+
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.vulkanApiVersion =
+        VK_API_VERSION_1_3; // Match your Vulkan version
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance;
+
+    VmaAllocator vmaAllocator;
+    if (vmaCreateAllocator(&allocatorInfo, &vmaAllocator) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create VMA allocator!");
+        return VK_NULL_HANDLE;
+    }
+    return vmaAllocator;
+}
+
 } // namespace
 
 namespace Vulkan {
@@ -450,18 +491,38 @@ InitializeVulkan(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
     VkSurfaceKHR surface = CreateVulkanSurface(window.get(), instance);
 
     auto [physicalDevice, properties, features, memoryProperties,
-          graphicsFamily, presentFamily] =
+          graphicsFamily, presentFamily, transferFamily] =
         PickPhysicalDevice(instance, surface);
 
-    auto [device, graphicsQueue, presentQueue] =
-        CreateLogicalDevice(graphicsFamily, presentFamily, physicalDevice);
+    auto [device, graphicsQueue, presentQueue, transferQueue] =
+        CreateLogicalDevice(graphicsFamily, presentFamily, transferFamily,
+                            physicalDevice);
 
-    return {
-        std::move(window), instance,     CreateDebugUtilsMessenger(instance),
-        surface,           device,       physicalDevice,
-        properties,        features,     memoryProperties,
-        graphicsQueue,     presentQueue, graphicsFamily,
-        presentFamily};
+    auto vmaAllocator =
+        InitializeVmaAllocator(instance, physicalDevice, device);
+
+    auto [descriptorPool, bindelessTextureSetLayout, bindelessTextureSet] =
+        CreateBindlessTexturePool(device, kMaxTextures);
+
+    return {std::move(window),
+            instance,
+            CreateDebugUtilsMessenger(instance),
+            surface,
+            device,
+            physicalDevice,
+            properties,
+            features,
+            memoryProperties,
+            graphicsQueue,
+            presentQueue,
+            transferQueue,
+            graphicsFamily,
+            presentFamily,
+            transferFamily,
+            vmaAllocator,
+            descriptorPool,
+            bindelessTextureSetLayout,
+            bindelessTextureSet};
 }
 
 std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,
@@ -604,5 +665,57 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
         }
     }
     return framebuffers;
+}
+
+std::tuple<VkDescriptorPool, VkDescriptorSetLayout, VkDescriptorSet>
+CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures) {
+    VkDescriptorPool pool;
+    VkDescriptorSetLayout layout;
+    VkDescriptorSet set;
+
+    VkDescriptorSetLayoutBinding textureBinding{};
+    textureBinding.binding = 0;
+    textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureBinding.descriptorCount = maxTextures;
+    textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorBindingFlags bindingFlags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    bindingFlagsInfo.bindingCount = 1;
+    bindingFlagsInfo.pBindingFlags = &bindingFlags;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    layoutInfo.pNext = &bindingFlagsInfo;
+    layoutInfo.flags =
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &textureBinding;
+    vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &layout);
+
+    VkDescriptorPoolSize poolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  maxTextures};
+
+    VkDescriptorPoolCreateInfo poolInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    vkCreateDescriptorPool(device, &poolInfo, nullptr, &pool);
+
+    VkDescriptorSetAllocateInfo allocInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout;
+    vkAllocateDescriptorSets(device, &allocInfo, &set);
+
+    return {pool, layout, set};
 }
 } // namespace Vulkan

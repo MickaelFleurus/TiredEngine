@@ -19,26 +19,25 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     , mGameObjectManager()
     , mCameraManager(mGameObjectManager.GetTransformManager(),
                      system.GetFileHandler())
-    , mDescriptorStorage(mContext)
-    , mMemoryAllocator(mContext)
-    , mBufferHandler(mContext, mMemoryAllocator)
-    , mMaterialManager(mTextureManager, system.GetFileHandler(), context,
-                       swapchain, mDescriptorStorage)
+    , mBufferHandler(mContext)
+    , mPipelineFactory(mContext, mSwapchain)
+    , mMaterialManager(mTextureManager, system.GetFileHandler(),
+                       mPipelineFactory)
     , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
                      mTextureManager)
-    , mTextureManager(context, swapchain, mVulkanRendering, mMemoryAllocator,
-                      mBufferHandler, system.GetFileHandler(),
-                      mDescriptorStorage, system.GetAssetParser())
+    , mTextureManager(context, swapchain, mVulkanRendering, mBufferHandler,
+                      system.GetFileHandler(), system.GetAssetParser())
     , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
                    mThreadPool, mAssetParser)
     , mComponentManager(mFontHandler, mMaterialManager, mSpriteManager,
                         mCameraManager,
                         mGameObjectManager.GetTransformManager())
     , mRendererManager(mBufferHandler, mMaterialManager,
-                       mGameObjectManager.GetTransformManager())
+                       mGameObjectManager.GetTransformManager(),
+                       mPipelineFactory)
     , mWindow(system, context.window.get(), swapchain, mVulkanRendering,
-              mBufferHandler, mMaterialManager, mDescriptorStorage,
-              mRendererManager, mCameraManager)
+              mBufferHandler, mMaterialManager, mRendererManager,
+              mCameraManager)
     , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {

@@ -5,12 +5,10 @@
 
 namespace Material {
 
-CMaterialManager::CMaterialManager(
-    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
-    const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
-    Vulkan::CDescriptorStorage& descriptorStorage)
-    : mMaterialFactory(textureManager, fileHandler, context, swapchain,
-                       descriptorStorage) {
+CMaterialManager::CMaterialManager(Renderer::CTextureManager& textureManager,
+                                   Utils::CFileHandler& fileHandler,
+                                   Vulkan::CPipelineFactory& pipelineFactory)
+    : mMaterialFactory(textureManager, fileHandler, pipelineFactory) {
 }
 
 CMaterialManager::~CMaterialManager() = default;

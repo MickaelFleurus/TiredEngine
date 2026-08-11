@@ -6,6 +6,7 @@
 
 #include "engine/core/GameObjectId.h"
 #include "engine/renderer/RendererUtils.h"
+#include "engine/vulkan/VulkanContext.h"
 
 struct SDL_Window;
 
@@ -24,7 +25,6 @@ class CSystem;
 namespace Vulkan {
 class CSwapchain;
 class CVulkanRendering;
-class CDescriptorStorage;
 class CBufferHandler;
 } // namespace Vulkan
 
@@ -43,10 +43,10 @@ class CRendererManager;
 class CWindow {
 public:
     CWindow(System::CSystem& system, SDL_Window* window,
-            Vulkan::CSwapchain& swapchain, Vulkan::CVulkanRendering& renderer,
+            Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
+            Vulkan::CVulkanRendering& renderer,
             Vulkan::CBufferHandler& bufferHandler,
             Material::CMaterialManager& materialManager,
-            Vulkan::CDescriptorStorage& descriptorStorage,
             CRendererManager& rendererManager,
             Core::CCameraManager& cameraManager);
     ~CWindow();
@@ -62,10 +62,10 @@ public:
 private:
     const System::CSystem& mSystem;
     SDL_Window* mSDLWindow;
+    Vulkan::SContext& mContext;
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
     Vulkan::CBufferHandler& mBufferHandler;
-    Vulkan::CDescriptorStorage& mDescriptorStorage;
     Material::CMaterialManager& mMaterialManager;
     CRendererManager& mRendererManager;
     Core::CCameraManager& mCameraManager;

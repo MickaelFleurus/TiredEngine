@@ -1,37 +1,97 @@
 #pragma once
 
+#include <limits>
+
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <vulkan/vulkan.h>
 
-namespace Core {
+#include "engine/utils/StringId.h"
 
 using IndexType = uint32_t;
+constexpr IndexType INVALID_INDEX = std::numeric_limits<IndexType>::max();
+namespace Core {
 
-struct SVertex {
+//! Buffer data type
+struct alignas(16) SInstanceData {
+    uint32_t transformIndex;
+    uint32_t partOffsetIndex;
+    uint32_t meshInfoIndex;
+    uint32_t materialIndex;
+};
+
+//! Buffer data type
+struct alignas(16) SVertex {
     glm::vec3 position;
-    float padding1;
-    glm::vec2 texCoord;
-    float padding2[2];
+    float padding;
     glm::vec3 normal;
-    float padding3;
+    float padding2;
+    glm::vec2 uv;
+    float padding3[2];
+    glm::vec4 tangent = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
-struct SUIVertex {
-    glm::vec2 position;
-    glm::vec2 texCoord;
+// Uploaded data to GPU buffers
+struct SGlobalMeshBuffers {
+    std::vector<SVertex> vertices;
+    std::vector<uint32_t> indices;
 };
 
-struct SInstanceData {
-    glm::mat4 modelMatrix;
-    glm::vec4 color;
-    uint32_t textureId;
-    uint32_t materialId;
-    float padding[2];
+namespace Meshes {
+
+// One node in the asset's internal hierarchy
+struct SMeshNode {
+    glm::mat4 local{1.0f};
+    glm::mat4 world{1.0f};
+    int32_t parentIdx = -1;
+    uint32_t meshInfoIndex = INVALID_INDEX;
+    uint32_t partOffsetIndex = INVALID_INDEX;
+    CStringId name;
 };
 
-struct SIndirectDrawCommand {
+// Data in a glTF file, used to load everything
+struct SCompositeMeshAsset {
+    // Breadth-First Search ordered nodes, parents are always before children
+    std::vector<SMeshNode> nodes;
+    bool isStaticInternally = true;
+
+    int32_t findNodeByName(CStringId name) const {
+        for (size_t i = 0; i < nodes.size(); ++i) {
+            if (nodes[i].name == name)
+                return (int32_t)i;
+        }
+        return -1;
+    }
+};
+
+// Instance data, created when a mesh is registered
+//! Buffer Data Type
+struct alignas(16) SMeshInfo {
+    uint32_t firstIndex;
+    uint32_t indexCount;
+    int32_t vertexOffset;
+    uint32_t materialIndex;
+    glm::vec4 boundingSphere; // xyz = center, w = radius
+};
+
+// Buffer data, represent the local matrice in the loaded mesh
+//! Buffer data type
+struct SGPUPartOffset {
+    glm::mat4 offset;
+};
+
+// Data to draw the meshes
+struct SMeshAssetRegistry {
+    std::vector<SMeshInfo> meshInfos;
+    std::vector<SCompositeMeshAsset> assets;
+    std::vector<SGPUPartOffset> partOffsets;
+};
+} // namespace Meshes
+
+//! Buffer data type
+struct alignas(4) SIndirectDrawCommand {
     uint32_t indexCount;
     uint32_t instanceCount;
     uint32_t firstIndex;
@@ -39,27 +99,73 @@ struct SIndirectDrawCommand {
     uint32_t firstInstance;
 };
 
-struct SUIInstanceData {
-    glm::mat4 modelMatrix;
+//! Buffer data type
+struct alignas(16) SMaterial {
+    glm::vec4 baseColorFactor;
+    uint32_t albedoTexIndex;
+    uint32_t normalTexIndex;
+    uint32_t metalRoughTexIndex;
+    float metallic;
+    float roughness;
+    float _pad[3];
+};
+
+// Draw data for UI and screen space stuff
+//! Buffer data type
+struct alignas(16) SScreenQuadInstance {
+    glm::vec2 posMin, posMax;
+    glm::vec2 uvMin, uvMax;
     glm::vec4 color;
-    glm::vec4 uvRect;
-    uint32_t textureId;
-    uint32_t materialId;
-    float padding[2];
+    uint32_t texIndex;
+    uint32_t _pad[3];
 };
 
-struct SPushConstantData {
-    glm::mat4 projectionMatrix;
-    glm::mat4 viewMatrix;
+// Draw data for 2D elements in world space (billboards, sprites, etc...)
+//! Buffer data type
+struct alignas(16) SWorldQuadInstance {
+    glm::vec3 worldPos;
+    float size;
+    glm::vec2 uvMin, uvMax;
+    glm::vec4 color;
+    uint32_t texIndex;
+    uint32_t _pad[3];
 };
 
-inline bool operator==(const SInstanceData& lhs, const SInstanceData& rhs) {
-    return lhs.modelMatrix == rhs.modelMatrix && lhs.color == rhs.color &&
-           lhs.materialId == rhs.materialId && lhs.textureId == rhs.textureId;
-}
+namespace PC {
+// Push constants for UI and screen space stuff
+struct SUiPushConstants {
+    VkDeviceAddress instances; // uiGlyphBuffer or uiSpriteBuffer address
+    glm::vec2 screenSize;
+    float msdfPxRange;
+    float _pad;
+};
 
-inline bool operator!=(const SInstanceData& lhs, const SInstanceData& rhs) {
-    return !(lhs == rhs);
-}
+// Push constants for world space 2D stuff
+struct SWorldPushConstants {
+    VkDeviceAddress instances; // worldGlyphBuffer or worldSpriteBuffer address
+    glm::mat4 view;
+    glm::mat4 proj;
+    float msdfPxRange;
+    float _pad[3];
+};
+
+// Push constants for culling and indirect draw resolution
+struct alignas(16) SCullPushConstants {
+    VkDeviceAddress meshInfoBuffer;
+    VkDeviceAddress indirectOut;
+    VkDeviceAddress drawCount;
+    uint32_t meshCount;
+    uint32_t _pad0, _pad1, _pad2;
+    glm::vec4 frustumPlanes[6];
+};
+
+// Push constants for rendering 3D meshes
+struct alignas(16) SScenePushConstants {
+    VkDeviceAddress vertexBuffer;
+    VkDeviceAddress materialBuffer;
+    VkDeviceAddress meshInfoBuffer;
+    VkDeviceAddress objectInstanceBuffer;
+};
+} // namespace PC
 
 } // namespace Core

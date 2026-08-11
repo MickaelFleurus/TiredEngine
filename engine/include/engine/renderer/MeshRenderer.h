@@ -1,13 +1,12 @@
 #pragma once
-#include <span>
+
 #include <unordered_map>
 #include <vector>
 
 #include "engine/core/DataTypes.h"
 #include "engine/core/GameObjectId.h"
 #include "engine/renderer/IRenderer.h"
-#include "engine/renderer/RendererUtils.h"
-#include "engine/utils/BufferMemoryBlocks.h"
+#include "engine/utils/BufferTypes.h"
 
 namespace Core {
 class CMesh;
@@ -25,8 +24,7 @@ class CTransformManager;
 } // namespace Renderer
 
 namespace Vulkan {
-template <typename T>
-class CBufferHandleWrapper;
+class CBufferHandler;
 } // namespace Vulkan
 
 namespace Renderer {
@@ -42,13 +40,8 @@ struct SPairHash {
 
 class CMeshRenderer : public IRenderer {
 public:
-    CMeshRenderer(
-        Vulkan::CBufferHandleWrapper<Core::SVertex>& vertexBufferHandle,
-        Vulkan::CBufferHandleWrapper<Core::IndexType>& indexesBufferHandle,
-        Vulkan::CBufferHandleWrapper<Core::SInstanceData>& instancesBuffer,
-        Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-            indirectDrawBuffer,
-        CTransformManager& transformManager);
+    CMeshRenderer(Vulkan::CBufferHandler& bufferHandler,
+                  CTransformManager& transformManager);
     ~CMeshRenderer();
 
     void RegisterMesh(const Core::CMesh* mesh);
@@ -57,17 +50,11 @@ public:
     void Free() override;
     void Update() override;
 
-    void UpdateInstances(
-        std::vector<std::unique_ptr<Component::IComponent>>& meshComponents);
-
-    std::unordered_map<std::size_t, std::vector<Utils::SBufferIndexRange>>
-    GetIndirectDrawRanges() const;
-
 private:
     struct SMeshPipelineGroup {
         Utils::SBufferIndexRange instanceBufferRange;
         Utils::SBufferIndexRange indirectBufferRange;
-        std::vector<Core::SInstanceData> instancesData;
+        std::vector<Core::SMeshInfo> instancesData;
         std::vector<Core::GameObjectId> gameObjectIds;
         std::optional<std::size_t>
         GetInstanceIndex(Core::GameObjectId id) const {
@@ -84,12 +71,7 @@ private:
         Utils::SBufferIndexRange verticesRange{};
         Utils::SBufferIndexRange indexesRange{};
     };
-
-    Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBufferHandle;
-    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBufferHandle;
-    Vulkan::CBufferHandleWrapper<Core::SInstanceData>& mInstancesBuffer;
-    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-        mIndirectDrawBuffer;
+    Vulkan::CBufferHandler& mBufferHandler;
     CTransformManager& mTransformManager;
 
     std::unordered_map<std::pair<std::size_t, std::size_t>, SMeshPipelineGroup,

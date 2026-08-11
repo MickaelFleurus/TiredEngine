@@ -7,7 +7,6 @@
 namespace Vulkan {
 struct SContext;
 class CSwapchain;
-class CDescriptorStorage;
 } // namespace Vulkan
 
 namespace Renderer {
@@ -25,9 +24,7 @@ class CMaterialManager {
 public:
     explicit CMaterialManager(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Vulkan::SContext& context,
-                              Vulkan::CSwapchain& swapchain,
-                              Vulkan::CDescriptorStorage& descriptorStorage);
+                              Vulkan::CPipelineFactory& pipelineFactory);
     ~CMaterialManager();
 
     CAbstractMaterial* GetorCreateMaterial(EMaterialType type);

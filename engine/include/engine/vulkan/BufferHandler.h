@@ -1,14 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <unordered_map>
-
-#include "engine/core/DataTypes.h"
-#include "engine/vulkan/BufferHandleWrapper.h"
-
-namespace Renderer {
-class CMemoryAllocator;
-}
+#include "engine/vulkan/GPUBuffer.h"
+#include "engine/vulkan/IndirectDrawBuffers.h"
+#include "engine/vulkan/QuadElementsBuffers.h"
+#include "engine/vulkan/StagingBuffer.h"
 
 namespace Vulkan {
 
@@ -16,29 +11,30 @@ struct SContext;
 
 class CBufferHandler {
 public:
-    CBufferHandler(const Vulkan::SContext& context,
-                   Renderer::CMemoryAllocator& memoryAllocator);
-    ~CBufferHandler();
+    CBufferHandler(const SContext& context);
 
-    void Upload();
-
-    template <typename T>
-    CBufferHandleWrapper<T>& Get(int index) {
-        auto* wrapper = mBufferWrappers[index].get();
-        auto* typedWrapper = static_cast<CBufferHandleWrapper<T>*>(wrapper);
-        return *typedWrapper;
+    CStagingBuffer& GetStagingBuffer() {
+        return mStagingBuffer;
     }
 
-    template <typename T>
-    CBufferHandleWrapper<T>* CreateTemp() {
-        return new CBufferHandleWrapper<T>(mContext, mMemoryAllocator);
+    CQuadElementsBuffers& GetQuadElementsBuffers() {
+        return mQuadElementsBuffers;
+    }
+
+    CIndirectDrawBuffers& GetIndirectDrawBuffers() {
+        return mIndirectDrawBuffers;
     }
 
 private:
-    const Vulkan::SContext& mContext;
-    Renderer::CMemoryAllocator& mMemoryAllocator;
-
-    std::unordered_map<int, std::unique_ptr<IBufferHandleWrapper>>
-        mBufferWrappers;
+    const SContext& mContext;
+    CStagingBuffer mStagingBuffer;
+    CQuadElementsBuffers mQuadElementsBuffers;
+    CIndirectDrawBuffers mIndirectDrawBuffers;
+    CGPUBuffer mVertexBuffer;
+    CGPUBuffer mIndexBuffer;
+    CGPUBuffer mInstanceBuffer;
+    CGPUBuffer mMaterialBuffer;
+    CGPUBuffer mMeshInfoBuffer;
+    CGPUBuffer mTransformBuffer;
 };
 } // namespace Vulkan

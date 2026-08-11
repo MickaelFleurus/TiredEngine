@@ -12,8 +12,11 @@ target_link_libraries(Angine_LIB PUBLIC
     msdf-atlas-gen::msdf-atlas-gen 
     freetype
     Vulkan::Vulkan
+    GPUOpen::VulkanMemoryAllocator
     spirv-reflect-static
     yaml-cpp::yaml-cpp
+    fastgltf::fastgltf
+    
 )
 
 # On macOS, link required frameworks for MoltenVK

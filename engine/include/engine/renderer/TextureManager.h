@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 struct SDL_Surface;
@@ -17,7 +18,6 @@ namespace Vulkan {
 struct SContext;
 class CSwapchain;
 class CVulkanRendering;
-class CDescriptorStorage;
 class CBufferHandler;
 } // namespace Vulkan
 
@@ -26,11 +26,10 @@ struct SAsset;
 
 namespace Renderer {
 
-struct VulkanTexture {
+struct LoadedTexture {
     VkImage image = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
     VkImageView imageView = VK_NULL_HANDLE;
-    VkSampler sampler = VK_NULL_HANDLE;
     uint32_t width = 0;
     uint32_t height = 0;
 };
@@ -44,7 +43,6 @@ public:
                     Renderer::CMemoryAllocator& memoryAllocator,
                     Vulkan::CBufferHandler& bufferHandler,
                     Utils::CFileHandler& fileHandler,
-                    Vulkan::CDescriptorStorage& descriptorStorage,
                     const CAssetParser& assetParser);
     ~CTextureManager();
 
@@ -52,17 +50,16 @@ public:
     int LoadTexture(const std::string& filename);
     int LoadTextureFromSurface(const std::string& filename,
                                SDL_Surface* surface);
-    std::optional<VulkanTexture> GetTexture(const std::string& filename);
+    std::optional<LoadedTexture> GetTexture(const std::string& filename);
     std::optional<int> GetTextureIndex(const std::string& filename) const;
-
-    const VulkanTexture& GetTexture(int index) const;
-    const std::unordered_map<std::string, int>& GetAllTextureIndices() const;
 
     void UnloadTexture(int index);
 
-private:
-    void UpdateDescriptor(int index);
+    // ONLY IMGUI
+    const LoadedTexture& GetTexture(int index) const;
+    const std::unordered_map<std::string, int>& GetAllTextureIndices() const;
 
+private:
     const Vulkan::SContext& mContext;
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
@@ -70,10 +67,9 @@ private:
 
     Vulkan::CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;
-    Vulkan::CDescriptorStorage& mDescriptorStorage;
     const CAssetParser& mAssetParser;
 
-    std::vector<VulkanTexture> mLoadedTextures;
+    std::vector<LoadedTexture> mLoadedTextures;
     std::unordered_map<std::string, int> mLoadedTexturesIndices;
 };
 } // namespace Renderer

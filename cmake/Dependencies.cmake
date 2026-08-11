@@ -18,10 +18,13 @@ include(AssetsCopy)
 include(Vulkan)
 include(SPIRV-Reflect)
 include(yaml-cpp)
+include(VMA)
+include(fastgltf)
 
 function(setup_dependencies)
     # Base dependencies first (no external deps)
     setup_vulkan()
+    setup_vma()
     setup_spirv_reflect()
     setup_zlib()
     setup_pnglib() 
@@ -31,6 +34,7 @@ function(setup_dependencies)
     setup_nlohmann_json()
     setup_gtest()
     setup_yaml_cpp()
+    setup_fastgltf()
     
     # Libraries that depend on base libraries
     setup_freetype()    # depends on zlib, brotli

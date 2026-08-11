@@ -10,7 +10,6 @@
 #include <vulkan/vulkan.h>
 
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
@@ -82,6 +81,11 @@ VkShaderModule CShaderFactory::CreateFragmentShader(std::string name,
 VkShaderModule CShaderFactory::CreateVertexShader(std::string name,
                                                   std::string path) {
     return mImpl->CreateShader(name + ".vert", path);
+}
+
+VkShaderModule CShaderFactory::CreateComputeShader(std::string name,
+                                                   std::string path) {
+    return mImpl->CreateShader(name + ".comp", path);
 }
 
 } // namespace Vulkan

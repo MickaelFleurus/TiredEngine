@@ -1,41 +1,22 @@
 #include "engine/core/MeshManager.h"
 
 #include "engine/core/Mesh.h"
-#include "engine/renderer/MeshRenderer.h"
-#include "engine/utils/Hashing.h"
 
 namespace Core {
 
-bool CMeshManager::HasMesh(std::size_t meshHash) const {
-    return mMeshes.contains(meshHash);
+CMeshManager::CMeshManager() : mFactory(*this) {
 }
 
-CMesh* CMeshManager::GetMesh(std::size_t meshHash) {
-    return &mMeshes.at(meshHash);
+bool CMeshManager::HasMesh(CStringId id) const {
+    return mMeshes.contains(id);
+}
+
+SMesh CMeshManager::GetMesh(CStringId id) {
+    return mMeshes.at(id);
 }
 
 void CMeshManager::ClearMeshes() {
     mMeshes.clear();
-}
-
-CMesh* CMeshManager::CreateCube(float size) {
-    std::size_t meshHash =
-        Utils::CreateHash(EMeshBaseType::Cube, EMeshDynamicType::Static, size);
-    if (!HasMesh(meshHash)) {
-        mMeshes.emplace(meshHash,
-                        std::move(mFactory.CreateCube(size, meshHash)));
-    }
-    return &mMeshes.at(meshHash);
-}
-
-CMesh* CMeshManager::CreateTriangle() {
-    std::size_t meshHash =
-        Utils::CreateHash(EMeshBaseType::Triangle, EMeshDynamicType::Static);
-    if (!HasMesh(meshHash)) {
-        auto mesh = mFactory.CreateTriangle(meshHash);
-        mMeshes.emplace(meshHash, std::move(mesh));
-    }
-    return &mMeshes.at(meshHash);
 }
 
 } // namespace Core

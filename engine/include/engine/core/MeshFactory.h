@@ -2,16 +2,17 @@
 #include "engine/core/Mesh.h"
 
 namespace Core {
-
+class CMeshManager;
 class CMeshFactory {
 public:
-    CMeshFactory();
+    CMeshFactory(CMeshManager& meshManager);
 
-    CMesh CreateTriangle(std::size_t hash);
-    CMesh CreateCube(float size, std::size_t hash);
-    CMesh CreateQuad(float width, float height, float depth, std::size_t hash);
-    // CMesh LoadFromFile(std::string filePath);
+    SMesh CreateTriangle();
+    SMesh CreateCube(float size);
+    SMesh CreateQuad(float width, float height, float depth);
+    SMesh LoadFromFile(std::string filePath);
 
 private:
+    CMeshManager& mMeshManager;
 };
 } // namespace Core

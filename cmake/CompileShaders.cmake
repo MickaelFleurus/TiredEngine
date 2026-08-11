@@ -7,13 +7,15 @@ function(compile_shaders_to_target target)
     file(GLOB ENGINE_SHADERS 
         "${CMAKE_SOURCE_DIR}/engine/assets/shaders/*.vert" 
         "${CMAKE_SOURCE_DIR}/engine/assets/shaders/*.frag"
-        "${CMAKE_SOURCE_DIR}/engine/assets/shaders/*.vertex"
+            "${CMAKE_SOURCE_DIR}/engine/assets/shaders/*.vertex"
+            "${CMAKE_SOURCE_DIR}/engine/assets/shaders/*.comp"
     )
     
     file(GLOB GAME_SHADERS 
         "${CMAKE_SOURCE_DIR}/game/assets/shaders/*.vert" 
         "${CMAKE_SOURCE_DIR}/game/assets/shaders/*.frag"
         "${CMAKE_SOURCE_DIR}/game/assets/shaders/*.vertex"
+        "${CMAKE_SOURCE_DIR}/game/assets/shaders/*.comp"
     )
     
     set(ALL_SHADERS ${ENGINE_SHADERS} ${GAME_SHADERS})

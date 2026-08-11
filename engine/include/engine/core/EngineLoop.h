@@ -61,9 +61,8 @@ protected:
     CAssetParser& mAssetParser;
     Core::CGameObjectManager mGameObjectManager;
     Core::CCameraManager mCameraManager;
-    Vulkan::CDescriptorStorage mDescriptorStorage;
-    Renderer::CMemoryAllocator mMemoryAllocator;
     Vulkan::CBufferHandler mBufferHandler;
+    Vulkan::CPipelineFactory mPipelineFactory;
 
     Material::CMaterialManager mMaterialManager;
     Renderer::CSpriteManager mSpriteManager;

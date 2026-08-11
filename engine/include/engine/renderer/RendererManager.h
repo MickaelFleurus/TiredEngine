@@ -1,7 +1,7 @@
 #pragma once
 
+#include "engine/renderer/MaterialStructures.h"
 #include "engine/renderer/MeshRenderer.h"
-#include "engine/renderer/TextRenderer.h"
 
 namespace Core {
 class CCamera;
@@ -13,6 +13,7 @@ class CMaterialManager;
 
 namespace Vulkan {
 class CBufferHandler;
+class CPipelineFactory;
 } // namespace Vulkan
 
 namespace Component {
@@ -21,19 +22,20 @@ class CComponentManager;
 
 namespace Renderer {
 class CTransformManager;
+struct SPipelineDescriptors;
 
 class CRendererManager {
 public:
     CRendererManager(Vulkan::CBufferHandler& bufferHandler,
                      Material::CMaterialManager& materialManager,
-                     CTransformManager& transformManager);
+                     CTransformManager& transformManager,
+                     Vulkan::CPipelineFactory& pipelineFactory);
     ~CRendererManager();
 
     void FreeSceneData();
     void Prepare();
 
     CMeshRenderer& GetMeshRenderer();
-    CTextRenderer& GetTextRenderer();
     void GenerateInstances(Component::CComponentManager& componentManager);
     void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
                 Core::CCamera& camera, Core::CCamera& uiCamera);
@@ -41,17 +43,13 @@ public:
     static void NotifyGameObjectHidden(Core::GameObjectId id);
 
 private:
-    Vulkan::CBufferHandleWrapper<Core::SVertex>& mVertexBuffer;
-    Vulkan::CBufferHandleWrapper<Core::IndexType>& mIndexesBuffer;
-    Vulkan::CBufferHandleWrapper<Core::SInstanceData>& mInstanceBuffer;
-    Vulkan::CBufferHandleWrapper<Core::SIndirectDrawCommand>&
-        mIndirectDrawBuffer;
-    Vulkan::CBufferHandleWrapper<Core::SUIInstanceData>& mTextInstanceBuffer;
-    Vulkan::CBufferHandleWrapper<Core::SUIVertex>& mUIVertexBuffer;
+    Vulkan::CBufferHandler& mBufferHandler;
+    Vulkan::CPipelineFactory& mPipelineFactory;
 
     Material::CMaterialManager& mMaterialManager;
     CTransformManager& mTransformManager;
     CMeshRenderer mMeshRenderer;
-    CTextRenderer mTextRenderer;
+
+    Renderer::SPipelineDescriptors mCullPipeline;
 };
 } // namespace Renderer

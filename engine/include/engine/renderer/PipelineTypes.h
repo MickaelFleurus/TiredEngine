@@ -25,6 +25,17 @@ enum class EVertexLayout {
     Mesh3D,
 };
 
+// FIXME: Can be constexpr? Do I really need a string here.
+struct SComputePipelineConfig {
+    std::string shaderName;
+    std::string shaderPath;
+
+    bool operator==(const SComputePipelineConfig& other) const noexcept {
+        return std::tie(shaderName, shaderPath) ==
+               std::tie(other.shaderName, other.shaderPath);
+    }
+};
+
 struct SPipelineConfig {
     EPrimitiveType primitiveType = EPrimitiveType::TriangleList;
     EFillMode fillMode = EFillMode::Fill;
@@ -54,6 +65,13 @@ struct SPipelineConfigHash {
         return Utils::CreateHash(d.primitiveType, d.fillMode, d.cullMode,
                                  d.frontFace, d.shaderPath, d.enableBlending,
                                  d.vertexLayout);
+    }
+};
+
+struct SComputePipelineConfigHash {
+
+    std::size_t operator()(const SComputePipelineConfig& d) const noexcept {
+        return Utils::CreateHash(d.shaderName, d.shaderPath);
     }
 };
 

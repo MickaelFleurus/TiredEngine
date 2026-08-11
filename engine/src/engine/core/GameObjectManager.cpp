@@ -30,7 +30,7 @@ GameObjectId CGameObjectManager::CreateObject(CStringId name) {
     SGameObjectSlot& slot = mGameObjects[id.index];
     slot.mExists = true;
     slot.mGeneration = id.generation;
-    slot.mObject = SGameObject{.mId = id, .mIsActive = true, .mName = name};
+    slot.mObject = SGameObject{.mName = name, .mId = id, .mIsActive = true};
 
     mTransformManager.Reset(id.index);
     return id;

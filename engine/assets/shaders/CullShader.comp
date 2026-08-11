@@ -1,0 +1,43 @@
+struct ObjectInstance {
+    mat4 modelMatrix;
+    uint meshIndex;
+    uint _pad0, _pad1, _pad2;
+};
+
+layout(buffer_reference, scalar) readonly buffer ObjectInstanceBuffer { ObjectInstance o[]; };
+
+layout(push_constant) uniform PC {
+    MeshInfoBuffer meshInfos;
+    ObjectInstanceBuffer instances;
+    IndirectBuffer indirectOut;
+    CountBuffer drawCount;
+    uint instanceCount;       // now counts ObjectInstances, not MeshInfo entries
+    vec4 frustumPlanes[6];
+} pc;
+
+void main()
+{
+    uint idx = gl_GlobalInvocationID.x;
+    if (idx >= pc.instanceCount) return;
+
+    ObjectInstance obj = pc.instances.o[idx];
+    MeshInfo info = pc.meshInfos.m[obj.meshIndex];
+
+    // transform local bounding sphere center to world space; radius scaled by max axis scale
+    vec3 worldCenter = (obj.modelMatrix * vec4(info.boundingSphere.xyz, 1.0)).xyz;
+    float scale = max(length(obj.modelMatrix[0].xyz), max(length(obj.modelMatrix[1].xyz), length(obj.modelMatrix[2].xyz)));
+    vec4 worldSphere = vec4(worldCenter, info.boundingSphere.w * scale);
+
+    if (!isVisible(worldSphere)) return;
+
+    uint slot = atomicAdd(pc.drawCount.count, 1u);
+
+    DrawCmd cmd;
+    cmd.indexCount = info.indexCount;
+    cmd.instanceCount = 1;
+    cmd.firstIndex = info.firstIndex;
+    cmd.vertexOffset = info.vertexOffset;
+    cmd.firstInstance = idx;   // <-- points back at THIS ObjectInstance, not a compacted index
+
+    pc.indirectOut.d[slot] = cmd;
+}

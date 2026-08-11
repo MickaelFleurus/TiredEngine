@@ -1,44 +1,16 @@
 #pragma once
 
-#include <span>
-#include <vector>
+#include <cstdint>
 
-#include "engine/core/DataTypes.h"
-#include "engine/core/MeshTypes.h"
-
-namespace Material {
-class CAbstractMaterial;
-}
+#include <engine/utils/StringId.h>
+#include <glm/mat4x4.hpp>
 
 namespace Core {
 
-class CMesh {
-public:
-    CMesh(std::size_t hash, EMeshBaseType type, EMeshDynamicType dynamicType,
-          std::span<Core::SVertex> vertices,
-          const std::span<const uint32_t> indexes);
-    CMesh(CMesh&& other) noexcept;
-    CMesh& operator=(CMesh&& other) noexcept;
-
-    CMesh(CMesh const& other) = delete;
-    CMesh& operator=(CMesh const& other) = delete;
-    ~CMesh();
-
-    const std::vector<SVertex>& GetVertices() const;
-    const std::vector<IndexType>& GetIndexes() const;
-
-    std::size_t GetHash() const;
-
-    Material::CAbstractMaterial* GetMaterial() const;
-    void SetMaterial(Material::CAbstractMaterial* material);
-
-private:
-    const EMeshBaseType mBaseType;
-    EMeshDynamicType mDynamicType;
-    std::vector<Core::SVertex> mVertices;
-    std::vector<IndexType> mIndexes;
-
-    const std::size_t mHash;
-    Material::CAbstractMaterial* mMaterial{nullptr};
+struct SMesh {
+    const CStringId id;
+    const uint64_t meshInfoId;
+    const glm::mat4 localTransform = glm::mat4(1.0f);
+    SMesh* parent = nullptr;
 };
 } // namespace Core

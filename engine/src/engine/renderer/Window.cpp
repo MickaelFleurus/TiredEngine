@@ -26,7 +26,6 @@
 #include "engine/renderer/Renderables.h"
 #include "engine/renderer/RendererManager.h"
 #include "engine/renderer/RendererUtils.h"
-#include "engine/renderer/TextRenderer.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
@@ -35,6 +34,7 @@
 #include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
 #include "engine/vulkan/VulkanSwapchain.h"
+
 
 namespace {
 
@@ -67,19 +67,18 @@ VkRect2D GetScissor(VkViewport viewport) {
 namespace Renderer {
 
 CWindow::CWindow(System::CSystem& system, SDL_Window* window,
-                 Vulkan::CSwapchain& swapchain,
+                 Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
                  Vulkan::CVulkanRendering& renderer,
                  Vulkan::CBufferHandler& bufferHandler,
                  Material::CMaterialManager& materialManager,
-                 Vulkan::CDescriptorStorage& descriptorStorage,
                  CRendererManager& rendererManager,
                  Core::CCameraManager& cameraManager)
     : mSystem(system)
+    , mContext(context)
     , mSwapchain(swapchain)
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
     , mMaterialManager(materialManager)
-    , mDescriptorStorage(descriptorStorage)
     , mRendererManager(rendererManager)
     , mCameraManager(cameraManager)
     , mSDLWindow(window)
@@ -100,9 +99,9 @@ void CWindow::Render(Scene::CAbstractScene& scene,
     mRendererManager.GenerateInstances(componentManager);
     VkCommandBuffer commandBuffer =
         mSwapchain.GetCommandBuffer(mImageIndex.value());
-    mRendererManager.Render(
-        commandBuffer, mDescriptorStorage.GetDescriptorSet(),
-        mCameraManager.GetDefaultCamera3D(), mCameraManager.GetCameraUI());
+    mRendererManager.Render(commandBuffer, mContext.bindelessTextureSet,
+                            mCameraManager.GetDefaultCamera3D(),
+                            mCameraManager.GetCameraUI());
 }
 
 bool CWindow::BeginRender() {

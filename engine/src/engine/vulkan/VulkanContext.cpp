@@ -10,7 +10,11 @@ SContext::SContext(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
                    VkPhysicalDeviceFeatures features,
                    VkPhysicalDeviceMemoryProperties memoryProperties,
                    VkQueue graphicsQueue, VkQueue presentQueue,
-                   uint32_t graphicsFamily, uint32_t presentFamily)
+                   VkQueue transferQueue, uint32_t graphicsFamily,
+                   uint32_t presentFamily, uint32_t transferFamily,
+                   VmaAllocator vmaAllocator, VkDescriptorPool descriptorPool,
+                   VkDescriptorSetLayout bindelessTextureSetLayout,
+                   VkDescriptorSet bindelessTextureSet)
     : window(std::move(window))
     , instance(instance)
     , debugMessenger(debugMessenger)
@@ -22,11 +26,19 @@ SContext::SContext(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
     , physicalDeviceMemoryProperties(memoryProperties)
     , graphicsQueue(graphicsQueue)
     , presentQueue(presentQueue)
+    , transferQueue(transferQueue)
     , graphicsQueueFamilyIndex(graphicsFamily)
-    , presentQueueFamilyIndex(presentFamily) {
+    , presentQueueFamilyIndex(presentFamily)
+    , transferQueueFamilyIndex(transferFamily)
+    , vmaAllocator(vmaAllocator)
+    , descriptorPool(descriptorPool)
+    , bindelessTextureSetLayout(bindelessTextureSetLayout)
+    , bindelessTextureSet(bindelessTextureSet) {
 }
 
 SContext::~SContext() {
+    vkDestroyDescriptorSetLayout(device, bindelessTextureSetLayout, nullptr);
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
     if (debugMessenger != VK_NULL_HANDLE) {
@@ -36,6 +48,7 @@ SContext::~SContext() {
             func(instance, debugMessenger, nullptr);
     }
     vkDestroyDevice(device, nullptr);
+    vmaDestroyAllocator(vmaAllocator);
     vkDestroyInstance(instance, nullptr);
 }
 

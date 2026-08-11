@@ -7,9 +7,11 @@
 #include "engine/utils/FileHandler.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/Constants.h"
-#include "engine/vulkan/DescriptorStorage.h"
+#include "engine/vulkan/StagingBuffer.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+
+#include "vulkan/vulkan.h"
 
 namespace {
 constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
@@ -22,6 +24,92 @@ uint32_t GetBytesPerPixel(SDL_PixelFormat format) {
     return SDL_BYTESPERPIXEL(format);
 }
 
+Renderer::LoadedTexture
+createTextureFromPixels(VmaAllocator allocator, VkDevice device,
+                        Vulkan::CStagingBuffer& uploader, const void* pixels,
+                        uint32_t width, uint32_t height, VkFormat format) {
+    VkDeviceSize imageSize =
+        VkDeviceSize(width) * height * 4; // assumes 4 bytes/pixel (RGBA8)
+
+    VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = format;
+    imageInfo.extent = {width, height, 1};
+    imageInfo.mipLevels = 1; // FIXME: Generate mipmaps if needed later
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+    Renderer::LoadedTexture tex{};
+    tex.width = width;
+    tex.height = height;
+    if (!vmaCreateImage(allocator, &imageInfo, &allocInfo, &tex.image,
+                        &tex.allocation, nullptr)) {
+        LOG_FATAL("Failed to create Vulkan image!");
+    }
+
+    // 1. Transition UNDEFINED -> TRANSFER_DST_OPTIMAL
+    transitionImageLayout(uploader, tex.image, format,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    // 2. Copy pixel data via staging (extends your existing StagingUploader —
+    // see below)
+    uploader.UploadToImage(pixels, imageSize, tex.image, width, height);
+
+    // 3. Transition TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
+    transitionImageLayout(uploader, tex.image, format,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    viewInfo.image = tex.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    if (vkCreateImageView(device, &viewInfo, nullptr, &tex.view)) {
+        LOG_FATAL("Failed to create Vulkan image view!");
+    }
+
+    return tex;
+}
+
+void transitionImageLayout(Vulkan::CStagingBuffer& uploader, VkImage image,
+                           VkFormat format, VkImageLayout oldLayout,
+                           VkImageLayout newLayout) {
+    VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkPipelineStageFlags srcStage, dstStage;
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+        newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else { // TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    vkCmdPipelineBarrier(uploader.GetCmdBuffer(), srcStage, dstStage, 0, 0,
+                         nullptr, 0, nullptr, 1, &barrier);
+}
+
 } // namespace
 
 namespace Renderer {
@@ -31,7 +119,6 @@ CTextureManager::CTextureManager(const Vulkan::SContext& context,
                                  Renderer::CMemoryAllocator& memoryAllocator,
                                  Vulkan::CBufferHandler& bufferHandler,
                                  Utils::CFileHandler& fileHandler,
-                                 Vulkan::CDescriptorStorage& descriptorStorage,
                                  const CAssetParser& assetParser)
     : mContext(context)
     , mSwapchain(swapchain)
@@ -39,7 +126,6 @@ CTextureManager::CTextureManager(const Vulkan::SContext& context,
     , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
     , mFileHandler(fileHandler)
-    , mDescriptorStorage(descriptorStorage)
     , mAssetParser(assetParser) {
     mLoadedTextures.reserve(Vulkan::kMaxTextures);
 }
@@ -47,9 +133,8 @@ CTextureManager::CTextureManager(const Vulkan::SContext& context,
 CTextureManager::~CTextureManager() {
     for (auto& texture : mLoadedTextures) {
         vkDestroyImageView(mContext.device, texture.imageView, nullptr);
-        vkDestroySampler(mContext.device, texture.sampler, nullptr);
         vkDestroyImage(mContext.device, texture.image, nullptr);
-        vkFreeMemory(mContext.device, texture.memory, nullptr);
+        vmaFreeMemory(mContext.vmaAllocator, texture.allocation);
     }
 }
 
@@ -57,6 +142,7 @@ int CTextureManager::LoadTexture(const SAsset& asset) {
     std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
         mFileHandler.LoadTextureFile(asset.mPath.string()), kGPUSurfaceDeleter};
     if (!surface) {
+        LOG_ERROR("Failed to load texture file: {}", asset.mPath.string());
         return -1;
     }
     auto textureIndex =
@@ -79,61 +165,17 @@ int CTextureManager::LoadTexture(const std::string& filename) {
 
 int CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                             SDL_Surface* surface) {
-    int width = surface->w;
-    int height = surface->h;
-    uint64_t imageSize = static_cast<uint64_t>(width) * height *
-                         GetBytesPerPixel(surface->format);
-    std::vector<uint8_t> pixelData(static_cast<uint8_t*>(surface->pixels),
-                                   static_cast<uint8_t*>(surface->pixels) +
-                                       imageSize);
-
-    auto bufferHandle = std::unique_ptr<Vulkan::CBufferHandleWrapper<uint8_t>>(
-        mBufferHandler.CreateTemp<uint8_t>());
-    bufferHandle->Init(static_cast<int>(imageSize),
-                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-
-    Utils::SBufferIndexRange range{};
-    bufferHandle->PrepareData(range, pixelData);
-    bufferHandle->Upload();
-
-    VkFormat format = SDLPixelFormatToVulkanFormat(surface->format);
-    VulkanImage image = CreateImage(mContext, mMemoryAllocator, width, height,
-                                    format, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                        VK_IMAGE_USAGE_SAMPLED_BIT,
-                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    // 3. Transition image layout and copy buffer to image
-    TransitionImageLayout(image.image, format, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mContext,
-                          mSwapchain, mRenderer);
-    CopyBufferToImage(bufferHandle->GetBuffer(), image.image, width, height,
-                      mContext, mSwapchain, mRenderer);
-    TransitionImageLayout(image.image, format,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mContext,
-                          mSwapchain, mRenderer);
-
-    // 4. Create image view and sampler
-    VkImageView imageView;
-    CreateImageView(mContext.device, image.image, format,
-                    VK_IMAGE_ASPECT_COLOR_BIT, imageView);
-    VkSampler sampler = CreateSampler(mContext.device);
-
-    VulkanTexture texture{image.image,
-                          image.memory,
-                          imageView,
-                          sampler,
-                          static_cast<uint32_t>(width),
-                          static_cast<uint32_t>(height)};
+    LoadedTexture tex = createTextureFromPixels(
+        mContext.vmaAllocator, mContext.device,
+        mBufferHandler.GetStagingBuffer(), surface->pixels,
+        uint32_t(surface->w), uint32_t(surface->h), VK_FORMAT_R8G8B8A8_UNORM);
     int index = static_cast<int>(mLoadedTextures.size());
-    mLoadedTextures.push_back(texture);
+    mLoadedTextures.push_back(tex);
     mLoadedTexturesIndices[filename] = index;
-    UpdateDescriptor(index);
     return index;
 }
 
-std::optional<VulkanTexture>
+std::optional<LoadedTexture>
 CTextureManager::GetTexture(const std::string& filename) {
     auto it = mLoadedTexturesIndices.find(filename);
     if (it != mLoadedTexturesIndices.end()) {
@@ -153,7 +195,7 @@ CTextureManager::GetTextureIndex(const std::string& filename) const {
     return std::nullopt;
 }
 
-const VulkanTexture& CTextureManager::GetTexture(int index) const {
+const LoadedTexture& CTextureManager::GetTexture(int index) const {
     if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
         LOG_FATAL("Texture index out of bounds: %d", index);
     }
@@ -165,38 +207,16 @@ CTextureManager::GetAllTextureIndices() const {
     return mLoadedTexturesIndices;
 }
 
-void CTextureManager::UpdateDescriptor(int index) {
-
-    VkDescriptorSet descriptorSet = mDescriptorStorage.GetDescriptorSet();
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = mLoadedTextures[index].imageView;
-    imageInfo.sampler = mLoadedTextures[index].sampler;
-
-    VkWriteDescriptorSet write{};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = descriptorSet;
-    write.dstBinding = Vulkan::kTextureBinding;
-    write.dstArrayElement = static_cast<uint32_t>(index);
-    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.descriptorCount = 1;
-    write.pImageInfo = &imageInfo;
-
-    vkUpdateDescriptorSets(mContext.device, 1, &write, 0, nullptr);
-}
-
 void CTextureManager::UnloadTexture(int index) {
     if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
         return;
     }
 
-    VulkanTexture& texture = mLoadedTextures[index];
+    LoadedTexture& texture = mLoadedTextures[index];
 
     vkDestroyImageView(mContext.device, texture.imageView, nullptr);
-    vkDestroySampler(mContext.device, texture.sampler, nullptr);
     vkDestroyImage(mContext.device, texture.image, nullptr);
-    vkFreeMemory(mContext.device, texture.memory, nullptr);
+    vmaFreeMemory(mContext.vmaAllocator, texture.allocation);
     auto it = std::find_if(
         mLoadedTexturesIndices.begin(), mLoadedTexturesIndices.end(),
         [index](const auto& pair) { return pair.second == index; });
@@ -205,7 +225,7 @@ void CTextureManager::UnloadTexture(int index) {
         mLoadedTexturesIndices.erase(it);
     }
 
-    mLoadedTextures[index] = VulkanTexture{}; // Mark as unloaded
+    mLoadedTextures[index] = LoadedTexture{}; // Mark as unloaded
 }
 
 } // namespace Renderer

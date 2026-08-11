@@ -15,6 +15,7 @@ public:
 
     VkShaderModule CreateFragmentShader(std::string name, std::string path);
     VkShaderModule CreateVertexShader(std::string name, std::string path);
+    VkShaderModule CreateComputeShader(std::string name, std::string path);
 
 private:
     class CImpl;
