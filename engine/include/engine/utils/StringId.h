@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/utils/Hashing.h"
 
 #ifdef EDITOR_MODE
 #include <string>
@@ -33,6 +34,12 @@ private:
     std::string mName;
 };
 
+struct CStringIdHash {
+    size_t operator()(const CStringId& k) const {
+        return Utils::CreateHash(k.GetName());
+    }
+};
+
 #else
 #include "engine/utils/Hashing.h"
 class CStringId {
@@ -62,5 +69,11 @@ public:
 
 private:
     const uint64_t mHash;
+};
+
+struct CStringIdHash {
+    size_t operator()(const CStringId& k) const {
+        return k.GetHash();
+    }
 };
 #endif

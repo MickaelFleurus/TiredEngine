@@ -22,19 +22,12 @@ struct SBrickDefinition {
 
 namespace Scene {
 
-CGameSceneLoader::CGameSceneLoader(
-    Core::CEngineLoop& engineLoop, Utils::CFileHandler& fileHandler,
-    Renderer::CTextureManager& textureManager,
-    Renderer::CSpriteManager& spriteManager,
-    Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
-    const System::CSystem& system, Core::CGameObjectManager& gameObjectManager)
-    : CSceneLoader(engineLoop, fileHandler, textureManager, spriteManager)
-    , mComponentManager(componentManager)
-    , mFontHandler(fontHandler)
-    , mMeshManager(meshManager)
-    , mSystem(system)
-    , mGameObjectManager(gameObjectManager) {
+CGameSceneLoader::CGameSceneLoader(Core::CEngineLoop& engineLoop,
+                                   Utils::CFileHandler& fileHandler,
+                                   const System::CSystem& system)
+    : CSceneLoader(engineLoop, fileHandler)
+
+    , mSystem(system) {
 }
 
 CGameSceneLoader::~CGameSceneLoader() = default;
@@ -42,9 +35,7 @@ CGameSceneLoader::~CGameSceneLoader() = default;
 std::unique_ptr<Scene::CAbstractScene>
 CGameSceneLoader::LoadGameSpecificScenePart(const YAML::Node& sceneData) {
     std::unique_ptr<CGameplayScene> gameplayScene =
-        std::make_unique<CGameplayScene>(mComponentManager, mFontHandler,
-                                         mMeshManager, mSystem,
-                                         mGameObjectManager);
+        std::make_unique<CGameplayScene>(mSystem);
     if (!sceneData["grid"].IsDefined()) {
         LOG_FATAL("Gameplay scene must have a grid defined");
         return nullptr;

@@ -12,7 +12,6 @@ public:
     };
 
     CQuadElementsBuffers(const SContext& context);
-    ~CQuadElementsBuffers();
 
 private:
     SQuadElementBuffer mUiGlyphBuffer, mWorldGlyphBuffer;

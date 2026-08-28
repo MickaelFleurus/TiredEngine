@@ -136,6 +136,8 @@ void CSwapchain::Recreate() {
 
     mFramebuffers = std::move(
         CreateFramebuffers(mContext.device, mRenderPass, mImageViews, mExtent));
+    mDepthBuffer = std::move(
+        CreateDepthBuffer(mContext.vmaAllocator, mContext.device, mExtent));
 }
 
 } // namespace Vulkan

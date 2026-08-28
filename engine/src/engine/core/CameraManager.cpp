@@ -4,11 +4,8 @@
 
 namespace Core {
 
-CCameraManager::CCameraManager(Renderer::CTransformManager& transformManager,
-                               Utils::CFileHandler& fileHandler)
-    : mTransformManager(transformManager)
-    , mFileHandler(fileHandler)
-    , mDefaultCamera3D(transformManager) {
+CCameraManager::CCameraManager(Utils::CFileHandler& fileHandler)
+    : mFileHandler(fileHandler) {
     // TODO: Eventually, load multiple cameras from config files
 }
 

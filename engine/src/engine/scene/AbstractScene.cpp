@@ -6,19 +6,9 @@
 
 namespace Scene {
 
-CAbstractScene::CAbstractScene(Component::CComponentManager& componentManager,
-                               Font::CFontHandler& fontHandler,
-                               Core::CMeshManager& meshManager,
-                               const System::CSystem& system,
-                               Core::CGameObjectManager& gameObjectManager)
-    : mGameObjectBuilder(componentManager, fontHandler, meshManager,
-                         gameObjectManager) {
+CAbstractScene::CAbstractScene() {
 }
 
 CAbstractScene::~CAbstractScene() = default;
-
-Core::CGameObjectBuilder& CAbstractScene::GetObjectBuilder() {
-    return mGameObjectBuilder;
-}
 
 } // namespace Scene

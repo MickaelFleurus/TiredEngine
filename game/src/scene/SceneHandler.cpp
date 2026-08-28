@@ -8,13 +8,8 @@
 
 namespace Scene {
 CSceneHandler::CSceneHandler(Core::CEngineLoop& engineLoop,
-                             Component::CComponentManager& componentManager,
-                             Font::CFontHandler& fontHandler,
-                             Core::CMeshManager& meshManager,
-                             const System::CSystem& system,
-                             Core::CGameObjectManager& gameObjectManager)
-    : CAbstractSceneHandler(engineLoop, componentManager, fontHandler,
-                            meshManager, system, gameObjectManager) {
+                             const System::CSystem& system)
+    : CAbstractSceneHandler(engineLoop, system) {
 }
 
 void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {

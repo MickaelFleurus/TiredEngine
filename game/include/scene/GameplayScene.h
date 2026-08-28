@@ -9,11 +9,7 @@ class CGrid;
 namespace Scene {
 class CGameplayScene : public CAbstractScene {
 public:
-    explicit CGameplayScene(Component::CComponentManager& componentManager,
-                            Font::CFontHandler& fontHandler,
-                            Core::CMeshManager& meshManager,
-                            const System::CSystem& system,
-                            Core::CGameObjectManager& gameObjectManager);
+    explicit CGameplayScene(const System::CSystem& system);
     ~CGameplayScene() override;
 
     void Update(float deltaTime) override;

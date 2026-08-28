@@ -10,6 +10,7 @@
 #include "engine/utils/Logger.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -584,10 +585,17 @@ CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
     // Create image views
     imageViews.resize(images.size());
     for (size_t i = 0; i < images.size(); i++) {
-        Renderer::CreateImageView(device, images[i], imageFormat,
-                                  VK_IMAGE_ASPECT_COLOR_BIT, imageViews[i]);
+        VkImageViewCreateInfo viewInfo{
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        viewInfo.image = images[i];
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = imageFormat;
+        viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        if (vkCreateImageView(device, &viewInfo, nullptr, &imageViews[i]) !=
+            VK_SUCCESS) {
+            LOG_FATAL("Failed to create image views!");
+        }
     }
-
     return {swapchain, imageFormat, extent, images, imageViews};
 }
 
@@ -717,5 +725,42 @@ CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures) {
     vkAllocateDescriptorSets(device, &allocInfo, &set);
 
     return {pool, layout, set};
+}
+
+Vulkan::CSwapchain::SDepthBuffer
+CreateDepthBuffer(VmaAllocator allocator, VkDevice device, VkExtent2D extent) {
+    VkFormat format = VK_FORMAT_D32_SFLOAT; // or query support first if you
+                                            // want a fallback chain
+
+    VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = format;
+    imageInfo.extent = {extent.width, extent.height, 1};
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+    Vulkan::CSwapchain::SDepthBuffer db{};
+    db.format = format;
+    if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &db.image,
+                       &db.allocation, nullptr) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create image!");
+    }
+
+    VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    viewInfo.image = db.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    if (vkCreateImageView(device, &viewInfo, nullptr, &db.view) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create image view!");
+    }
+
+    return db;
 }
 } // namespace Vulkan

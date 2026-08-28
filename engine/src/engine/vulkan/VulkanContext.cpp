@@ -47,9 +47,9 @@ SContext::~SContext() {
         if (func)
             func(instance, debugMessenger, nullptr);
     }
-    vkDestroyDevice(device, nullptr);
     vmaDestroyAllocator(vmaAllocator);
     vkDestroyInstance(instance, nullptr);
+    vkDestroyDevice(device, nullptr);
 }
 
 } // namespace Vulkan

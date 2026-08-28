@@ -7,20 +7,12 @@ namespace Core {
 CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
                      Vulkan::CSwapchain& swapchain)
     : CEngineLoop(system, context, swapchain)
-    , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
-                    system, mGameObjectManager)
-    , mSceneLoader(*this, system.GetFileHandler(), mTextureManager,
-                   mSpriteManager, mComponentManager, mFontHandler,
-                   mMeshManager, system, mGameObjectManager)
-    , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
-                   mFontHandler, mBufferHandler, mTextureManager, mSceneLoader,
-                   mCameraManager, mGameObjectManager, mMeshManager,
-                   mAssetParser) {
+    , mSceneHandler(*this, system)
+    , mSceneLoader(*this, system.GetFileHandler(), system) {
 
     mOverlordManager.CreateOverlord(context.window.get());
-    mToolHandler.Initialize();
+
     mFontHandler.LoadAllThePolices();
-    mSpriteManager.LoadSpriteSheet("bricks");
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

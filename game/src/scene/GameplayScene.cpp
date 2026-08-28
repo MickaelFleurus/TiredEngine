@@ -6,13 +6,8 @@
 
 namespace Scene {
 
-CGameplayScene::CGameplayScene(Component::CComponentManager& componentManager,
-                               Font::CFontHandler& fontHandler,
-                               Core::CMeshManager& meshManager,
-                               const System::CSystem& system,
-                               Core::CGameObjectManager& gameObjectManager)
-    : CAbstractScene(componentManager, fontHandler, meshManager, system,
-                     gameObjectManager) {
+CGameplayScene::CGameplayScene(const System::CSystem& system)
+    : CAbstractScene() {
 }
 
 CGameplayScene::~CGameplayScene() = default;

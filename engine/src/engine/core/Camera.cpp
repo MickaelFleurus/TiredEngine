@@ -8,14 +8,13 @@ namespace Core {
 CCamera::CCamera(std::string cameraName) : mName(std::move(cameraName)) {
 }
 
-void CCamera::SetAttachedGameObject(
-    std::optional<Core::GameObjectId> gameobjectId) {
-    if (mGameObjectId.has_value() && gameobjectId.has_value()) {
+void CCamera::SetAttachedEntity(std::optional<Core::SEntity> e) {
+    if (mEntity.has_value() && e.has_value()) {
         LOG_WARNING("Having two camera is not supported yet. The last "
                     "registered component will set the transform. This is most "
                     "likely going to be an issue.");
     }
-    mGameObjectId = gameobjectId;
+    mEntity = e;
 }
 
 const glm::mat4& CCamera::GetViewMatrix() {

@@ -1,15 +1,12 @@
 #include "engine/vulkan/PipelineFactory.h"
 
 #include <array>
-#include <functional>
 
 #include <vulkan/vulkan.h>
 
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
-#include "engine/renderer/RendererUtils.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanSwapchain.h"
@@ -113,7 +110,7 @@ public:
             VkPushConstantRange cullPcRange{};
             cullPcRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
             cullPcRange.offset = 0;
-            cullPcRange.size = sizeof(Core::SCullPushConstants);
+            cullPcRange.size = sizeof(Core::PC::SCullPushConstants);
 
             VkPipelineLayoutCreateInfo cullLayoutInfo{
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
@@ -259,21 +256,22 @@ public:
             colorBlending.blendConstants[2] = 0.0f;
             colorBlending.blendConstants[3] = 0.0f;
 
-            auto layoutInfo = CreateVertexLayout(config.vertexLayout);
+            // auto layoutInfo = CreateVertexLayout(config.vertexLayout);
 
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
             vertexInputInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
             vertexInputInfo.pNext = nullptr;
 
-            vertexInputInfo.pVertexBindingDescriptions =
-                layoutInfo.bufferDescriptions.data();
-            vertexInputInfo.vertexBindingDescriptionCount =
-                static_cast<uint32_t>(layoutInfo.bufferDescriptions.size());
-            vertexInputInfo.pVertexAttributeDescriptions =
-                layoutInfo.attributes.data();
-            vertexInputInfo.vertexAttributeDescriptionCount =
-                static_cast<uint32_t>(layoutInfo.attributes.size());
+            // FIXME
+            // vertexInputInfo.pVertexBindingDescriptions =
+            //     layoutInfo.bufferDescriptions.data();
+            // vertexInputInfo.vertexBindingDescriptionCount =
+            //     static_cast<uint32_t>(layoutInfo.bufferDescriptions.size());
+            // vertexInputInfo.pVertexAttributeDescriptions =
+            //     layoutInfo.attributes.data();
+            // vertexInputInfo.vertexAttributeDescriptionCount =
+            //     static_cast<uint32_t>(layoutInfo.attributes.size());
 
             VkPipelineLayout pipelineLayout;
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};

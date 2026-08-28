@@ -1,5 +1,7 @@
 #include <iostream>
 
+#define VMA_IMPLEMENTATION
+
 #include <SDL3/SDL.h>
 #include <core/GameLoop.h>
 #include <engine/system/System.h>

@@ -21,6 +21,5 @@ public:
 private:
     Scene::CSceneHandler mSceneHandler;
     Scene::CGameSceneLoader mSceneLoader;
-    Debug::COverlordToolHandler mToolHandler;
 };
 } // namespace Core

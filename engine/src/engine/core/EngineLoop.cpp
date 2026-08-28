@@ -5,8 +5,8 @@
 #include "engine/renderer/Window.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
-#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
+
 
 namespace Core {
 
@@ -16,32 +16,16 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     , mSwapchain(swapchain)
     , mVulkanRendering(context, swapchain)
     , mAssetParser(system.GetAssetParser())
-    , mGameObjectManager()
-    , mCameraManager(mGameObjectManager.GetTransformManager(),
-                     system.GetFileHandler())
+    , mCameraManager(system.GetFileHandler())
     , mBufferHandler(mContext)
     , mPipelineFactory(mContext, mSwapchain)
-    , mMaterialManager(mTextureManager, system.GetFileHandler(),
-                       mPipelineFactory)
-    , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
-                     mTextureManager)
-    , mTextureManager(context, swapchain, mVulkanRendering, mBufferHandler,
-                      system.GetFileHandler(), system.GetAssetParser())
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager,
-                   mThreadPool, mAssetParser)
-    , mComponentManager(mFontHandler, mMaterialManager, mSpriteManager,
-                        mCameraManager,
-                        mGameObjectManager.GetTransformManager())
-    , mRendererManager(mBufferHandler, mMaterialManager,
-                       mGameObjectManager.GetTransformManager(),
-                       mPipelineFactory)
-    , mWindow(system, context.window.get(), swapchain, mVulkanRendering,
-              mBufferHandler, mMaterialManager, mRendererManager,
+    , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser)
+
+    , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
               mCameraManager)
     , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
-    mTextureManager.LoadTexture("WhitePixel");
 }
 
 CEngineLoop::~CEngineLoop() = default;
@@ -67,12 +51,9 @@ bool CEngineLoop::Run() {
 
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
-        mGameObjectManager.Update();
-        mComponentManager.Update(deltaTime);
-
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
-                mWindow.Render(*mCurrentScene, mComponentManager);
+                mWindow.Render(*mCurrentScene);
             }
             mOverlordManager.Render(
                 mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value()));
@@ -83,16 +64,13 @@ bool CEngineLoop::Run() {
             if (mCurrentScene) {
                 mCurrentScene->Unload();
             }
-            mRendererManager.FreeSceneData();
 
             mPendingScene->Load();
-            mRendererManager.Prepare();
 
             mCurrentScene.swap(mPendingScene);
             mPendingScene.reset();
         }
         mInputHandler.Swap();
-        mComponentManager.CleanDeleted();
         mAssetParser.CheckAndUpdateAssets();
     }
     return true;

@@ -17,7 +17,7 @@ public:
 
 private:
     CMeshFactory mFactory;
-    std::unordered_map<CStringId, SMesh> mMeshes;
+    std::unordered_map<CStringId, SMesh, CStringIdHash> mMeshes;
 };
 
 } // namespace Core

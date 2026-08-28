@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanRendering.h"
 
 struct SDL_Window;
 
@@ -35,5 +36,8 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
 
 std::tuple<VkDescriptorPool, VkDescriptorSetLayout, VkDescriptorSet>
 CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures);
+
+Vulkan::CSwapchain::SDepthBuffer
+CreateDepthBuffer(VmaAllocator allocator, VkDevice device, VkExtent2D extent);
 
 } // namespace Vulkan

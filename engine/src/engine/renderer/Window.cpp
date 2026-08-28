@@ -1,40 +1,15 @@
 #include "engine/renderer/Window.h"
 
-#include <functional>
-#include <vector>
-
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
-#include "engine/component/CameraComponent.h"
-#include "engine/component/ComponentManager.h"
-#include "engine/component/MeshComponent.h"
-#include "engine/component/MovementComponent.h"
-#include "engine/component/SpriteComponent.h"
-#include "engine/component/TextUIComponent.h"
-#include "engine/core/CameraManager.h"
-#include "engine/core/DataTypes.h"
-#include "engine/core/GameObject.h"
-#include "engine/core/Mesh.h"
-#include "engine/debug/Overlord.h"
-#include "engine/font/Police.h"
-#include "engine/material/AbstractMaterial.h"
-#include "engine/material/MaterialManager.h"
-#include "engine/renderer/MeshRenderer.h"
-#include "engine/renderer/Renderables.h"
-#include "engine/renderer/RendererManager.h"
-#include "engine/renderer/RendererUtils.h"
-#include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/BufferHandleWrapper.h"
 #include "engine/vulkan/BufferHandler.h"
-#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
 #include "engine/vulkan/VulkanSwapchain.h"
-
 
 namespace {
 
@@ -66,23 +41,19 @@ VkRect2D GetScissor(VkViewport viewport) {
 
 namespace Renderer {
 
-CWindow::CWindow(System::CSystem& system, SDL_Window* window,
-                 Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
+CWindow::CWindow(System::CSystem& system, Vulkan::SContext& context,
+                 Vulkan::CSwapchain& swapchain,
                  Vulkan::CVulkanRendering& renderer,
                  Vulkan::CBufferHandler& bufferHandler,
-                 Material::CMaterialManager& materialManager,
-                 CRendererManager& rendererManager,
                  Core::CCameraManager& cameraManager)
     : mSystem(system)
     , mContext(context)
     , mSwapchain(swapchain)
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
-    , mMaterialManager(materialManager)
-    , mRendererManager(rendererManager)
     , mCameraManager(cameraManager)
-    , mSDLWindow(window)
-    , mViewport(GetViewport(window, mSystem.GetDisplayParameters()))
+    , mSDLWindow(context.window.get())
+    , mViewport(GetViewport(mSDLWindow, mSystem.GetDisplayParameters()))
     , mScissor(GetScissor(mViewport))
 
 {
@@ -93,15 +64,14 @@ CWindow::~CWindow() {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-void CWindow::Render(Scene::CAbstractScene& scene,
-                     Component::CComponentManager& componentManager) {
+void CWindow::Render(Scene::CAbstractScene& scene) {
 
-    mRendererManager.GenerateInstances(componentManager);
-    VkCommandBuffer commandBuffer =
-        mSwapchain.GetCommandBuffer(mImageIndex.value());
-    mRendererManager.Render(commandBuffer, mContext.bindelessTextureSet,
-                            mCameraManager.GetDefaultCamera3D(),
-                            mCameraManager.GetCameraUI());
+    // mRendererManager.GenerateInstances(componentManager);
+    // VkCommandBuffer commandBuffer =
+    //     mSwapchain.GetCommandBuffer(mImageIndex.value());
+    // mRendererManager.Render(commandBuffer, mContext.bindelessTextureSet,
+    //                         mCameraManager.GetDefaultCamera3D(),
+    //                         mCameraManager.GetCameraUI());
 }
 
 bool CWindow::BeginRender() {

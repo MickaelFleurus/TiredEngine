@@ -2,9 +2,8 @@
 
 #include <chrono>
 
-#include "engine/component/ComponentManager.h"
+#include "engine/component/ComponentManager2.h"
 #include "engine/core/CameraManager.h"
-#include "engine/core/GameObjectManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
 #include "engine/core/MeshManager.h"
@@ -13,15 +12,11 @@
 #include "engine/input/InputHandler.h"
 #include "engine/material/MaterialFactory.h"
 #include "engine/material/MaterialManager.h"
-#include "engine/renderer/MemoryAllocator.h"
-#include "engine/renderer/RendererManager.h"
 #include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
-#include "engine/renderer/TransformManager.h"
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
 #include "engine/vulkan/BufferHandler.h"
-#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/VulkanRendering.h"
 
 namespace Vulkan {
@@ -59,20 +54,14 @@ protected:
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering mVulkanRendering;
     CAssetParser& mAssetParser;
-    Core::CGameObjectManager mGameObjectManager;
     Core::CCameraManager mCameraManager;
     Vulkan::CBufferHandler mBufferHandler;
     Vulkan::CPipelineFactory mPipelineFactory;
 
-    Material::CMaterialManager mMaterialManager;
-    Renderer::CSpriteManager mSpriteManager;
-
     Core::CMeshManager mMeshManager;
 
-    Renderer::CTextureManager mTextureManager;
     Font::CFontHandler mFontHandler;
-    Component::CComponentManager mComponentManager;
-    Renderer::CRendererManager mRendererManager;
+    Component::CManager mComponentManager;
     Renderer::CWindow mWindow;
 
     Debug::COverlordManager mOverlordManager;

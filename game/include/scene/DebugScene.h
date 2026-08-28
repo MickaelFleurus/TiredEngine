@@ -7,11 +7,7 @@
 namespace Scene {
 class CDebugScene : public CAbstractScene {
 public:
-    explicit CDebugScene(Component::CComponentManager& componentManager,
-                         Font::CFontHandler& fontHandler,
-                         Core::CMeshManager& meshManager,
-                         const System::CSystem& system,
-                         Core::CGameObjectManager& gameObjectManager);
+    explicit CDebugScene(const System::CSystem& system);
 
     void Update(float deltaTime) override;
     CAbstractScene* GetNextScene() const override;

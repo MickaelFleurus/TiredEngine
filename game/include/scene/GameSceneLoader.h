@@ -25,23 +25,13 @@ class CGameSceneLoader : public CSceneLoader {
 public:
     CGameSceneLoader(Core::CEngineLoop& engineLoop,
                      Utils::CFileHandler& fileHandler,
-                     Renderer::CTextureManager& textureManager,
-                     Renderer::CSpriteManager& spriteManager,
-                     Component::CComponentManager& componentManager,
-                     Font::CFontHandler& fontHandler,
-                     Core::CMeshManager& meshManager,
-                     const System::CSystem& system,
-                     Core::CGameObjectManager& gameObjectManager);
+                     const System::CSystem& system);
     ~CGameSceneLoader() override;
 
     std::unique_ptr<Scene::CAbstractScene>
     LoadGameSpecificScenePart(const YAML::Node& sceneData) override;
 
 private:
-    Component::CComponentManager& mComponentManager;
-    Font::CFontHandler& mFontHandler;
-    Core::CMeshManager& mMeshManager;
     const System::CSystem& mSystem;
-    Core::CGameObjectManager& mGameObjectManager;
 };
 } // namespace Scene

@@ -1,11 +1,8 @@
 #pragma once
 #include <optional>
-#include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include "engine/core/GameObjectId.h"
-#include "engine/renderer/RendererUtils.h"
 #include "engine/vulkan/VulkanContext.h"
 
 struct SDL_Window;
@@ -13,10 +10,6 @@ struct SDL_Window;
 namespace Scene {
 class CAbstractScene;
 } // namespace Scene
-
-namespace Component {
-class CComponentManager;
-} // namespace Component
 
 namespace System {
 class CSystem;
@@ -42,18 +35,14 @@ class CRendererManager;
 
 class CWindow {
 public:
-    CWindow(System::CSystem& system, SDL_Window* window,
-            Vulkan::SContext& context, Vulkan::CSwapchain& swapchain,
-            Vulkan::CVulkanRendering& renderer,
+    CWindow(System::CSystem& system, Vulkan::SContext& context,
+            Vulkan::CSwapchain& swapchain, Vulkan::CVulkanRendering& renderer,
             Vulkan::CBufferHandler& bufferHandler,
-            Material::CMaterialManager& materialManager,
-            CRendererManager& rendererManager,
             Core::CCameraManager& cameraManager);
     ~CWindow();
 
     bool BeginRender();
-    void Render(Scene::CAbstractScene& scene,
-                Component::CComponentManager& componentManager);
+    void Render(Scene::CAbstractScene& scene);
     void EndRender();
 
     std::optional<uint32_t> GetImageIndex() const;
@@ -66,8 +55,6 @@ private:
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
     Vulkan::CBufferHandler& mBufferHandler;
-    Material::CMaterialManager& mMaterialManager;
-    CRendererManager& mRendererManager;
     Core::CCameraManager& mCameraManager;
 
     std::optional<uint32_t> mImageIndex = std::nullopt;

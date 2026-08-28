@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 namespace Vulkan {
@@ -9,7 +10,14 @@ struct SContext;
 
 class CSwapchain {
 public:
-    CSwapchain(SContext& context);
+    struct SDepthBuffer {
+        VkImage image;
+        VmaAllocation allocation;
+        VkImageView view;
+        VkFormat format;
+    };
+
+    explicit CSwapchain(SContext& context);
     ~CSwapchain();
     void Recreate();
 
@@ -35,6 +43,7 @@ private:
     VkExtent2D mExtent;
     std::vector<VkImage> mImages;
     std::vector<VkImageView> mImageViews;
+    SDepthBuffer mDepthBuffer;
 
     // Rendering
     VkRenderPass mRenderPass = VK_NULL_HANDLE;

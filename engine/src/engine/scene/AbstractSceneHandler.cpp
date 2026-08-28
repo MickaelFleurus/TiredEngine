@@ -4,17 +4,9 @@
 
 namespace Scene {
 
-CAbstractSceneHandler::CAbstractSceneHandler(
-    Core::CEngineLoop& engineLoop,
-    Component::CComponentManager& componentManager,
-    Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
-    const System::CSystem& system, Core::CGameObjectManager& gameObjectManager)
-    : mEngineLoop(engineLoop)
-    , mComponentManager(componentManager)
-    , mFontHandler(fontHandler)
-    , mMeshManager(meshManager)
-    , mSystem(system)
-    , mGameObjectManager(gameObjectManager) {
+CAbstractSceneHandler::CAbstractSceneHandler(Core::CEngineLoop& engineLoop,
+                                             const System::CSystem& system)
+    : mEngineLoop(engineLoop), mSystem(system) {
 }
 
 void CAbstractSceneHandler::SetCurrentScene(

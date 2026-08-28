@@ -30,10 +30,8 @@ class CAssetParser;
 namespace Font {
 class CFontHandler {
 public:
-    CFontHandler(Renderer::CTextureManager& textureManager,
-                 Utils::CFileHandler& fileHandler,
-                 Material::CMaterialManager& materialManager,
-                 Thread::CPool& threadPool, const CAssetParser& assetParser);
+    CFontHandler(Utils::CFileHandler& fileHandler, Thread::CPool& threadPool,
+                 const CAssetParser& assetParser);
     ~CFontHandler();
 
     CPolice& GetPolice(std::string name);
@@ -43,9 +41,8 @@ public:
 
 private:
     std::unordered_map<std::string, CPolice> mPolices;
-    Renderer::CTextureManager& mTextureManager;
+
     Utils::CFileHandler& mFileHandler;
-    Material::CMaterialManager& mMaterialManager;
     Thread::CPool& mThreadPool;
     const CAssetParser& mAssetParser;
 };

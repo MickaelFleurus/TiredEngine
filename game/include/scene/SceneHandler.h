@@ -6,11 +6,7 @@ namespace Scene {
 class CSceneHandler : public CAbstractSceneHandler {
 public:
     explicit CSceneHandler(Core::CEngineLoop& engineLoop,
-                           Component::CComponentManager& componentManager,
-                           Font::CFontHandler& fontHandler,
-                           Core::CMeshManager& meshManager,
-                           const System::CSystem& system,
-                           Core::CGameObjectManager& gameObjectManager);
+                           const System::CSystem& system);
 
     void CreateAndSetScene(const std::string& sceneName) override;
     const std::vector<std::string>& GetSceneNames() const override;

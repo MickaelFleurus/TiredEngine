@@ -216,14 +216,10 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
 } // namespace
 
 namespace Font {
-CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
-                           Utils::CFileHandler& fileHandler,
-                           Material::CMaterialManager& materialManager,
+CFontHandler::CFontHandler(Utils::CFileHandler& fileHandler,
                            Thread::CPool& threadPool,
                            const CAssetParser& assetParser)
-    : mTextureManager(textureManager)
-    , mFileHandler(fileHandler)
-    , mMaterialManager(materialManager)
+    : mFileHandler(fileHandler)
     , mThreadPool(threadPool)
     , mAssetParser(assetParser) {
 }
@@ -247,7 +243,8 @@ CPolice& CFontHandler::GetPolice(std::string name) {
     SFontData fontData;
     LoadExistingFontData(fontTexturePath->get(), fontData, mFileHandler);
     auto textureIndex =
-        mTextureManager.LoadTextureFromSurface(name, fontData.surface);
+        0; // FIXME
+           // mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 
     SDL_DestroySurface(fontData.surface);
     auto [emplaced_it, inserted] = mPolices.try_emplace(

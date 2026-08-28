@@ -7,11 +7,11 @@
 
 namespace {
 
-constexpr auto kScreenQuadDataSize = sizeof(Core::ScreenQuadInstance);
+constexpr auto kScreenQuadDataSize = sizeof(Core::SScreenQuadInstance);
 constexpr int kScreenQuadBufferDefaultSize =
     Vulkan::kMaxSprites * kScreenQuadDataSize;
 
-constexpr auto kWorldQuadDataSize = sizeof(Core::WorldQuadInstance);
+constexpr auto kWorldQuadDataSize = sizeof(Core::SWorldQuadInstance);
 constexpr int kWorldQuadBufferDefaultSize =
     Vulkan::kMaxSprites * kWorldQuadDataSize;
 constexpr auto kBufferUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |

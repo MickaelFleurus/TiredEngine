@@ -1,50 +1,51 @@
-#include "engine/renderer/TransformHandle.h"
+// #include "engine/renderer/TransformHandle.h"
 
-#include "engine/renderer/TransformManager.h"
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/euler_angles.hpp>
+// #include "engine/renderer/TransformManager.h"
+// #define GLM_ENABLE_EXPERIMENTAL
+// #include <glm/gtx/euler_angles.hpp>
 
-namespace Renderer {
+// namespace Renderer {
 
-CTransformHandle::CTransformHandle(CTransformManager& manager,
-                                   Core::GameObjectId id)
-    : mManager(manager), mId(id) {
-}
+// CTransformHandle::CTransformHandle(CTransformManager& manager,
+//                                    Core::GameObjectId id)
+//     : mManager(manager), mId(id) {
+// }
 
-void CTransformHandle::SetPosition(glm::vec3 position) {
-    mManager.SetPosition(mId, position);
-}
+// void CTransformHandle::SetPosition(glm::vec3 position) {
+//     mManager.SetPosition(mId, position);
+// }
 
-glm::vec3 CTransformHandle::GetPosition() const {
-    return mManager.GetPosition(mId);
-}
+// glm::vec3 CTransformHandle::GetPosition() const {
+//     return mManager.GetPosition(mId);
+// }
 
-void CTransformHandle::Move(glm::vec3 move) {
-    auto& position = mManager.GetPosition(mId);
-    mManager.SetPosition(mId, position + move);
-}
+// void CTransformHandle::Move(glm::vec3 move) {
+//     auto& position = mManager.GetPosition(mId);
+//     mManager.SetPosition(mId, position + move);
+// }
 
-void CTransformHandle::SetRotation(glm::quat rotation) {
-    mManager.SetRotation(mId, rotation);
-}
+// void CTransformHandle::SetRotation(glm::quat rotation) {
+//     mManager.SetRotation(mId, rotation);
+// }
 
-glm::quat CTransformHandle::GetRotation() const {
-    return mManager.GetRotation(mId);
-}
+// glm::quat CTransformHandle::GetRotation() const {
+//     return mManager.GetRotation(mId);
+// }
 
-void CTransformHandle::SetScale(const glm::vec3& scale) {
-    mManager.SetScale(mId, scale);
-}
+// void CTransformHandle::SetScale(const glm::vec3& scale) {
+//     mManager.SetScale(mId, scale);
+// }
 
-glm::vec3 CTransformHandle::GetScale() const {
-    return mManager.GetScale(mId);
-}
+// glm::vec3 CTransformHandle::GetScale() const {
+//     return mManager.GetScale(mId);
+// }
 
-bool CTransformHandle::HasChildren() const {
-    return !mManager.GetChildren(mId).empty();
-}
+// bool CTransformHandle::HasChildren() const {
+//     return !mManager.GetChildren(mId).empty();
+// }
 
-const std::vector<Core::GameObjectId>& CTransformHandle::GetChildren() const {
-    return mManager.GetChildren(mId);
-}
-} // namespace Renderer
+// const std::vector<Core::GameObjectId>& CTransformHandle::GetChildren() const
+// {
+//     return mManager.GetChildren(mId);
+// }
+// } // namespace Renderer

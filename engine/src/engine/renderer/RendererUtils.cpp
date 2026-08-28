@@ -1,72 +1,8 @@
 #include "engine/renderer/RendererUtils.h"
 
-#include "engine/renderer/MemoryAllocator.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/VulkanContext.h"
-#include "engine/vulkan/VulkanRendering.h"
-
-namespace {} // namespace
 
 namespace Renderer {
-
-VkCommandBuffer BeginSingleTimeCommands(const Vulkan::SContext& context,
-                                        Vulkan::CSwapchain& swapchain) {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = swapchain.GetCommandPool();
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    if (vkAllocateCommandBuffers(context.device, &allocInfo, &commandBuffer) !=
-        VK_SUCCESS) {
-        LOG_ERROR("Failed to allocate command buffer!");
-        return VK_NULL_HANDLE;
-    }
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
-}
-
-void EndSingleTimeCommands(const Vulkan::SContext& context,
-                           Vulkan::CSwapchain& swapchain,
-                           const Vulkan::CVulkanRendering& renderer,
-                           VkCommandBuffer commandBuffer) {
-
-    vkEndCommandBuffer(commandBuffer);
-    renderer.SubmitSyncSingleUse(commandBuffer);
-
-    vkFreeCommandBuffers(context.device, swapchain.GetCommandPool(), 1,
-                         &commandBuffer);
-}
-
-void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                       uint32_t height, const Vulkan::SContext& context,
-                       Vulkan::CSwapchain& swapchain,
-                       Vulkan::CVulkanRendering& renderer) {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context, swapchain);
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;   // Tightly packed
-    region.bufferImageHeight = 0; // Tightly packed
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {width, height, 1};
-
-    vkCmdCopyBufferToImage(commandBuffer, buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    EndSingleTimeCommands(context, swapchain, renderer, commandBuffer);
-}
 
 VkSampler CreateSampler(VkDevice device) {
     VkSamplerCreateInfo samplerInfo{};

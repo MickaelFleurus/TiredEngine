@@ -18,7 +18,6 @@ public:
     };
 
     CIndirectDrawBuffers(const Vulkan::SContext& context);
-    ~CIndirectDrawBuffers();
 
     void CreatePipelineDrawGroup(VkPipeline pipeline);
     void ResetDrawGroupCounts(VkCommandBuffer cmd);

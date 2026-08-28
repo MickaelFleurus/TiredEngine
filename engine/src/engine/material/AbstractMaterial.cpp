@@ -1,7 +1,5 @@
 #include "engine/material/AbstractMaterial.h"
 
-#include "engine/vulkan/DescriptorStorage.h"
-
 namespace {
 static std::size_t gMaterialIdCounter = 0;
 } // namespace

@@ -1,16 +1,11 @@
 #pragma once
 #include "engine/core/Camera.h"
-#include "engine/renderer/DirtyObserver.h"
 #include "engine/utils/Token.h"
 
-namespace Renderer {
-class CTransformManager;
-}
-
 namespace Core {
-class CCamera3D : public CCamera, public Renderer::IDirtyObserver {
+class CCamera3D : public CCamera {
 public:
-    explicit CCamera3D(Renderer::CTransformManager& transformManager);
+    explicit CCamera3D();
 
     void SetFOV(float fovDegrees);
     float GetFOV() const;
@@ -23,13 +18,10 @@ public:
     void SetShakeOffset(const glm::vec3& shake);
     const glm::vec3& GetShakeOffset() const;
 
-    void OnDirty(Core::GameObjectId id) override;
-
 protected:
     void EnsureUpToDate() override;
 
 private:
-    Renderer::CTransformManager& mTransformManager;
     float mFOV = 45.0f;
     float mZoom = 1.0f;
     float mAspectRatio = 16.0f / 9.0f;

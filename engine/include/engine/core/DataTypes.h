@@ -20,6 +20,7 @@ struct alignas(16) SInstanceData {
     uint32_t partOffsetIndex;
     uint32_t meshInfoIndex;
     uint32_t materialIndex;
+    glm::vec4 baseColor{1.0f};
 };
 
 //! Buffer data type
@@ -42,7 +43,7 @@ struct SGlobalMeshBuffers {
 namespace Meshes {
 
 // One node in the asset's internal hierarchy
-struct SMeshNode {
+struct SNode {
     glm::mat4 local{1.0f};
     glm::mat4 world{1.0f};
     int32_t parentIdx = -1;
@@ -52,9 +53,9 @@ struct SMeshNode {
 };
 
 // Data in a glTF file, used to load everything
-struct SCompositeMeshAsset {
+struct SCompositeAsset {
     // Breadth-First Search ordered nodes, parents are always before children
-    std::vector<SMeshNode> nodes;
+    std::vector<SNode> nodes;
     bool isStaticInternally = true;
 
     int32_t findNodeByName(CStringId name) const {
@@ -68,12 +69,13 @@ struct SCompositeMeshAsset {
 
 // Instance data, created when a mesh is registered
 //! Buffer Data Type
-struct alignas(16) SMeshInfo {
+struct alignas(16) SInfo {
     uint32_t firstIndex;
     uint32_t indexCount;
     int32_t vertexOffset;
     uint32_t materialIndex;
-    glm::vec4 boundingSphere; // xyz = center, w = radius
+    glm::vec3 localBoundsCenter;
+    float localBoundsRadius;
 };
 
 // Buffer data, represent the local matrice in the loaded mesh
@@ -84,8 +86,8 @@ struct SGPUPartOffset {
 
 // Data to draw the meshes
 struct SMeshAssetRegistry {
-    std::vector<SMeshInfo> meshInfos;
-    std::vector<SCompositeMeshAsset> assets;
+    std::vector<SInfo> meshInfos;
+    std::vector<SCompositeAsset> assets;
     std::vector<SGPUPartOffset> partOffsets;
 };
 } // namespace Meshes
@@ -101,7 +103,6 @@ struct alignas(4) SIndirectDrawCommand {
 
 //! Buffer data type
 struct alignas(16) SMaterial {
-    glm::vec4 baseColorFactor;
     uint32_t albedoTexIndex;
     uint32_t normalTexIndex;
     uint32_t metalRoughTexIndex;

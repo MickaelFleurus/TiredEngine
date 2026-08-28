@@ -25,9 +25,7 @@ class CAbstractScene;
 class CSceneLoader {
 public:
     CSceneLoader(Core::CEngineLoop& engineLoop,
-                 Utils::CFileHandler& fileHandler,
-                 Renderer::CTextureManager& textureManager,
-                 Renderer::CSpriteManager& spriteManager);
+                 Utils::CFileHandler& fileHandler);
     virtual ~CSceneLoader();
 
     void LoadSceneFromFile(const std::filesystem::path& path);
@@ -37,7 +35,5 @@ public:
 private:
     Core::CEngineLoop& mEngineLoop;
     Utils::CFileHandler& mFileHandler;
-    Renderer::CTextureManager& mTextureManager;
-    Renderer::CSpriteManager& mSpriteManager;
 };
 } // namespace Scene

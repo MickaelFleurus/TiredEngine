@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -11,6 +12,9 @@ public:
     virtual ~IPool() = default;
 
     virtual void Remove(Core::SEntity entity) = 0;
+    virtual bool Has(Core::SEntity entity) const = 0;
+    virtual std::size_t Size() const = 0;
+    virtual Core::SEntity GetEntity(std::size_t index) const = 0;
 };
 
 template <typename T>
@@ -27,6 +31,7 @@ public:
         mEntityToDataId[entity.id] = static_cast<uint32_t>(mData.size());
         mData.emplace_back(std::forward<Args>(args)...);
         mDataToEntity.push_back(entity);
+        return mData.back();
     }
 
     void Remove(Core::SEntity entity) override {
@@ -47,9 +52,22 @@ public:
         mEntityToDataId[entity.id] = kInvalidId;
     }
 
-    bool Has(Core::SEntity entity) const {
+    bool Has(Core::SEntity entity) const override {
         return entity.id < mEntityToDataId.size() &&
                mEntityToDataId[entity.id] != kInvalidId;
+    }
+
+    std::size_t Size() const override {
+        return mData.size();
+    }
+
+    Core::SEntity GetEntity(std::size_t index) const override {
+        return mDataToEntity[index];
+    }
+
+    template <typename Pool>
+    auto&& Get(this Pool&& self, Core::SEntity e) {
+        return self.mData[self.mEntityToDataId[e.id]];
     }
 
 private:

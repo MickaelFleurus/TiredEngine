@@ -1,17 +1,41 @@
+#version 450
+
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_scalar_block_layout : require
+
+struct MeshInfo {
+    uint firstIndex;
+    uint indexCount;
+    int  vertexOffset;
+    uint materialIndex;
+    vec4 boundingSphere;
+};
+
 struct ObjectInstance {
     mat4 modelMatrix;
     uint meshIndex;
     uint _pad0, _pad1, _pad2;
 };
 
+struct DrawCmd {
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int  vertexOffset;
+    uint firstInstance;
+};
+
+layout(buffer_reference, scalar) readonly buffer MeshInfoBuffer { MeshInfo m[]; };
 layout(buffer_reference, scalar) readonly buffer ObjectInstanceBuffer { ObjectInstance o[]; };
+layout(buffer_reference, scalar) buffer IndirectBuffer { DrawCmd d[]; };
+layout(buffer_reference, scalar) buffer CountBuffer { uint count; };
 
 layout(push_constant) uniform PC {
     MeshInfoBuffer meshInfos;
     ObjectInstanceBuffer instances;
     IndirectBuffer indirectOut;
     CountBuffer drawCount;
-    uint instanceCount;       // now counts ObjectInstances, not MeshInfo entries
+    uint instanceCount;
     vec4 frustumPlanes[6];
 } pc;
 
@@ -28,7 +52,8 @@ void main()
     float scale = max(length(obj.modelMatrix[0].xyz), max(length(obj.modelMatrix[1].xyz), length(obj.modelMatrix[2].xyz)));
     vec4 worldSphere = vec4(worldCenter, info.boundingSphere.w * scale);
 
-    if (!isVisible(worldSphere)) return;
+// FIXME
+    //if (!isVisible(worldSphere)) return;
 
     uint slot = atomicAdd(pc.drawCount.count, 1u);
 

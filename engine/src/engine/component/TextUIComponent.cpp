@@ -1,189 +1,190 @@
-#include "engine/component/TextUIComponent.h"
+// #include "engine/component/TextUIComponent.h"
 
-#include <glm/gtc/matrix_transform.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/component/ComponentManager.h"
-#include "engine/component/MovementComponent.h"
-#include "engine/core/DataTypes.h"
-#include "engine/core/GameObject.h"
-#include "engine/font/Police.h"
-#include "engine/renderer/TextRenderer.h"
-#include "engine/utils/Logger.h"
+// #include "engine/component/ComponentManager.h"
+// #include "engine/component/MovementComponent.h"
+// #include "engine/core/DataTypes.h"
+// #include "engine/core/GameObject.h"
+// #include "engine/font/Police.h"
+// #include "engine/renderer/TextRenderer.h"
+// #include "engine/utils/Logger.h"
 
-namespace Component {
-CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
-                                   CComponentManager& componentManager)
-    : IComponent(owner, componentManager) {
-}
+// namespace Component {
+// CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
+//                                    CComponentManager& componentManager)
+//     : IComponent(owner, componentManager) {
+// }
 
-CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
-                                   CComponentManager& componentManager,
-                                   const CTextUIComponent& other)
-    : CTextUIComponent(owner, componentManager) {
-    *this = other;
-}
+// CTextUIComponent::CTextUIComponent(Core::GameObjectId owner,
+//                                    CComponentManager& componentManager,
+//                                    const CTextUIComponent& other)
+//     : CTextUIComponent(owner, componentManager) {
+//     *this = other;
+// }
 
-CTextUIComponent& CTextUIComponent::operator=(const CTextUIComponent& other) {
-    SetText(other.mText);
-    SetPolice(other.mPolice);
-    SetFontSize(other.mFontSize);
-    mPolice = other.mPolice;
-    mText = other.mText;
-    mFontSize = other.mFontSize;
-    mColor = other.mColor;
-    mSize = other.mSize;
-    AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
-    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
-    return *this;
-}
+// CTextUIComponent& CTextUIComponent::operator=(const CTextUIComponent& other)
+// {
+//     SetText(other.mText);
+//     SetPolice(other.mPolice);
+//     SetFontSize(other.mFontSize);
+//     mPolice = other.mPolice;
+//     mText = other.mText;
+//     mFontSize = other.mFontSize;
+//     mColor = other.mColor;
+//     mSize = other.mSize;
+//     AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
+//     AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
+//     return *this;
+// }
 
-CTextUIComponent::~CTextUIComponent() = default;
+// CTextUIComponent::~CTextUIComponent() = default;
 
-void CTextUIComponent::SetText(const std::string& text) {
-    if (text == mText) {
-        return;
-    }
+// void CTextUIComponent::SetText(const std::string& text) {
+//     if (text == mText) {
+//         return;
+//     }
 
-    mText = text;
-    ResolveSize();
-    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
-}
+//     mText = text;
+//     ResolveSize();
+//     AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
+// }
 
-void CTextUIComponent::SetPolice(Font::CPolice* police) {
-    if (police == mPolice) {
-        return;
-    }
+// void CTextUIComponent::SetPolice(Font::CPolice* police) {
+//     if (police == mPolice) {
+//         return;
+//     }
 
-    mPolice = police;
-    ResolveSize();
-    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
-}
+//     mPolice = police;
+//     ResolveSize();
+//     AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
+// }
 
-Font::CPolice* CTextUIComponent::GetPolice() const {
-    return mPolice;
-}
+// Font::CPolice* CTextUIComponent::GetPolice() const {
+//     return mPolice;
+// }
 
-const std::string& CTextUIComponent::GetText() const {
-    return mText;
-}
+// const std::string& CTextUIComponent::GetText() const {
+//     return mText;
+// }
 
-int CTextUIComponent::GetFontSize() const {
-    return mFontSize;
-}
+// int CTextUIComponent::GetFontSize() const {
+//     return mFontSize;
+// }
 
-void CTextUIComponent::SetFontSize(int size) {
-    if (size == mFontSize) {
-        return;
-    }
+// void CTextUIComponent::SetFontSize(int size) {
+//     if (size == mFontSize) {
+//         return;
+//     }
 
-    mFontSize = size;
-    ResolveSize();
-    AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
-}
+//     mFontSize = size;
+//     ResolveSize();
+//     AddDirtyFlag(Core::EDirtyFlag::TextSizeChange);
+// }
 
-const glm::vec4& CTextUIComponent::GetColor() const {
-    return mColor;
-}
+// const glm::vec4& CTextUIComponent::GetColor() const {
+//     return mColor;
+// }
 
-void CTextUIComponent::SetColor(const glm::vec4& color) {
-    if (color == mColor) {
-        return;
-    }
+// void CTextUIComponent::SetColor(const glm::vec4& color) {
+//     if (color == mColor) {
+//         return;
+//     }
 
-    mColor = color;
-    AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
-}
+//     mColor = color;
+//     AddDirtyFlag(Core::EDirtyFlag::TextInstanceProperties);
+// }
 
-void CTextUIComponent::GenerateInstances(const glm::mat4& entityModel) {
-    mInstances.clear();
+// void CTextUIComponent::GenerateInstances(const glm::mat4& entityModel) {
+//     mInstances.clear();
 
-    if (!mPolice || mText.empty()) {
-        return;
-    }
+//     if (!mPolice || mText.empty()) {
+//         return;
+//     }
 
-    const auto& metrics = mPolice->GetFontMetrics();
-    float scale = mFontSize / metrics.emSize;
+//     const auto& metrics = mPolice->GetFontMetrics();
+//     float scale = mFontSize / metrics.emSize;
 
-    float baselineY = metrics.ascenderY * scale;
-    float cursorX = 0.0f;
-    float cursorY = 0.0f;
+//     float baselineY = metrics.ascenderY * scale;
+//     float cursorX = 0.0f;
+//     float cursorY = 0.0f;
 
-    for (char c : mText) {
-        const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
+//     for (char c : mText) {
+//         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
 
-        if (c == '\n') {
-            cursorX = 0.0f;
-            cursorY += scale * metrics.lineHeight;
-            continue;
-        }
+//         if (c == '\n') {
+//             cursorX = 0.0f;
+//             cursorY += scale * metrics.lineHeight;
+//             continue;
+//         }
 
-        if (c == ' ') {
-            cursorX += glyph.advance * scale;
-            continue;
-        }
+//         if (c == ' ') {
+//             cursorX += glyph.advance * scale;
+//             continue;
+//         }
 
-        glm::vec4 uvRect(glyph.uv.x, glyph.uv.y, glyph.uv.z, glyph.uv.w);
+//         glm::vec4 uvRect(glyph.uv.x, glyph.uv.y, glyph.uv.z, glyph.uv.w);
 
-        Core::SUIInstanceData instance;
-        instance.textureId = mPolice->GetTextureIndex();
-        instance.materialId = 0;
-        instance.color = mColor;
+//         Core::SUIInstanceData instance;
+//         instance.textureId = mPolice->GetTextureIndex();
+//         instance.materialId = 0;
+//         instance.color = mColor;
 
-        glm::vec3 glyphPos(cursorX + glyph.offset.x * scale,
-                           cursorY + baselineY - glyph.offset.y * scale -
-                               glyph.size.y * scale,
-                           0.0f);
-        instance.modelMatrix = glm::translate(glm::mat4{1.0f}, glyphPos);
-        instance.modelMatrix = glm::scale(
-            instance.modelMatrix,
-            glm::vec3(glyph.size.x * scale, glyph.size.y * scale, 1.0f));
-        instance.modelMatrix = entityModel * instance.modelMatrix;
-        instance.uvRect = uvRect;
-        mInstances.push_back(instance);
+//         glm::vec3 glyphPos(cursorX + glyph.offset.x * scale,
+//                            cursorY + baselineY - glyph.offset.y * scale -
+//                                glyph.size.y * scale,
+//                            0.0f);
+//         instance.modelMatrix = glm::translate(glm::mat4{1.0f}, glyphPos);
+//         instance.modelMatrix = glm::scale(
+//             instance.modelMatrix,
+//             glm::vec3(glyph.size.x * scale, glyph.size.y * scale, 1.0f));
+//         instance.modelMatrix = entityModel * instance.modelMatrix;
+//         instance.uvRect = uvRect;
+//         mInstances.push_back(instance);
 
-        cursorX += glyph.advance * scale;
-    }
-}
+//         cursorX += glyph.advance * scale;
+//     }
+// }
 
-void CTextUIComponent::ResolveSize() {
-    if (!mPolice || mText.empty()) {
-        mSize = glm::vec2(0.0f, 0.0f);
-        return;
-    }
+// void CTextUIComponent::ResolveSize() {
+//     if (!mPolice || mText.empty()) {
+//         mSize = glm::vec2(0.0f, 0.0f);
+//         return;
+//     }
 
-    float scale = mFontSize / mPolice->GetFontMetrics().emSize;
-    float cursorX = 0.0f;
-    float cursorY = 0.0f;
-    float maxWidth = 0.0f;
-    float totalHeight = scale;
+//     float scale = mFontSize / mPolice->GetFontMetrics().emSize;
+//     float cursorX = 0.0f;
+//     float cursorY = 0.0f;
+//     float maxWidth = 0.0f;
+//     float totalHeight = scale;
 
-    for (char c : mText) {
-        const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
+//     for (char c : mText) {
+//         const Font::GlyphInfo& glyph = mPolice->GetGlyphInfo(c);
 
-        if (c == '\n') {
-            maxWidth = std::max(maxWidth, cursorX);
-            cursorX = 0.0f;
-            cursorY += scale * mPolice->GetFontMetrics().lineHeight;
-            totalHeight += scale * mPolice->GetFontMetrics().lineHeight;
-        } else {
-            cursorX += glyph.advance * scale;
-        }
-    }
-    maxWidth = std::max(maxWidth, cursorX);
+//         if (c == '\n') {
+//             maxWidth = std::max(maxWidth, cursorX);
+//             cursorX = 0.0f;
+//             cursorY += scale * mPolice->GetFontMetrics().lineHeight;
+//             totalHeight += scale * mPolice->GetFontMetrics().lineHeight;
+//         } else {
+//             cursorX += glyph.advance * scale;
+//         }
+//     }
+//     maxWidth = std::max(maxWidth, cursorX);
 
-    mSize = glm::vec2(maxWidth, totalHeight);
-}
+//     mSize = glm::vec2(maxWidth, totalHeight);
+// }
 
-glm::vec2 CTextUIComponent::GetSize() const {
-    return mSize;
-}
+// glm::vec2 CTextUIComponent::GetSize() const {
+//     return mSize;
+// }
 
-const std::vector<Core::SUIInstanceData>&
-CTextUIComponent::GetInstances(const glm::mat4& entityModel) {
-    if (IsDirty()) {
-        GenerateInstances(entityModel);
-    }
-    return mInstances;
-}
+// const std::vector<Core::SUIInstanceData>&
+// CTextUIComponent::GetInstances(const glm::mat4& entityModel) {
+//     if (IsDirty()) {
+//         GenerateInstances(entityModel);
+//     }
+//     return mInstances;
+// }
 
-} // namespace Component
+// } // namespace Component

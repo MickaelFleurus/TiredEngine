@@ -21,11 +21,7 @@ class CFontHandler;
 namespace Scene {
 class CAbstractScene {
 public:
-    explicit CAbstractScene(Component::CComponentManager& componentManager,
-                            Font::CFontHandler& fontHandler,
-                            Core::CMeshManager& meshManager,
-                            const System::CSystem& system,
-                            Core::CGameObjectManager& gameObjectManager);
+    explicit CAbstractScene();
     virtual ~CAbstractScene();
     virtual void Update(float deltaTime) = 0;
     virtual CAbstractScene* GetNextScene() const = 0;
@@ -33,9 +29,7 @@ public:
     virtual void Unload() = 0;
 
     virtual const char* GetName() const = 0;
-    Core::CGameObjectBuilder& GetObjectBuilder();
 
 protected:
-    Core::CGameObjectBuilder mGameObjectBuilder;
 };
 } // namespace Scene

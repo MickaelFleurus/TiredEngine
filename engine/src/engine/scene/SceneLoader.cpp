@@ -1,21 +1,13 @@
 #include "engine/scene/SceneLoader.h"
 
 #include "engine/core/EngineLoop.h"
-#include "engine/renderer/SpriteManager.h"
-#include "engine/renderer/TextureManager.h"
-#include "engine/scene/AbstractScene.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
 
 namespace Scene {
 CSceneLoader::CSceneLoader(Core::CEngineLoop& engineLoop,
-                           Utils::CFileHandler& fileHandler,
-                           Renderer::CTextureManager& textureManager,
-                           Renderer::CSpriteManager& spriteManager)
-    : mEngineLoop(engineLoop)
-    , mFileHandler(fileHandler)
-    , mTextureManager(textureManager)
-    , mSpriteManager(spriteManager) {
+                           Utils::CFileHandler& fileHandler)
+    : mEngineLoop(engineLoop), mFileHandler(fileHandler) {
 }
 CSceneLoader::~CSceneLoader() = default;
 

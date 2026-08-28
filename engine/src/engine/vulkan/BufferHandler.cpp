@@ -34,7 +34,8 @@ CBufferHandler::CBufferHandler(const Vulkan::SContext& context)
     , mIndexBuffer(CreateIndexBuffer(context))
     , mInstanceBuffer(CreateVertexBuffer(context))
     , mMaterialBuffer(CreateVertexBuffer(context))
-    , mMeshInfoBuffer(CreateVertexBuffer(context)) {
+    , mMeshInfoBuffer(CreateVertexBuffer(context))
+    , mTransformBuffer(CreateVertexBuffer(context)) {
 }
 
 } // namespace Vulkan

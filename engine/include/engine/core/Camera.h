@@ -5,7 +5,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-#include "engine/core/GameObjectId.h"
+#include "engine/core/Entity.h"
 
 namespace Core {
 
@@ -22,7 +22,7 @@ public:
     glm::vec2 WorldToScreen(const glm::vec2& worldPos,
                             const glm::vec2& viewportSize);
 
-    void SetAttachedGameObject(std::optional<Core::GameObjectId> gameobjectId);
+    void SetAttachedEntity(std::optional<Core::SEntity> e);
 
     void SetZoom(float z);
     float GetZoom() const;
@@ -37,7 +37,7 @@ public:
 protected:
     virtual void EnsureUpToDate() = 0;
 
-    std::optional<Core::GameObjectId> mGameObjectId{std::nullopt};
+    std::optional<Core::SEntity> mEntity{std::nullopt};
 
     std::string mName;
 

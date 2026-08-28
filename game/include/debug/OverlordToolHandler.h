@@ -1,80 +1,80 @@
-#pragma once
+// #pragma once
 
-#include <engine/debug/BufferWidget.h>
-#include <engine/debug/Camera3DWidget.h>
-#include <engine/debug/CameraUIWidget.h>
-#include <engine/debug/EntityWidget.h>
-#include <engine/debug/LevelSceneLoaderWidget.h>
-#include <engine/debug/OverlordSettingsWidget.h>
-#include <engine/debug/SceneHierarchy.h>
-#include <engine/debug/SceneLoaderOverlord.h>
-#include <engine/debug/TextureImGuiContainer.h>
-#include <engine/debug/TexturesWidget.h>
-#include <engine/utils/OverlordSettings.h>
-#include <engine/utils/Token.h>
+// #include <engine/debug/BufferWidget.h>
+// #include <engine/debug/Camera3DWidget.h>
+// #include <engine/debug/CameraUIWidget.h>
+// #include <engine/debug/EntityWidget.h>
+// #include <engine/debug/LevelSceneLoaderWidget.h>
+// #include <engine/debug/OverlordSettingsWidget.h>
+// #include <engine/debug/SceneHierarchy.h>
+// #include <engine/debug/SceneLoaderOverlord.h>
+// #include <engine/debug/TextureImGuiContainer.h>
+// #include <engine/debug/TexturesWidget.h>
+// #include <engine/utils/OverlordSettings.h>
+// #include <engine/utils/Token.h>
 
-namespace Core {
-class CCameraManager;
-class CGameObjectManager;
-class CMeshManager;
-} // namespace Core
+// namespace Core {
+// class CCameraManager;
+// class CGameObjectManager;
+// class CMeshManager;
+// } // namespace Core
 
-namespace Utils {
-class CFileHandler;
-}
+// namespace Utils {
+// class CFileHandler;
+// }
 
-namespace Scene {
-class ISceneHandler;
-class CSceneLoader;
-} // namespace Scene
+// namespace Scene {
+// class ISceneHandler;
+// class CSceneLoader;
+// } // namespace Scene
 
-namespace Component {
-class CComponentManager;
-} // namespace Component
+// namespace Component {
+// class CComponentManager;
+// } // namespace Component
 
-namespace Font {
-class CFontHandler;
-} // namespace Font
+// namespace Font {
+// class CFontHandler;
+// } // namespace Font
 
-namespace Vulkan {
-class CBufferHandler;
-} // namespace Vulkan
+// namespace Vulkan {
+// class CBufferHandler;
+// } // namespace Vulkan
 
-class CAssetParser;
+// class CAssetParser;
 
-namespace Debug {
-class COverlordToolHandler {
-public:
-    COverlordToolHandler(Component::CComponentManager& componentManager,
-                         Utils::CFileHandler& fileHandler,
-                         Scene::ISceneHandler& sceneLoader,
-                         Font::CFontHandler& fontHandler,
-                         Vulkan::CBufferHandler& bufferHandler,
-                         Renderer::CTextureManager& textureManager,
-                         Scene::CSceneLoader& sceneLoaderOverlord,
-                         Core::CCameraManager& cameraManager,
-                         Core::CGameObjectManager& gameObjectManager,
-                         Core::CMeshManager& meshManager,
-                         const CAssetParser& assetParser);
+// namespace Debug {
+// class COverlordToolHandler {
+// public:
+//     COverlordToolHandler(Component::CComponentManager& componentManager,
+//                          Utils::CFileHandler& fileHandler,
+//                          Scene::ISceneHandler& sceneLoader,
+//                          Font::CFontHandler& fontHandler,
+//                          Vulkan::CBufferHandler& bufferHandler,
+//                          Renderer::CTextureManager& textureManager,
+//                          Scene::CSceneLoader& sceneLoaderOverlord,
+//                          Core::CCameraManager& cameraManager,
+//                          Core::CGameObjectManager& gameObjectManager,
+//                          Core::CMeshManager& meshManager,
+//                          const CAssetParser& assetParser);
 
-    void Initialize();
+//     void Initialize();
 
-    void RegisterTools();
+//     void RegisterTools();
 
-private:
-    Utils::COverlordSettings mSettings;
+// private:
+//     Utils::COverlordSettings mSettings;
 
-    COverlordSettingsWidget mOverlordSettings;
-    CTextureImGuiContainer mTextureContainer;
-    CSceneLoaderOverlord mSceneLoaderOverlord;
-    CEntityWidget mEntityWidget;
-    CSceneHierarchy mSceneHierarchy;
-    CBufferWidget mBufferWidget;
-    CTexturesWidget mTexturesWidget;
-    CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
-    CCamera3DWidget mCamera3DWidget;
-    CCameraUIWidget mCameraUIWidget;
+//     COverlordSettingsWidget mOverlordSettings;
+//     CTextureImGuiContainer mTextureContainer;
+//     CSceneLoaderOverlord mSceneLoaderOverlord;
+//     CEntityWidget mEntityWidget;
+//     CSceneHierarchy mSceneHierarchy;
+//     CBufferWidget mBufferWidget;
+//     CTexturesWidget mTexturesWidget;
+//     CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
+//     CCamera3DWidget mCamera3DWidget;
+//     CCameraUIWidget mCameraUIWidget;
 
-    CToken mToken;
-};
-} // namespace Debug
+//     CToken mToken;
+// };
+// } // namespace Debug
