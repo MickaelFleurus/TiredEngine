@@ -27,6 +27,7 @@ public:
 
 private:
     const SContext& mContext;
+
     CStagingBuffer mStagingBuffer;
     CQuadElementsBuffers mQuadElementsBuffers;
     CIndirectDrawBuffers mIndirectDrawBuffers;

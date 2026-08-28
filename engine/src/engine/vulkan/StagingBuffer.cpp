@@ -101,7 +101,6 @@ void CStagingBuffer::Flush() {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(mCmdBuffer, &beginInfo);
 
-    mWriteCursor =
-        0; // ring buffer resets since we waited for GPU to finish reading it
+    mWriteCursor = 0;
 }
 } // namespace Vulkan

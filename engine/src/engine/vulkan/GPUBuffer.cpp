@@ -86,4 +86,8 @@ VmaAllocation CGPUBuffer::GetAllocation() const {
 VkBuffer CGPUBuffer::GetBuffer() const {
     return mBuffer;
 }
+
+Utils::CBufferMemoryBlocks& CGPUBuffer::GetMemoryBlocks() {
+    return mMemoryBlocks;
+}
 } // namespace Vulkan
