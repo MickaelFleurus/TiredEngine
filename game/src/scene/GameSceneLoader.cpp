@@ -8,7 +8,6 @@
 #include "engine/utils/Logger.h"
 
 #include "core/BrickType.h"
-#include "core/Grid.h"
 #include "scene/GameplayScene.h"
 
 namespace {

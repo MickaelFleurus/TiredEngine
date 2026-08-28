@@ -1,5 +1,4 @@
 #pragma once
-#include "engine/core/GameObjectBuilder.h"
 
 namespace Component {
 class CComponentManager;

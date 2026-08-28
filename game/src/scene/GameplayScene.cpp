@@ -2,8 +2,6 @@
 
 #include <engine/core/Camera3D.h>
 
-#include "core/Grid.h"
-
 namespace Scene {
 
 CGameplayScene::CGameplayScene(const System::CSystem& system)

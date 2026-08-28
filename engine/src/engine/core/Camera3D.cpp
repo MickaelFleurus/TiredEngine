@@ -1,8 +1,5 @@
 #include "engine/core/Camera3D.h"
 
-#include "engine/component/ComponentManager.h"
-#include "engine/core/GameObjectBuilder.h"
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
 

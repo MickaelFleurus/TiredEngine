@@ -2,7 +2,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/component/CameraComponent.h"
 #include "engine/utils/Logger.h"
 
 namespace {

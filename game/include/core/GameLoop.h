@@ -2,7 +2,6 @@
 
 #include <engine/core/EngineLoop.h>
 
-#include "debug/OverlordToolHandler.h"
 #include "scene/GameSceneLoader.h"
 #include "scene/SceneHandler.h"
 

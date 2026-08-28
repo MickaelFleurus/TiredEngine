@@ -1,7 +1,6 @@
 #include "core/GameLoop.h"
 
 #include "engine/system/System.h"
-#include "engine/utils/Asserts.h"
 
 namespace Core {
 CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
