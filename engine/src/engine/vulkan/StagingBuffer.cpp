@@ -34,6 +34,18 @@ CStagingBuffer::CStagingBuffer(const SContext& context)
     vkCreateFence(mContext.device, &fenceInfo, nullptr, &mFence);
 }
 
+CStagingBuffer::~CStagingBuffer() {
+    if (mCmdPool != VK_NULL_HANDLE || mFence != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(mContext.device);
+    }
+    if (mFence != VK_NULL_HANDLE) {
+        vkDestroyFence(mContext.device, mFence, nullptr);
+    }
+    if (mCmdPool != VK_NULL_HANDLE) {
+        vkDestroyCommandPool(mContext.device, mCmdPool, nullptr);
+    }
+}
+
 void CStagingBuffer::UploadToBuffer(const void* srcData, VkDeviceSize size,
                                     VkBuffer dstBuffer,
                                     VkDeviceSize dstOffset) {

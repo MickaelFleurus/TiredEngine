@@ -1,5 +1,6 @@
 #include "engine/vulkan/GPUBuffer.h"
 
+#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
@@ -27,10 +28,47 @@ CGPUBuffer::CGPUBuffer(const SContext& context, VkDeviceSize size,
         return;
     }
 
-    VkBufferDeviceAddressInfo addrInfo{
-        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
-    addrInfo.buffer = mBuffer;
-    mDeviceAddress = vkGetBufferDeviceAddress(mContext.device, &addrInfo);
+    if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
+        VkBufferDeviceAddressInfo addrInfo{
+            VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
+        addrInfo.buffer = mBuffer;
+        mDeviceAddress = vkGetBufferDeviceAddress(mContext.device, &addrInfo);
+    }
+}
+
+CGPUBuffer::CGPUBuffer(CGPUBuffer&& other)
+    : mContext(other.mContext)
+    , mBuffer(other.mBuffer)
+    , mAllocation(other.mAllocation)
+    , mSize(other.mSize)
+    , mDeviceAddress(other.mDeviceAddress)
+    , mMemoryBlocks(std::move(other.mMemoryBlocks)) {
+    other.mBuffer = VK_NULL_HANDLE;
+    other.mAllocation = VK_NULL_HANDLE;
+    other.mDeviceAddress = 0;
+    other.mSize = 0;
+}
+
+CGPUBuffer& CGPUBuffer::operator=(CGPUBuffer&& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    if (mBuffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(mContext.vmaAllocator, mBuffer, mAllocation);
+    }
+
+    mBuffer = other.mBuffer;
+    mAllocation = other.mAllocation;
+    mSize = other.mSize;
+    mDeviceAddress = other.mDeviceAddress;
+    mMemoryBlocks = std::move(other.mMemoryBlocks);
+
+    other.mBuffer = VK_NULL_HANDLE;
+    other.mAllocation = VK_NULL_HANDLE;
+    other.mDeviceAddress = 0;
+    other.mSize = 0;
+    return *this;
 }
 
 CGPUBuffer::~CGPUBuffer() {

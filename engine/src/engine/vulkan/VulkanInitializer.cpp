@@ -371,8 +371,15 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
     indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures{};
+    addressFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    addressFeatures.bufferDeviceAddress = VK_TRUE;
+    addressFeatures.pNext = &indexingFeatures;
 
     // deviceFeatures.multiDrawIndirect = VK_TRUE;
 
@@ -385,7 +392,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     createInfo.enabledExtensionCount =
         static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-    createInfo.pNext = &indexingFeatures;
+    createInfo.pNext = &addressFeatures;
 
     VkDevice device;
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) !=
@@ -472,6 +479,7 @@ VmaAllocator InitializeVmaAllocator(VkInstance instance,
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
     allocatorInfo.instance = instance;
+    allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     VmaAllocator vmaAllocator;
     if (vmaCreateAllocator(&allocatorInfo, &vmaAllocator) != VK_SUCCESS) {
@@ -722,6 +730,12 @@ CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures) {
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
+
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variableCountInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO};
+    variableCountInfo.descriptorSetCount = 1;
+    variableCountInfo.pDescriptorCounts = &maxTextures;
+    allocInfo.pNext = &variableCountInfo;
     vkAllocateDescriptorSets(device, &allocInfo, &set);
 
     return {pool, layout, set};

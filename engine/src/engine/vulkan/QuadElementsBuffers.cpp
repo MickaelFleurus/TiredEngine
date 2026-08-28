@@ -45,4 +45,5 @@ CQuadElementsBuffers::CQuadElementsBuffers(const SContext& context)
     FigureMappedPtr(context, mUiSpriteBuffer);
     FigureMappedPtr(context, mWorldSpriteBuffer);
 }
+
 } // namespace Vulkan

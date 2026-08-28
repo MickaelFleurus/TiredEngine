@@ -4,6 +4,7 @@
 
 #include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
+#include "engine/utils/Logger.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/StagingBuffer.h"
@@ -130,8 +131,8 @@ CTextureManager::CTextureManager(const Vulkan::SContext& context,
 CTextureManager::~CTextureManager() {
     for (auto& texture : mLoadedTextures) {
         vkDestroyImageView(mContext.device, texture.imageView, nullptr);
-        vkDestroyImage(mContext.device, texture.image, nullptr);
-        vmaFreeMemory(mContext.vmaAllocator, texture.allocation);
+        vmaDestroyImage(mContext.vmaAllocator, texture.image,
+                        texture.allocation);
     }
 }
 
@@ -212,8 +213,7 @@ void CTextureManager::UnloadTexture(int index) {
     LoadedTexture& texture = mLoadedTextures[index];
 
     vkDestroyImageView(mContext.device, texture.imageView, nullptr);
-    vkDestroyImage(mContext.device, texture.image, nullptr);
-    vmaFreeMemory(mContext.vmaAllocator, texture.allocation);
+    vmaDestroyImage(mContext.vmaAllocator, texture.image, texture.allocation);
     auto it = std::find_if(
         mLoadedTexturesIndices.begin(), mLoadedTexturesIndices.end(),
         [index](const auto& pair) { return pair.second == index; });

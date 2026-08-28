@@ -11,7 +11,7 @@ public:
         uint32_t count = 0;
     };
 
-    CQuadElementsBuffers(const SContext& context);
+    explicit CQuadElementsBuffers(const SContext& context);
 
 private:
     SQuadElementBuffer mUiGlyphBuffer, mWorldGlyphBuffer;

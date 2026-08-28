@@ -39,7 +39,9 @@ SContext::SContext(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
 SContext::~SContext() {
     vkDestroyDescriptorSetLayout(device, bindelessTextureSetLayout, nullptr);
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDeviceWaitIdle(device);
+    vmaDestroyAllocator(vmaAllocator);
+    vkDestroyDevice(device, nullptr);
 
     if (debugMessenger != VK_NULL_HANDLE) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
@@ -47,9 +49,8 @@ SContext::~SContext() {
         if (func)
             func(instance, debugMessenger, nullptr);
     }
-    vmaDestroyAllocator(vmaAllocator);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
-    vkDestroyDevice(device, nullptr);
 }
 
 } // namespace Vulkan

@@ -19,6 +19,17 @@ VkCommandPool CreateCommandBufferPool(VkDevice device,
     }
     return commandPool;
 }
+
+void DestroyDepthBuffer(VkDevice device, VmaAllocator allocator,
+                        Vulkan::CSwapchain::SDepthBuffer& depthBuffer) {
+    if (depthBuffer.view != VK_NULL_HANDLE) {
+        vkDestroyImageView(device, depthBuffer.view, nullptr);
+    }
+    if (depthBuffer.image != VK_NULL_HANDLE) {
+        vmaDestroyImage(allocator, depthBuffer.image, depthBuffer.allocation);
+    }
+    depthBuffer = {};
+}
 } // namespace
 
 namespace Vulkan {
@@ -30,6 +41,7 @@ CSwapchain::CSwapchain(SContext& context)
 }
 
 CSwapchain::~CSwapchain() {
+    vkDeviceWaitIdle(mContext.device);
     vkDestroyCommandPool(mContext.device, mCommandPool, nullptr);
     for (auto framebuffer : mFramebuffers) {
         vkDestroyFramebuffer(mContext.device, framebuffer, nullptr);
@@ -41,6 +53,7 @@ CSwapchain::~CSwapchain() {
         vkDestroyImageView(mContext.device, imageView, nullptr);
     }
     vkDestroySwapchainKHR(mContext.device, mSwapchain, nullptr);
+    DestroyDepthBuffer(mContext.device, mContext.vmaAllocator, mDepthBuffer);
 }
 
 VkCommandPool CSwapchain::GetCommandPool() const {
@@ -117,6 +130,8 @@ void CSwapchain::Recreate() {
     if (mSwapchain != VK_NULL_HANDLE) {
         vkDestroySwapchainKHR(mContext.device, mSwapchain, nullptr);
     }
+
+    DestroyDepthBuffer(mContext.device, mContext.vmaAllocator, mDepthBuffer);
 
     auto [swapchain, imageFormat, extent, images, imageViews] = CreateSwapchain(
         mContext.physicalDevice, mContext.device, mContext.surface,

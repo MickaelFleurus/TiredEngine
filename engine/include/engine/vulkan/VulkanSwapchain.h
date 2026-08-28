@@ -11,10 +11,10 @@ struct SContext;
 class CSwapchain {
 public:
     struct SDepthBuffer {
-        VkImage image;
-        VmaAllocation allocation;
-        VkImageView view;
-        VkFormat format;
+        VkImage image = VK_NULL_HANDLE;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VkImageView view = VK_NULL_HANDLE;
+        VkFormat format = VK_FORMAT_UNDEFINED;
     };
 
     explicit CSwapchain(SContext& context);
@@ -43,7 +43,7 @@ private:
     VkExtent2D mExtent;
     std::vector<VkImage> mImages;
     std::vector<VkImageView> mImageViews;
-    SDepthBuffer mDepthBuffer;
+    SDepthBuffer mDepthBuffer{};
 
     // Rendering
     VkRenderPass mRenderPass = VK_NULL_HANDLE;

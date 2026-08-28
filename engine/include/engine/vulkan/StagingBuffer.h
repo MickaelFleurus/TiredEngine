@@ -11,6 +11,7 @@ struct SContext;
 class CStagingBuffer {
 public:
     CStagingBuffer(const SContext& context);
+    ~CStagingBuffer();
 
     void UploadToBuffer(const void* srcData, VkDeviceSize size,
                         VkBuffer dstBuffer, VkDeviceSize dstOffset);
@@ -25,9 +26,9 @@ public:
 private:
     const SContext& mContext;
 
-    VkCommandPool mCmdPool;
-    VkCommandBuffer mCmdBuffer;
-    VkFence mFence;
+    VkCommandPool mCmdPool{VK_NULL_HANDLE};
+    VkCommandBuffer mCmdBuffer{VK_NULL_HANDLE};
+    VkFence mFence{VK_NULL_HANDLE};
 
     CGPUBuffer mStagingBuffer;
     void* mMappedPtr = nullptr;

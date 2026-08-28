@@ -1,13 +1,11 @@
 #pragma once
 
 #include <cstring>
-#include <vector>
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 #include "engine/utils/BufferMemoryBlocks.h"
-#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
@@ -19,9 +17,14 @@ struct SBufferOperation {
 
 class CGPUBuffer {
 public:
-    CGPUBuffer(const SContext& context, VkDeviceSize size,
-               VkBufferUsageFlags usage, bool hostVisible = false);
+    explicit CGPUBuffer(const SContext& context, VkDeviceSize size,
+                        VkBufferUsageFlags usage, bool hostVisible = false);
     ~CGPUBuffer();
+
+    CGPUBuffer(const CGPUBuffer&) = delete;
+    CGPUBuffer& operator=(const CGPUBuffer&) = delete;
+    CGPUBuffer(CGPUBuffer&& other);
+    CGPUBuffer& operator=(CGPUBuffer&& other);
 
     VmaAllocation GetAllocation() const;
     VkBuffer GetBuffer() const;
