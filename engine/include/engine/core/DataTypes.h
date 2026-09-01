@@ -125,7 +125,7 @@ struct alignas(16) SScreenQuadInstance {
 //! Buffer data type
 struct alignas(16) SWorldQuadInstance {
     glm::vec3 worldPos;
-    float size;
+    glm::vec2 size;
     glm::vec2 uvMin, uvMax;
     glm::vec4 color;
     uint32_t texIndex;

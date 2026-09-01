@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "engine/core/Entity.h"
+#include "engine/utils/GuardedContainer.h"
+#include "engine/utils/Token.h"
 
 namespace Component {
 class IPool {
@@ -65,9 +67,20 @@ public:
         return mDataToEntity[index];
     }
 
-    template <typename Pool>
-    auto&& Get(this Pool&& self, Core::SEntity e) {
-        return self.mData[self.mEntityToDataId[e.id]];
+    const T& Get(Core::SEntity e) const {
+        return mData[mEntityToDataId[e.id]];
+    }
+
+    void Update(Core::SEntity e, std::function<void(T&)> update) {
+        T& obj = mData[mEntityToDataId[e.id]];
+        fn(obj);
+        for (auto& observer : mToNotify)
+            observer(e);
+    }
+
+    void RegisterUpdateListener(std::function<void(Core::SEntity)> fn,
+                                CToken& token) {
+        mToNotify.Add(fn, token);
     }
 
 private:
@@ -76,5 +89,6 @@ private:
     std::vector<T> mData;
     std::vector<Core::SEntity> mDataToEntity;
     std::vector<uint32_t> mEntityToDataId;
+    CGuardedContainer<std::function<void(Core::SEntity)>> mToNotify;
 };
 } // namespace Component

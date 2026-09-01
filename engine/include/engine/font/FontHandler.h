@@ -1,5 +1,6 @@
 #pragma once
 
+#include <expected>
 #include <string>
 #include <unordered_map>
 
@@ -31,19 +32,23 @@ namespace Font {
 class CFontHandler {
 public:
     CFontHandler(Utils::CFileHandler& fileHandler, Thread::CPool& threadPool,
-                 const CAssetParser& assetParser);
+                 const CAssetParser& assetParser,
+                 Renderer::CTextureManager& textureManager);
     ~CFontHandler();
 
-    CPolice& GetPolice(std::string name);
+    CPolice& GetPolice(const std::string& name);
+    std::optional<std::reference_wrapper<CPolice>> GetPolice(std::size_t id);
     void LoadAllThePolices();
     bool LoadFont(const SAsset& fontAsset,
                   msdfgen::FreetypeHandle* freeType = nullptr);
 
 private:
-    std::unordered_map<std::string, CPolice> mPolices;
+    std::vector<CPolice> mPolices;
+    std::unordered_map<std::string, std::size_t> mPoliceNameToIndex;
 
     Utils::CFileHandler& mFileHandler;
     Thread::CPool& mThreadPool;
     const CAssetParser& mAssetParser;
+    Renderer::CTextureManager& mTextureManager;
 };
 } // namespace Font

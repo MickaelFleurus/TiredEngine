@@ -59,6 +59,7 @@ protected:
     Vulkan::CPipelineFactory mPipelineFactory;
 
     Core::CMeshManager mMeshManager;
+    Renderer::CTextureManager mTextureManager;
 
     Font::CFontHandler mFontHandler;
     Component::CManager mComponentManager;

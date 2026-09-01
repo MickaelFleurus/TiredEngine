@@ -16,11 +16,15 @@ public:
         : mPools(p...), mDriver(FindSmallestPool()) {
     }
 
+    explicit CView(std::tuple<CPool<Components>&...> p)
+        : mPools(std::move(p)), mDriver(FindSmallestPool()) {
+    }
+
     class Iterator {
     public:
-        Iterator(CPool<Components>&... p, IPool* driver,
+        Iterator(const std::tuple<CPool<Components>&...>& p, IPool* driver,
                  std::size_t startIndex = 0)
-            : mPools(p...), mDriver(driver), mDriverDataIndex(startIndex) {
+            : mPools(p), mDriver(driver), mDriverDataIndex(startIndex) {
             mDriverDataIndex = FindNextIndex();
         }
 
@@ -67,14 +71,14 @@ public:
         auto GetAll(Core::SEntity e) const {
             return std::apply(
                 [&](auto&... p) {
-                    return std::tuple<Core::SEntity, Components&...>(
+                    return std::tuple<Core::SEntity, const Components&...>(
                         e, p.Get(e)...);
                 },
                 mPools);
         }
 
-        std::tuple<CPool<Components>&...> mPools;
-        IPool* mDriver {nullptr};
+        const std::tuple<CPool<Components>&...>& mPools;
+        IPool* mDriver{nullptr};
         std::size_t mDriverDataIndex{};
     };
 

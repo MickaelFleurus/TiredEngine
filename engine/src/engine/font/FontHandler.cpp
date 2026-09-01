@@ -218,19 +218,29 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
 namespace Font {
 CFontHandler::CFontHandler(Utils::CFileHandler& fileHandler,
                            Thread::CPool& threadPool,
-                           const CAssetParser& assetParser)
+                           const CAssetParser& assetParser,
+                           Renderer::CTextureManager& textureManager)
     : mFileHandler(fileHandler)
     , mThreadPool(threadPool)
-    , mAssetParser(assetParser) {
+    , mAssetParser(assetParser)
+    , mTextureManager(textureManager) {
 }
 
 CFontHandler::~CFontHandler() {
 }
 
-CPolice& CFontHandler::GetPolice(std::string name) {
-    auto it = mPolices.find(name);
-    if (it != mPolices.end()) {
-        return it->second;
+std::optional<std::reference_wrapper<CPolice>>
+CFontHandler::GetPolice(std::size_t id) {
+    if (mPolices.size() <= id) {
+        return std::nullopt;
+    }
+    return mPolices[id];
+}
+
+CPolice& CFontHandler::GetPolice(const std::string& name) {
+    auto it = mPoliceNameToIndex.find(name);
+    if (it != mPoliceNameToIndex.end()) {
+        return mPolices[it->second];
     }
 
     auto fontTexturePath = mAssetParser.Get(EAssetType::Texture, name);
@@ -243,18 +253,20 @@ CPolice& CFontHandler::GetPolice(std::string name) {
     SFontData fontData;
     LoadExistingFontData(fontTexturePath->get(), fontData, mFileHandler);
     auto textureIndex =
-        0; // FIXME
-           // mTextureManager.LoadTextureFromSurface(name, fontData.surface);
+        mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 
     SDL_DestroySurface(fontData.surface);
-    auto [emplaced_it, inserted] = mPolices.try_emplace(
-        name, name.c_str(), textureIndex, fontData.glyphInfos,
+    std::size_t index = mPolices.size();
+    mPoliceNameToIndex.emplace(name, index);
+
+    mPolices.emplace_back(
+        name.c_str(), textureIndex->second, fontData.glyphInfos,
         CPolice::SMetrics{
             fontData.fontMetrics.emSize, fontData.fontMetrics.ascenderY,
             fontData.fontMetrics.descenderY, fontData.fontMetrics.lineHeight,
             fontData.fontMetrics.underlineY,
             fontData.fontMetrics.underlineThickness});
-    return emplaced_it->second;
+    return mPolices.back();
 }
 
 void CFontHandler::LoadAllThePolices() {

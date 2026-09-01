@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "engine/component/ComponentPool.h"
@@ -32,6 +33,11 @@ public:
         if (!mPools[id])
             mPools[id] = std::make_unique<CPool<T>>();
         return static_cast<CPool<T>&>(*mPools[id]);
+    }
+
+    template <typename... C>
+    std::tuple<CPool<C>&...> GetPools() {
+        return std::forward_as_tuple((GetPool<C>())...);
     }
 
     void DestroyComponents(Core::SEntity entity);

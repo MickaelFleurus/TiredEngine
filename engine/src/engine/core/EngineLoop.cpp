@@ -7,7 +7,6 @@
 #include "engine/system/System.h"
 #include "engine/vulkan/VulkanContext.h"
 
-
 namespace Core {
 
 CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
@@ -19,7 +18,10 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     , mCameraManager(system.GetFileHandler())
     , mBufferHandler(mContext)
     , mPipelineFactory(mContext, mSwapchain)
-    , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser)
+    , mTextureManager(context, swapchain, mVulkanRendering, mBufferHandler,
+                      system.GetFileHandler(), mAssetParser)
+    , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser,
+                   mTextureManager)
 
     , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
               mCameraManager)

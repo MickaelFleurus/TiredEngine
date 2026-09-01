@@ -3,7 +3,7 @@
 #include "engine/material/AbstractMaterial.h"
 
 namespace Font {
-CPolice::CPolice(const char* name, int textureIndex,
+CPolice::CPolice(const char* name, uint64_t textureIndex,
                  std::unordered_map<std::string, Font::GlyphInfo> glyphs,
                  CPolice::SMetrics fontMetrics)
     : mName(name)
@@ -27,7 +27,7 @@ const CPolice::SMetrics& CPolice::GetFontMetrics() const {
     return mFontMetrics;
 }
 
-int CPolice::GetTextureIndex() const {
+uint64_t CPolice::GetTextureIndex() const {
     return mTextureIndex;
 }
 

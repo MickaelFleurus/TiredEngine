@@ -1,10 +1,14 @@
 #include "engine/renderer/TextureManager.h"
 
+#include <cstdint>
+#include <optional>
+
 #include <SDL3/SDL_surface.h>
 
 #include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
+#include "engine/utils/StringId.h"
 #include "engine/vulkan/BufferHandler.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/StagingBuffer.h"
@@ -22,7 +26,7 @@ uint32_t GetBytesPerPixel(SDL_PixelFormat format) {
     return SDL_BYTESPERPIXEL(format);
 }
 
-void transitionImageLayout(Vulkan::CStagingBuffer& uploader, VkImage image,
+void TransitionImageLayout(Vulkan::CStagingBuffer& uploader, VkImage image,
                            VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout) {
     VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -83,7 +87,7 @@ createTextureFromPixels(VmaAllocator allocator, VkDevice device,
     }
 
     // 1. Transition UNDEFINED -> TRANSFER_DST_OPTIMAL
-    transitionImageLayout(uploader, tex.image, format,
+    TransitionImageLayout(uploader, tex.image, format,
                           VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -92,7 +96,7 @@ createTextureFromPixels(VmaAllocator allocator, VkDevice device,
     uploader.UploadToImage(pixels, imageSize, tex.image, width, height);
 
     // 3. Transition TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
-    transitionImageLayout(uploader, tex.image, format,
+    TransitionImageLayout(uploader, tex.image, format,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -114,14 +118,12 @@ namespace Renderer {
 CTextureManager::CTextureManager(const Vulkan::SContext& context,
                                  Vulkan::CSwapchain& swapchain,
                                  Vulkan::CVulkanRendering& renderer,
-                                 Renderer::CMemoryAllocator& memoryAllocator,
                                  Vulkan::CBufferHandler& bufferHandler,
                                  Utils::CFileHandler& fileHandler,
                                  const CAssetParser& assetParser)
     : mContext(context)
     , mSwapchain(swapchain)
     , mRenderer(renderer)
-    , mMemoryAllocator(memoryAllocator)
     , mBufferHandler(bufferHandler)
     , mFileHandler(fileHandler)
     , mAssetParser(assetParser) {
@@ -136,12 +138,13 @@ CTextureManager::~CTextureManager() {
     }
 }
 
-int CTextureManager::LoadTexture(const SAsset& asset) {
+std::optional<std::pair<CStringId, uint64_t>>
+CTextureManager::LoadTexture(const SAsset& asset) {
     std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
         mFileHandler.LoadTextureFile(asset.mPath.string()), kGPUSurfaceDeleter};
     if (!surface) {
         LOG_ERROR("Failed to load texture file: {}", asset.mPath.string());
-        return -1;
+        return std::nullopt;
     }
     auto textureIndex =
         LoadTextureFromSurface(asset.mPath.stem().string(), surface.get());
@@ -149,32 +152,36 @@ int CTextureManager::LoadTexture(const SAsset& asset) {
     return textureIndex;
 }
 
-int CTextureManager::LoadTexture(const std::string& filename) {
-    auto it = mLoadedTexturesIndices.find(filename);
+std::optional<std::pair<CStringId, uint64_t>>
+CTextureManager::LoadTexture(const std::filesystem::path& filename) {
+    CStringId id{filename};
+    auto it = mLoadedTexturesIndices.find(id);
     if (it != mLoadedTexturesIndices.end()) {
-        return it->second;
+        return std::make_pair(id, it->second);
     }
     auto textureAsset = mAssetParser.Get(EAssetType::Texture, filename);
     if (!textureAsset) {
-        return -1;
+        return std::nullopt;
     }
     return LoadTexture(textureAsset->get());
 }
 
-int CTextureManager::LoadTextureFromSurface(const std::string& filename,
-                                            SDL_Surface* surface) {
+std::optional<std::pair<CStringId, uint64_t>>
+CTextureManager::LoadTextureFromSurface(const std::string& filename,
+                                        SDL_Surface* surface) {
+    CStringId id{filename};
     LoadedTexture tex = createTextureFromPixels(
         mContext.vmaAllocator, mContext.device,
         mBufferHandler.GetStagingBuffer(), surface->pixels,
         uint32_t(surface->w), uint32_t(surface->h), VK_FORMAT_R8G8B8A8_UNORM);
     int index = static_cast<int>(mLoadedTextures.size());
     mLoadedTextures.push_back(tex);
-    mLoadedTexturesIndices[filename] = index;
-    return index;
+    mLoadedTexturesIndices[id] = index;
+
+    return std::make_pair(id, index);
 }
 
-std::optional<LoadedTexture>
-CTextureManager::GetTexture(const std::string& filename) {
+std::optional<LoadedTexture> CTextureManager::GetTexture(CStringId filename) {
     auto it = mLoadedTexturesIndices.find(filename);
     if (it != mLoadedTexturesIndices.end()) {
         return mLoadedTextures[it->second];
@@ -183,8 +190,8 @@ CTextureManager::GetTexture(const std::string& filename) {
     return std::nullopt;
 }
 
-std::optional<int>
-CTextureManager::GetTextureIndex(const std::string& filename) const {
+std::optional<uint64_t>
+CTextureManager::GetTextureIndex(CStringId filename) const {
     auto it = mLoadedTexturesIndices.find(filename);
     if (it != mLoadedTexturesIndices.end()) {
         return it->second;
@@ -193,19 +200,19 @@ CTextureManager::GetTextureIndex(const std::string& filename) const {
     return std::nullopt;
 }
 
-const LoadedTexture& CTextureManager::GetTexture(int index) const {
+const LoadedTexture& CTextureManager::GetTexture(uint64_t index) const {
     if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
         LOG_FATAL("Texture index out of bounds: %d", index);
     }
     return mLoadedTextures.at(index);
 }
 
-const std::unordered_map<std::string, int>&
+const std::unordered_map<CStringId, uint64_t, CStringIdHash>&
 CTextureManager::GetAllTextureIndices() const {
     return mLoadedTexturesIndices;
 }
 
-void CTextureManager::UnloadTexture(int index) {
+void CTextureManager::UnloadTexture(uint64_t index) {
     if (index < 0 || index >= static_cast<int>(mLoadedTextures.size())) {
         return;
     }
