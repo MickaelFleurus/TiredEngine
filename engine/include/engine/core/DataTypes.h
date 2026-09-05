@@ -137,7 +137,7 @@ namespace PC {
 struct SUiPushConstants {
     VkDeviceAddress instances; // uiGlyphBuffer or uiSpriteBuffer address
     glm::vec2 screenSize;
-    float msdfPxRange;
+    float msdfPxRange = 2.0f;
     float _pad;
 };
 

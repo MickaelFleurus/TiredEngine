@@ -256,22 +256,15 @@ public:
             colorBlending.blendConstants[2] = 0.0f;
             colorBlending.blendConstants[3] = 0.0f;
 
-            // auto layoutInfo = CreateVertexLayout(config.vertexLayout);
-
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
             vertexInputInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
             vertexInputInfo.pNext = nullptr;
 
-            // FIXME
-            // vertexInputInfo.pVertexBindingDescriptions =
-            //     layoutInfo.bufferDescriptions.data();
-            // vertexInputInfo.vertexBindingDescriptionCount =
-            //     static_cast<uint32_t>(layoutInfo.bufferDescriptions.size());
-            // vertexInputInfo.pVertexAttributeDescriptions =
-            //     layoutInfo.attributes.data();
-            // vertexInputInfo.vertexAttributeDescriptionCount =
-            //     static_cast<uint32_t>(layoutInfo.attributes.size());
+            vertexInputInfo.pVertexBindingDescriptions = nullptr;
+            vertexInputInfo.vertexBindingDescriptionCount = 0;
+            vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+            vertexInputInfo.vertexAttributeDescriptionCount = 0;
 
             VkPipelineLayout pipelineLayout;
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -288,8 +281,7 @@ public:
             pushConstantRange.stageFlags =
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             pushConstantRange.offset = 0;
-            pushConstantRange.size =
-                0; // FIXME :sizeof(Core::SPushConstantData);
+            pushConstantRange.size = sizeof(Core::PC::SScenePushConstants);
 
             pipelineLayoutInfo.pushConstantRangeCount = 1;
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;

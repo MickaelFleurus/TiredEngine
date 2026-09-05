@@ -18,6 +18,17 @@ public:
                 VkBufferUsageFlags usage);
 
     template <typename T>
+    bool ReplaceData(const T& data) {
+        return ReplaceData(std::vector<T>{data});
+    }
+
+    template <typename T>
+    bool ReplaceData(const std::vector<T>& data) {
+        mBuffer.GetMemoryBlocks().Reset();
+        return AppendData(data);
+    }
+
+    template <typename T>
     bool AppendData(const T& data) {
         return AppendData(std::vector<T>{data});
     }
@@ -51,6 +62,10 @@ public:
     template <typename T>
     bool UpdateData(const std::vector<T>& data,
                     const Utils::SBufferRange& range) {
+        if (mBuffer.GetMemoryBlocks().Contains(range)) {
+            LOG_FATAL("UpdateData: range does not belong to this buffer!");
+            return false;
+        }
         const auto alignment = mContext.physicalDeviceProperties.limits
                                    .minStorageBufferOffsetAlignment;
         const auto alignedItemSize =
@@ -64,13 +79,17 @@ public:
                          sizeof(T), alignedItemSize, data.size(), range.offset);
     }
 
+    VkDeviceAddress GetDeviceAddress() const;
+
 private:
     bool WriteData(const uint8_t* items, size_t itemSize,
                    size_t alignedItemSize, size_t itemCount,
                    VkDeviceSize dstOffset);
+
     const SContext& mContext;
 
     CGPUBuffer mBuffer;
     void* mMappedPtr = nullptr;
+    VkDeviceAddress mDeviceAddress = 0;
 };
 } // namespace Vulkan

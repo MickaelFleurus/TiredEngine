@@ -25,6 +25,8 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
 
     , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
               mCameraManager)
+    , mUiRenderer(mComponentManager, mFontHandler, system,
+                  mBufferHandler.GetUiInstancesBuffer(), mPipelineFactory)
     , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
@@ -50,6 +52,8 @@ bool CEngineLoop::Run() {
         mLastFrameTime = currentTime;
 
         mInputHandler.Update();
+        mUiRenderer.Prepare();
+        mUiRenderer.Update();
 
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
@@ -57,8 +61,10 @@ bool CEngineLoop::Run() {
             if (mCurrentScene) {
                 mWindow.Render(*mCurrentScene);
             }
-            mOverlordManager.Render(
-                mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value()));
+            auto cmd =
+                mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value());
+            mOverlordManager.Render(cmd);
+            mUiRenderer.Render(cmd);
 
             mWindow.EndRender();
         }

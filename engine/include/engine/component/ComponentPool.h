@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "engine/core/Entity.h"
+#include "engine/utils/Asserts.h"
 #include "engine/utils/GuardedContainer.h"
 #include "engine/utils/Token.h"
 
@@ -68,12 +69,13 @@ public:
     }
 
     const T& Get(Core::SEntity e) const {
+        // TODO ENGINE_ASSERT(Has(e), "Tried to retrieve Entity ")
         return mData[mEntityToDataId[e.id]];
     }
 
     void Update(Core::SEntity e, std::function<void(T&)> update) {
         T& obj = mData[mEntityToDataId[e.id]];
-        fn(obj);
+        update(obj);
         for (auto& observer : mToNotify)
             observer(e);
     }

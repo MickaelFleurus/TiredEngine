@@ -14,6 +14,7 @@
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/UIRenderer.h"
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
 #include "engine/vulkan/BufferHandler.h"
@@ -64,6 +65,7 @@ protected:
     Font::CFontHandler mFontHandler;
     Component::CManager mComponentManager;
     Renderer::CWindow mWindow;
+    Renderer::CUiRenderer mUiRenderer;
 
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;

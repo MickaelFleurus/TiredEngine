@@ -36,6 +36,18 @@ public:
             return self.GetAll(self.mDriver->GetEntity(self.mDriverDataIndex));
         }
 
+        template <typename T>
+        const T& Get() const {
+            return std::get<CPool<T>&>(mPools).Get(
+                mDriver->GetEntity(mDriverDataIndex));
+        }
+
+        template <typename T>
+        void Update(std::function<void(T&)> update) {
+            std::get<CPool<T>&>(mPools).Update(
+                mDriver->GetEntity(mDriverDataIndex), update);
+        }
+
         Iterator& operator++() noexcept {
             mDriverDataIndex++;
             mDriverDataIndex = FindNextIndex();

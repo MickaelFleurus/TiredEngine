@@ -7,6 +7,15 @@ CHostBuffer::CHostBuffer(const SContext& context, VkDeviceSize size,
     VmaAllocationInfo info;
     vmaGetAllocationInfo(mContext.vmaAllocator, mBuffer.GetAllocation(), &info);
     mMappedPtr = info.pMappedData;
+
+    VkBufferDeviceAddressInfo addressInfo{};
+    addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    addressInfo.buffer = mBuffer.GetBuffer();
+    mDeviceAddress = vkGetBufferDeviceAddress(mContext.device, &addressInfo);
+}
+
+VkDeviceAddress CHostBuffer::GetDeviceAddress() const {
+    return mDeviceAddress;
 }
 
 bool CHostBuffer::WriteData(const uint8_t* items, size_t itemSize,

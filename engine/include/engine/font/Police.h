@@ -24,7 +24,7 @@ public:
             SMetrics fontMetrics);
     ~CPolice();
 
-    const Font::GlyphInfo& GetGlyphInfo(char c) const;
+    std::optional<Font::GlyphInfo> GetGlyphInfo(char c) const;
     const SMetrics& GetFontMetrics() const;
 
     uint64_t GetTextureIndex() const;
