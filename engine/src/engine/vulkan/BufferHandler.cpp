@@ -1,8 +1,22 @@
 #include "engine/vulkan/BufferHandler.h"
 
+#include "engine/core/DataTypes.h"
+#include "engine/vulkan/Constants.h"
 #include "engine/vulkan/GPUBuffer.h"
 
 namespace {
+
+constexpr auto kScreenQuadDataSize = sizeof(Core::SScreenQuadInstance);
+constexpr int kScreenQuadBufferDefaultSize =
+    Vulkan::kMaxSprites * kScreenQuadDataSize;
+
+constexpr auto kWorldQuadDataSize = sizeof(Core::SWorldQuadInstance);
+constexpr int kWorldQuadBufferDefaultSize =
+    Vulkan::kMaxSprites * kWorldQuadDataSize;
+constexpr auto kBufferUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
 Vulkan::CGPUBuffer CreateVertexBuffer(const Vulkan::SContext& context) {
 
     constexpr VkDeviceSize vertexBufferSize = 1024 * 1024 * 10; // 10 MB
@@ -28,7 +42,8 @@ namespace Vulkan {
 CBufferHandler::CBufferHandler(const Vulkan::SContext& context)
     : mContext(context)
     , mStagingBuffer(context)
-    , mQuadElementsBuffers(context)
+    , mUiInstancesBuffer(context, kScreenQuadBufferDefaultSize,
+                         kBufferUsageFlags)
     , mIndirectDrawBuffers(context)
     , mVertexBuffer(CreateVertexBuffer(context))
     , mIndexBuffer(CreateIndexBuffer(context))

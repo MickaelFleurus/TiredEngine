@@ -5,9 +5,8 @@
 namespace Material {
 class CMaterial : public CAbstractMaterial {
 public:
-    CMaterial(EMaterialType type, Renderer::EVertexLayout vertexLayout,
-              Renderer::SPipelineDescriptors& pipeline)
-        : CAbstractMaterial(type, vertexLayout, pipeline) {
+    CMaterial(EMaterialType type, Renderer::SPipelineDescriptors& pipeline)
+        : CAbstractMaterial(type, pipeline) {
     }
 
 private:

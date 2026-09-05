@@ -5,6 +5,7 @@
 
 #include <SDL3/SDL_surface.h>
 
+#include "engine/renderer/RendererUtils.h"
 #include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
@@ -112,6 +113,25 @@ createTextureFromPixels(VmaAllocator allocator, VkDevice device,
     return tex;
 }
 
+void registerBindlessTexture(const Vulkan::SContext& context, uint32_t index,
+                             VkImageView view, VkSampler sampler) {
+    VkDescriptorImageInfo imageInfo{
+        .sampler = sampler,
+        .imageView = view,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    write.dstSet = context.bindelessTextureSet;
+    write.dstBinding = 0;
+    write.dstArrayElement = index;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(context.device, 1, &write, 0, nullptr);
+}
+
 } // namespace
 
 namespace Renderer {
@@ -126,11 +146,13 @@ CTextureManager::CTextureManager(const Vulkan::SContext& context,
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
     , mFileHandler(fileHandler)
-    , mAssetParser(assetParser) {
+    , mAssetParser(assetParser)
+    , mSampler(Renderer::CreateSampler(mContext.device)) {
     mLoadedTextures.reserve(Vulkan::kMaxTextures);
 }
 
 CTextureManager::~CTextureManager() {
+    vkDestroySampler(mContext.device, mSampler, nullptr);
     for (auto& texture : mLoadedTextures) {
         vkDestroyImageView(mContext.device, texture.imageView, nullptr);
         vmaDestroyImage(mContext.vmaAllocator, texture.image,
@@ -177,6 +199,7 @@ CTextureManager::LoadTextureFromSurface(const std::string& filename,
     int index = static_cast<int>(mLoadedTextures.size());
     mLoadedTextures.push_back(tex);
     mLoadedTexturesIndices[id] = index;
+    registerBindlessTexture(mContext, index, tex.imageView, mSampler);
 
     return std::make_pair(id, index);
 }

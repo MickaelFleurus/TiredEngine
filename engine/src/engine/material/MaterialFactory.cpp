@@ -23,7 +23,7 @@ CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
     auto pipeline = mPipelineFactory.GetOrCreateGraphicsPipeline(info);
-    return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
+    return std::make_unique<CMaterial>(type, pipeline);
 }
 
 std::unique_ptr<CAbstractMaterial>
@@ -31,12 +31,12 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
     switch (type) {
     case EMaterialType::Normal:
         return CreateMaterial(
-            type, Renderer::SPipelineConfig{
-                      .cullMode = Renderer::ECullMode::Back,
-                      .frontFace = Renderer::EFrontFace::Clockwise,
-                      .shaderName = "NormalShader",
-                      .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
-                      .vertexLayout = Renderer::EVertexLayout::Mesh3D});
+            type,
+            Renderer::SPipelineConfig{
+                .cullMode = Renderer::ECullMode::Back,
+                .frontFace = Renderer::EFrontFace::Clockwise,
+                .shaderName = "NormalShader",
+                .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/"});
     case EMaterialType::UI:
         return CreateUIMaterial();
     default:
@@ -48,7 +48,6 @@ std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "UIShader";
     config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
-    config.vertexLayout = Renderer::EVertexLayout::UI;
     config.cullMode = Renderer::ECullMode::None;
     config.enableBlending = true;
     config.enableDepthTest = false;

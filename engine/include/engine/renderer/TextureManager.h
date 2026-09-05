@@ -71,6 +71,7 @@ private:
     const Vulkan::SContext& mContext;
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
+    VkSampler mSampler = VK_NULL_HANDLE;
 
     Vulkan::CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;

@@ -1,7 +1,7 @@
 #include "scene/DebugScene.h"
 
 namespace Scene {
-CDebugScene::CDebugScene(const System::CSystem& system) : CAbstractScene() {
+CDebugScene::CDebugScene(const System::CSystem& system) {
     // mLoadCallback = [this](CAbstractScene& scene) {
     //     auto& objBuilder = scene.GetObjectBuilder();
     //     objBuilder.Start("Camera")

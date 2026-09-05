@@ -6,17 +6,12 @@ static std::size_t gMaterialIdCounter = 0;
 
 namespace Material {
 CAbstractMaterial::CAbstractMaterial(EMaterialType type,
-                                     Renderer::EVertexLayout vertexLayout,
                                      Renderer::SPipelineDescriptors& pipeline)
-    : mType(type)
-    , mVertexLayout(vertexLayout)
-    , mPipeline(pipeline)
-    , mId(gMaterialIdCounter++) {
+    : mType(type), mPipeline(pipeline), mId(gMaterialIdCounter++) {
 }
 
 CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
     : mType(other.mType)
-    , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
     , mTextureIndex(other.mTextureIndex)
@@ -25,7 +20,6 @@ CAbstractMaterial::CAbstractMaterial(const CAbstractMaterial& other)
 
 CAbstractMaterial::CAbstractMaterial(CAbstractMaterial&& other) noexcept
     : mType(other.mType)
-    , mVertexLayout(other.mVertexLayout)
     , mPipeline(other.mPipeline)
     , mColor(other.mColor)
     , mTextureIndex(other.mTextureIndex)

@@ -1,19 +1,3 @@
-- Create pipelines for rendering UI and text both in 3D world and in screen space. 
-They need a specific set of PushConstant to be rendered. 
-They are as those: 
-VkPushConstantRange uiPcRange{};
-uiPcRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-uiPcRange.offset = 0;
-uiPcRange.size = sizeof(UiPushConstants);
-
-VkPushConstantRange worldPcRange{};
-worldPcRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-worldPcRange.offset = 0;
-worldPcRange.size = sizeof(WorldPushConstants);
-
-UiPushConstants and WorldPushConstants are already in DataTypes
-
-
 - Rendering of these data is not done through the indirect draw array: 
 vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiPipelineLayout,
                          0, 1, &bindlessTextureSet, 0, nullptr);

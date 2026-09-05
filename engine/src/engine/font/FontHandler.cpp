@@ -26,14 +26,16 @@ GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
     jsonData["glyphs"] = nlohmann::json::object();
     for (const auto it : glyphs) {
         nlohmann::json glyphJson;
-        glyphJson["uv"] = {{"x", it.second.uv.x},
-                           {"y", it.second.uv.y},
-                           {"w", it.second.uv.z},
-                           {"h", it.second.uv.w}};
+        glyphJson["uvMin"] = {{"x", it.second.uvMin.x},
+                              {"y", it.second.uvMin.y}};
+        glyphJson["uvMax"] = {{"x", it.second.uvMax.x},
+                              {"y", it.second.uvMax.y}};
+        glyphJson["planeBounds"] = {{"x", it.second.planeBounds.x},
+                                    {"y", it.second.planeBounds.y},
+                                    {"z", it.second.planeBounds.z},
+                                    {"w", it.second.planeBounds.w}};
         glyphJson["advance"] = it.second.advance;
-        glyphJson["offset"] = {{"x", it.second.offset.x},
-                               {"y", it.second.offset.y}};
-        glyphJson["size"] = {{"x", it.second.size.x}, {"y", it.second.size.y}};
+
         jsonData["glyphs"][it.first] = glyphJson;
     }
     jsonData["fontMetrics"] = {
@@ -49,9 +51,9 @@ GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
 std::unordered_map<std::string, Font::GlyphInfo>
 JsonToGlyphs(const nlohmann::json& jsonData) {
     constexpr auto validateGlyphJson = [](const nlohmann::json& glyphJson) {
-        return !glyphJson.is_null() && glyphJson.contains("uv") &&
-               glyphJson.contains("advance") && glyphJson.contains("offset") &&
-               glyphJson.contains("size");
+        return !glyphJson.is_null() && glyphJson.contains("uvMin") &&
+               glyphJson.contains("planeBounds") &&
+               glyphJson.contains("uvMax") && glyphJson.contains("advance");
     };
     std::unordered_map<std::string, Font::GlyphInfo> glyphs;
     if (jsonData.contains("glyphs")) {
@@ -63,25 +65,25 @@ JsonToGlyphs(const nlohmann::json& jsonData) {
             Font::GlyphInfo info;
 
             info.advance = glyphJson["advance"];
-            const auto& uv = glyphJson["uv"];
-            if (uv.contains("x") && uv.contains("y") && uv.contains("w") &&
-                uv.contains("h")) {
-                info.uv.x = uv["x"];
-                info.uv.y = uv["y"];
-                info.uv.z = uv["w"];
-                info.uv.w = uv["h"];
+            const auto& uvMin = glyphJson["uvMin"];
+            if (uvMin.contains("x") && uvMin.contains("y")) {
+                info.uvMin.x = uvMin["x"];
+                info.uvMin.y = uvMin["y"];
             }
 
-            const auto& offset = glyphJson["offset"];
-            if (offset.contains("x") && offset.contains("y")) {
-                info.offset.x = offset["x"];
-                info.offset.y = offset["y"];
+            const auto& uvMax = glyphJson["uvMax"];
+            if (uvMax.contains("x") && uvMax.contains("y")) {
+                info.uvMax.x = uvMax["x"];
+                info.uvMax.y = uvMax["y"];
             }
 
-            const auto& size = glyphJson["size"];
-            if (size.contains("x") && size.contains("y")) {
-                info.size.x = size["x"];
-                info.size.y = size["y"];
+            const auto& size = glyphJson["planeBounds"];
+            if (size.contains("x") && size.contains("y") &&
+                size.contains("z") && size.contains("w ")) {
+                info.planeBounds.x = size["x"];
+                info.planeBounds.y = size["y"];
+                info.planeBounds.z = size["z"];
+                info.planeBounds.w = size["w"];
             }
             glyphs.emplace(it.key(), info);
         }
@@ -180,28 +182,18 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
         Font::GlyphInfo info;
         double l, b, r, t;
         glyph.getQuadAtlasBounds(l, b, r, t);
-        l /= width;
-        r /= width;
-        b /= height;
-        t /= height;
+        info.planeBounds = {static_cast<float>(l), static_cast<float>(b),
+                            static_cast<float>(r), static_cast<float>(t)};
 
-        // UV coordinates (normalized to 0-1)
-        info.uv.x = static_cast<float>(l);
-        info.uv.y = static_cast<float>(b);
-        info.uv.z = static_cast<float>(r - l);
-        info.uv.w = static_cast<float>(t - b);
+        glyph.getQuadPlaneBounds(l, b, r, t);
+        info.uvMin = {static_cast<float>(l) / width,
+                      1.0f - static_cast<float>(b) / height};
+        info.uvMax = {static_cast<float>(r) / width,
+                      1.0f - static_cast<float>(t) / height};
 
-        // Glyph metrics
         double advance = glyph.getAdvance();
         info.advance = static_cast<float>(advance);
 
-        glyph.getQuadPlaneBounds(l, b, r, t);
-        info.offset.x = static_cast<float>(l);
-        info.offset.y = static_cast<float>(b);
-        info.size.x = static_cast<float>(r - l);
-        info.size.y = static_cast<float>(t - b);
-
-        info.index = static_cast<int>(fontData.glyphInfos.size());
         std::string charKey(1,
                             static_cast<unsigned char>(glyph.getCodepoint()));
         fontData.glyphInfos.emplace(charKey, info);

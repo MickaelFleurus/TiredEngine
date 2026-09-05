@@ -10,6 +10,8 @@
 
 #include "engine/utils/StringId.h"
 
+#include "glm/ext/vector_float2.hpp"
+
 using IndexType = uint32_t;
 constexpr IndexType INVALID_INDEX = std::numeric_limits<IndexType>::max();
 namespace Core {
@@ -117,8 +119,12 @@ struct alignas(16) SScreenQuadInstance {
     glm::vec2 posMin, posMax;
     glm::vec2 uvMin, uvMax;
     glm::vec4 color;
+    glm::vec2 scale{1.f, 1.f};
+    glm::vec2 anchor{0.5f, 0.5f};
     uint32_t texIndex;
-    uint32_t _pad[3];
+    uint32_t isText;
+    float rotation{0.f};
+    uint32_t _pad;
 };
 
 // Draw data for 2D elements in world space (billboards, sprites, etc...)
@@ -137,7 +143,7 @@ namespace PC {
 struct SUiPushConstants {
     VkDeviceAddress instances; // uiGlyphBuffer or uiSpriteBuffer address
     glm::vec2 screenSize;
-    float msdfPxRange;
+    float msdfPxRange = 2.0f;
     float _pad;
 };
 

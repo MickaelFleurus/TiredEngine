@@ -338,6 +338,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.shaderInt64 = VK_TRUE;
 
     // Check for available device extensions
     uint32_t extensionCount = 0;
