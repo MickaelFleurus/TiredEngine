@@ -3,6 +3,10 @@
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/MaterialStructures.h"
 
+namespace Core {
+class CEntityManager;
+}
+
 namespace Vulkan {
 class CHostBuffer;
 class CPipelineFactory;
@@ -34,7 +38,8 @@ public:
                          Font::CFontHandler& fontHandler,
                          System::CSystem& system,
                          Vulkan::CHostBuffer& instanceBuffer,
-                         Vulkan::CPipelineFactory& pipelineFactory);
+                         Vulkan::CPipelineFactory& pipelineFactory,
+                         Core::CEntityManager& entityManager);
 
     void Prepare();
     void Update();
@@ -48,6 +53,7 @@ private:
     Vulkan::CHostBuffer& mInstanceBuffer;
     Renderer::SPipelineDescriptors mUiPipelineDescriptors;
     const Vulkan::SContext& mContext;
+    Core::CEntityManager& mEntityManager;
 };
 
 } // namespace Renderer

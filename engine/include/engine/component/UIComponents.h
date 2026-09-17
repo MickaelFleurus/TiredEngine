@@ -4,8 +4,10 @@
 
 #include <glm/vec4.hpp>
 
+#include "engine/component/ComponentManager2.h"
 #include "engine/core/DataTypes.h"
 #include "engine/core/Entity.h"
+#include "engine/utils/ComponentParserRegistry.h"
 
 namespace Component {
 struct SText {
@@ -37,7 +39,21 @@ struct SScreenTransform {
 };
 
 struct SHierarchy {
-    Core::SEntity parent = Core::kNullEntity;
-    std::vector<Core::SEntity> children;
+    CStringId parent{};
+    std::vector<CStringId> children;
 };
+
+static ComponentRegistrar RegisterHierarchy(
+    "Hierarchy",
+    [](Component::CManager& manager, Core::SEntity e, const nlohmann::json& j) {
+        auto& hierarchy = manager.Emplace<SHierarchy>(e);
+        hierarchy.parent = CStringId(j.at("parent").get<std::string>());
+
+        const auto names = j.at("children").get<std::vector<std::string>>();
+        hierarchy.children = names |
+                             std::views::transform([](const std::string& name) {
+                                 return CStringId{name};
+                             }) |
+                             std::ranges::to<std::vector<CStringId>>();
+    });
 } // namespace Component

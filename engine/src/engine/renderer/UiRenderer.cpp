@@ -4,6 +4,7 @@
 #include "engine/component/ComponentPool.h"
 #include "engine/component/ComponentView.h"
 #include "engine/component/UIComponents.h"
+#include "engine/core/EntityManager.h"
 #include "engine/font/FontHandler.h"
 #include "engine/font/Police.h"
 #include "engine/renderer/PipelineTypes.h"
@@ -77,6 +78,7 @@ glm::mat3 MakeLocal2D(glm::vec2 position, float rotation, glm::vec2 scale) {
 void ResolveScreenTransform(
     Component::CPool<Component::SScreenTransform>& screenTransformPool,
     Component::CPool<Component::SHierarchy>& hierarchyPool, Core::SEntity e,
+    Core::CEntityManager& entityManager,
     glm::mat3 parentTransform = glm::mat3{1.0f},
     glm::vec2 parentSize = glm::vec2(1.0f)) {
     screenTransformPool.Update(e, [&](auto& t) {
@@ -90,9 +92,10 @@ void ResolveScreenTransform(
     if (hierarchyPool.Has(e)) {
         const auto& hierarchy = hierarchyPool.Get(e);
         const auto& parent = screenTransformPool.Get(e);
-        for (Core::SEntity child : hierarchy.children) {
-            ResolveScreenTransform(screenTransformPool, hierarchyPool, child,
-                                   parent.resolvedTransform);
+        for (CStringId name : hierarchy.children) {
+            Core::SEntity childEntity = entityManager.GetEntity(name);
+            ResolveScreenTransform(screenTransformPool, hierarchyPool,
+                                   childEntity, parent.resolvedTransform);
         }
     }
 }
@@ -104,7 +107,8 @@ CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
                          Font::CFontHandler& fontHandler,
                          System::CSystem& system,
                          Vulkan::CHostBuffer& instanceBuffer,
-                         Vulkan::CPipelineFactory& pipelineFactory)
+                         Vulkan::CPipelineFactory& pipelineFactory,
+                         Core::CEntityManager& entityManager)
     : mContext(context)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
@@ -112,7 +116,8 @@ CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
                                         system.GetDisplayParameters().width),
                                     static_cast<float>(
                                         system.GetDisplayParameters().height)}}
-    , mInstanceBuffer(instanceBuffer) {
+    , mInstanceBuffer(instanceBuffer)
+    , mEntityManager(entityManager) {
     Renderer::SPipelineConfig uiConfig{};
     uiConfig.shaderName = "UIShader";
     uiConfig.shaderPath =

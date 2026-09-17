@@ -26,6 +26,11 @@ public:
     explicit CManager() = default;
 
     template <typename T>
+    T& Emplace(Core::SEntity entity) {
+        return GetPool<T>().Emplace(entity);
+    }
+
+    template <typename T>
     CPool<T>& GetPool() {
         uint32_t id = componentTypeId<T>();
         if (id >= mPools.size())

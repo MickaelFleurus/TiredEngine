@@ -10,7 +10,7 @@ CEntityManager::CEntityManager(Component::CManager& componentManager)
     : mComponentManager(componentManager) {
 }
 
-SEntity CEntityManager::Create() {
+SEntity CEntityManager::Create(CStringId name) {
     uint32_t index;
     if (!mFreeIndices.empty()) {
         index = mFreeIndices.back();
@@ -19,7 +19,8 @@ SEntity CEntityManager::Create() {
         index = static_cast<uint32_t>(mEntityGeneration.size());
         mEntityGeneration.push_back(0);
     }
-    SEntity entity{index, mEntityGeneration[index]};
+    mEntityNames[name] = index;
+    SEntity entity{name, index, mEntityGeneration[index]};
 
     auto& localTransformPool =
         mComponentManager.GetPool<Component::SLocalTransform>();
@@ -40,4 +41,5 @@ bool CEntityManager::IsAlive(SEntity e) const {
     return e.id < mEntityGeneration.size() &&
            mEntityGeneration[e.id] == e.generation;
 }
+
 } // namespace Core

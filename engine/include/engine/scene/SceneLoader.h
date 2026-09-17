@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <memory>
 
+#include <nlohmann/json.hpp>
+
 namespace Core {
 class CEngineLoop;
 }

@@ -14,7 +14,7 @@
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
-#include "engine/renderer/UIRenderer.h"
+#include "engine/renderer/UiRenderer.h"
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
 #include "engine/vulkan/BufferHandler.h"
