@@ -30,20 +30,19 @@ CFileHandler::CFileHandler()
 }
 
 void CFileHandler::CreateTempFolder(const std::string& gameName) {
-    const std::string tempPath =
+    mTempFolder =
         HandleSDLPath(SDL_GetPrefPath(kCompanyName, gameName.c_str()));
-    mTempFolder = tempPath;
     std::filesystem::create_directories(mTempFolder);
-    std::filesystem::create_directories(mTempFolder + "/textures/");
-    std::filesystem::create_directories(mTempFolder + "/logs/");
+    std::filesystem::create_directories(mTempFolder / "textures/");
+    std::filesystem::create_directories(mTempFolder / "logs/");
 }
 
 std::string CFileHandler::GetTempFolder() const {
     return mTempFolder;
 }
 
-std::string CFileHandler::GetAssetsFolder() const {
-    return mAssetFolder;
+std::string CFileHandler::GetAssetsFolder(std::string type) const {
+    return (mAssetFolder / type).string();
 }
 
 bool CFileHandler::DoesFileExist(const std::string& filePath) const {
@@ -54,7 +53,7 @@ bool CFileHandler::SaveTextureFile(const std::string& fileName,
                                    SDL_Surface* surface,
                                    ETextureExtension ext) const {
 
-    auto completePath = mTempFolder + "/textures/" + fileName;
+    auto completePath = mTempFolder / "textures" / fileName;
     if (ext == ETextureExtension::JPG) {
         completePath += ".jpg";
         return IMG_SaveJPG(surface, completePath.c_str(), 100);
@@ -68,10 +67,10 @@ bool CFileHandler::SaveJson(const std::string& fileName,
                             const std::string& folderName,
                             const nlohmann::json& data) const {
 
-    const std::filesystem::path completePath =
-        mTempFolder + "/" + folderName + "/" + fileName + ".json";
-    std::filesystem::create_directories(completePath.parent_path());
+    std::filesystem::path completePath = mTempFolder / folderName / fileName;
 
+    std::filesystem::create_directories(completePath);
+    completePath.append(".json");
     std::ofstream fileStream(completePath.c_str(), std::ios::out);
     if (!fileStream.is_open()) {
         return false;
@@ -88,10 +87,6 @@ nlohmann::json CFileHandler::LoadJson(const std::string& filePath) const {
         return nlohmann::json{};
     }
     return nlohmann::json::parse(fileStream);
-}
-
-YAML::Node CFileHandler::LoadYAML(const std::string& filePath) const {
-    return YAML::LoadFile(filePath);
 }
 
 SDL_Surface* CFileHandler::LoadTextureFile(const std::string& filePath) const {

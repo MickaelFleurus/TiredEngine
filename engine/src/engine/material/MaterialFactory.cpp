@@ -31,12 +31,11 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
     switch (type) {
     case EMaterialType::Normal:
         return CreateMaterial(
-            type,
-            Renderer::SPipelineConfig{
-                .cullMode = Renderer::ECullMode::Back,
-                .frontFace = Renderer::EFrontFace::Clockwise,
-                .shaderName = "NormalShader",
-                .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/"});
+            type, Renderer::SPipelineConfig{
+                      .cullMode = Renderer::ECullMode::Back,
+                      .frontFace = Renderer::EFrontFace::Clockwise,
+                      .shaderName = "NormalShader",
+                      .shaderPath = mFileHandler.GetAssetsFolder("shaders")});
     case EMaterialType::UI:
         return CreateUIMaterial();
     default:
@@ -47,7 +46,7 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
 std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "UIShader";
-    config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
+    config.shaderPath = mFileHandler.GetAssetsFolder("shaders");
     config.cullMode = Renderer::ECullMode::None;
     config.enableBlending = true;
     config.enableDepthTest = false;

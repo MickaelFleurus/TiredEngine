@@ -123,8 +123,7 @@ CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
     , mEntityManager(entityManager) {
     Renderer::SPipelineConfig uiConfig{};
     uiConfig.shaderName = "UIShader";
-    uiConfig.shaderPath =
-        system.GetFileHandler().GetAssetsFolder() + "shaders/";
+    uiConfig.shaderPath = system.GetFileHandler().GetAssetsFolder("shaders");
     uiConfig.cullMode = Renderer::ECullMode::None;
     uiConfig.enableBlending = true;
     uiConfig.enableDepthTest = false;

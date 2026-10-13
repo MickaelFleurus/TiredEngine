@@ -23,6 +23,21 @@
             }
         },
         {
+            "name": "Sprite",
+            "components": {
+                "SpriteRenderer": {
+                    "path": "paddles/Hearts.png"
+                }
+            },
+            "transform": {
+                "scale": [
+                    10,
+                    10,
+                    10
+                ]
+            }
+        },
+        {
             "name": "Goblin_01",
             "transform": {
                 "pos": [

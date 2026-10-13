@@ -1,9 +1,9 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 #include <nlohmann/json.hpp>
-#include <yaml-cpp/yaml.h>
 
 struct SDL_Surface;
 
@@ -18,7 +18,7 @@ public:
     bool DoesFileExist(const std::string& filePath) const;
 
     std::string GetTempFolder() const;
-    std::string GetAssetsFolder() const;
+    std::string GetAssetsFolder(std::string type = std::string()) const;
 
     bool SaveTextureFile(const std::string& fileName, SDL_Surface* surface,
                          ETextureExtension ext = ETextureExtension::PNG) const;
@@ -26,11 +26,11 @@ public:
                   const nlohmann::json& data) const;
 
     nlohmann::json LoadJson(const std::string& filePath) const;
-    YAML::Node LoadYAML(const std::string& filePath) const;
+
     SDL_Surface* LoadTextureFile(const std::string& filePath) const;
 
 private:
-    std::string mTempFolder;
-    const std::string mAssetFolder;
+    std::filesystem::path mTempFolder;
+    const std::filesystem::path mAssetFolder;
 };
 } // namespace Utils

@@ -4,6 +4,8 @@
 #include <unordered_map>
 
 #include "engine/core/Sprite.h"
+#include "engine/utils/StringId.h"
+
 namespace Utils {
 class CFileHandler;
 }
@@ -20,10 +22,7 @@ public:
                    Renderer::CTextureManager& textureManager);
     ~CSpriteManager();
 
-    void LoadSpriteSheet(const std::string& spriteSheetName);
-    void LoadSprite(const std::string& spriteName);
-
-    std::optional<Core::SSpriteInfo>
+    std::optional<Core::SSpriteRegion>
     GetSpriteInfo(const std::string& spriteName) const;
 
 private:
@@ -31,6 +30,6 @@ private:
     const Utils::CFileHandler& mFileHandler;
     Renderer::CTextureManager& mTextureManager;
 
-    std::unordered_map<std::string, Core::SSpriteInfo> mSprites;
+    std::unordered_map<CStringId, Core::SSpriteAtlas, CStringIdHash> mAtlases;
 };
 } // namespace Renderer

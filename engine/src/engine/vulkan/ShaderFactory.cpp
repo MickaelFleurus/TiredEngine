@@ -26,7 +26,7 @@ public:
     }
 
     VkShaderModule CreateShader(std::string name, std::string path) {
-        path += name + ".spv";
+        path += "/" + name + ".spv";
 
         if (!mShaderCache.contains(name)) {
             size_t codeSize = 0;

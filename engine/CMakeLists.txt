@@ -14,7 +14,6 @@ target_link_libraries(Angine_LIB PUBLIC
     Vulkan::Vulkan
     GPUOpen::VulkanMemoryAllocator
     spirv-reflect-static
-    yaml-cpp::yaml-cpp
     fastgltf::fastgltf
     
 )

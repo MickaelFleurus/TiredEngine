@@ -8,6 +8,7 @@
 #include "engine/core/DataTypes.h"
 #include "engine/core/Entity.h"
 #include "engine/utils/ComponentParserRegistry.h"
+#include "engine/utils/Logger.h"
 
 namespace Component {
 struct SText {
@@ -24,10 +25,8 @@ struct SText {
 };
 
 struct SSprite {
-    uint32_t texIndex;
-    glm::vec2 uvMin, uvMax;
+    std::string spriteName;
     glm::vec4 color{1.0f};
-    glm::vec2 size;
 };
 
 struct SScreenTransform {
@@ -57,19 +56,27 @@ static ComponentRegistrar RegisterHierarchy(
                              std::ranges::to<std::vector<CStringId>>();
     });
 
-static ComponentRegistrar
-    RegisterSprite("Sprite", [](Component::CManager& manager, Core::SEntity e,
-                                const nlohmann::json& j) {
+static ComponentRegistrar RegisterSprite(
+    "SpriteRenderer",
+    [](Component::CManager& manager, Core::SEntity e, const nlohmann::json& j) {
+        if (!j.contains("path")) {
+            LOG_ERROR("The sprite component needs a path, and this object "
+                      "does not have one.");
+            return;
+        }
+        const auto spritePath = j.at("path").get<std::string>();
         auto& sprite = manager.Emplace<SSprite>(e);
-        sprite.texIndex = j.at("texIndex").get<uint32_t>();
-        const auto uv = j.at("uv").get<std::array<float, 4>>();
-        sprite.uvMin = {uv[0], uv[1]};
-        sprite.uvMax = {uv[2], uv[3]};
-        sprite.color = {
-            j.at("color").at(0).get<float>(), j.at("color").at(1).get<float>(),
-            j.at("color").at(2).get<float>(), j.at("color").at(3).get<float>()};
-        sprite.size = {j.at("size").at(0).get<float>(),
-                       j.at("size").at(1).get<float>()};
+        // sprite.texIndex = j.at("texIndex").get<uint32_t>();
+        // const auto uv = j.at("uv").get<std::array<float, 4>>();
+        // sprite.uvMin = {uv[0], uv[1]};
+        // sprite.uvMax = {uv[2], uv[3]};
+        // sprite.color = {
+        //     j.at("color").at(0).get<float>(),
+        //     j.at("color").at(1).get<float>(),
+        //     j.at("color").at(2).get<float>(),
+        //     j.at("color").at(3).get<float>()};
+        // sprite.size = {j.at("size").at(0).get<float>(),
+        //                j.at("size").at(1).get<float>()};
     });
 
 static ComponentRegistrar RegisterScreenTransform(

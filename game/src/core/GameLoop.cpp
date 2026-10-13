@@ -12,7 +12,7 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
 
     mOverlordManager.CreateOverlord(context.window.get());
     mSceneLoader.LoadSceneFromFile(std::format(
-        "{}/scene/debug.json", system.GetFileHandler().GetAssetsFolder()));
+        "{}/debug.json", system.GetFileHandler().GetAssetsFolder("scene")));
 
     mFontHandler.LoadAllThePolices();
 }

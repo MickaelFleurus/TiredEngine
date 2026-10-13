@@ -1,6 +1,13 @@
 #include "engine/renderer/SpriteManager.h"
 
-#include "engine/utils/SpriteSheetLoader.h"
+#include "engine/utils/FileHandler.h"
+
+namespace {
+
+std::unordered_map<CStringId, Core::SSpriteAtlas, CStringIdHash>
+LoadSpritesheetsMetadata(std::string path) {
+}
+} // namespace
 
 namespace Renderer {
 CSpriteManager::CSpriteManager(const CAssetParser& assetParser,
@@ -8,31 +15,11 @@ CSpriteManager::CSpriteManager(const CAssetParser& assetParser,
                                Renderer::CTextureManager& textureManager)
     : mAssetParser(assetParser)
     , mFileHandler(fileHandler)
-    , mTextureManager(textureManager) {
+    , mTextureManager(textureManager)
+    , mAtlases(
+          LoadSpritesheetsMetadata(mFileHandler.GetAssetsFolder("sprites"))) {
 }
 
 CSpriteManager::~CSpriteManager() = default;
-
-void CSpriteManager::LoadSpriteSheet(const std::string& spriteSheetName) {
-    auto sprites = Utils::LoadSpriteSheet(mAssetParser, mFileHandler,
-                                          mTextureManager, spriteSheetName);
-    mSprites.insert(sprites.begin(), sprites.end());
-}
-
-void CSpriteManager::LoadSprite(const std::string& spriteName) {
-    // auto sprite = Utils::LoadSprite(mAssetParser, mFileHandler,
-    // mTextureManager,
-    //                                 spriteSheetName);
-    // mSprites.push(sprite);
-}
-
-std::optional<Core::SSpriteInfo>
-CSpriteManager::GetSpriteInfo(const std::string& spriteName) const {
-    auto it = mSprites.find(spriteName);
-    if (it != mSprites.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
 
 } // namespace Renderer
