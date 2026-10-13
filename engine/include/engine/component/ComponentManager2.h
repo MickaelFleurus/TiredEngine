@@ -27,7 +27,7 @@ public:
 
     template <typename T>
     T& Emplace(Core::SEntity entity) {
-        return GetPool<T>().Emplace(entity);
+        return GetPool<T>().Create(entity);
     }
 
     template <typename T>

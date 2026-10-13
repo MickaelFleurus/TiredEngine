@@ -1,13 +1,13 @@
 #pragma once
 
 #include <filesystem>
-#include <memory>
 
 #include <nlohmann/json.hpp>
 
 namespace Core {
 class CEngineLoop;
-}
+class CEntityManager;
+} // namespace Core
 
 namespace Utils {
 class CFileHandler;
@@ -18,24 +18,26 @@ class CTextureManager;
 class CSpriteManager;
 } // namespace Renderer
 
-namespace YAML {
-class Node;
-} // namespace YAML
+namespace Component {
+class CManager;
+} // namespace Component
 
 namespace Scene {
 class CAbstractScene;
 class CSceneLoader {
 public:
     CSceneLoader(Core::CEngineLoop& engineLoop,
-                 Utils::CFileHandler& fileHandler);
-    virtual ~CSceneLoader();
+                 Utils::CFileHandler& fileHandler,
+                 Core::CEntityManager& entityManager,
+                 Component::CManager& componentManager);
+    virtual ~CSceneLoader() = default;
 
     void LoadSceneFromFile(const std::filesystem::path& path);
-    virtual std::unique_ptr<CAbstractScene>
-    LoadGameSpecificScenePart(const YAML::Node& sceneData) = 0;
 
 private:
     Core::CEngineLoop& mEngineLoop;
     Utils::CFileHandler& mFileHandler;
+    Core::CEntityManager& mEntityManager;
+    Component::CManager& mComponentManager;
 };
 } // namespace Scene

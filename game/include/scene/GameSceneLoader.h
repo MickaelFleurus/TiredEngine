@@ -2,10 +2,6 @@
 
 #include <engine/scene/SceneLoader.h>
 
-namespace Component {
-class CComponentManager;
-}
-
 namespace Font {
 class CFontHandler;
 }
@@ -25,11 +21,9 @@ class CGameSceneLoader : public CSceneLoader {
 public:
     CGameSceneLoader(Core::CEngineLoop& engineLoop,
                      Utils::CFileHandler& fileHandler,
+                     Core::CEntityManager& entityManager,
+                     Component::CManager& componentManager,
                      const System::CSystem& system);
-    ~CGameSceneLoader() override;
-
-    std::unique_ptr<Scene::CAbstractScene>
-    LoadGameSpecificScenePart(const YAML::Node& sceneData) override;
 
 private:
     const System::CSystem& mSystem;

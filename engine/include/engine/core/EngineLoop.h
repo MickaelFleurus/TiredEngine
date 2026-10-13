@@ -4,6 +4,7 @@
 
 #include "engine/component/ComponentManager2.h"
 #include "engine/core/CameraManager.h"
+#include "engine/core/EntityManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
 #include "engine/core/MeshManager.h"
@@ -64,6 +65,7 @@ protected:
 
     Font::CFontHandler mFontHandler;
     Component::CManager mComponentManager;
+    CEntityManager mEntityManager;
     Renderer::CWindow mWindow;
     Renderer::CUiRenderer mUiRenderer;
 

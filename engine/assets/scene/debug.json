@@ -1,0 +1,206 @@
+{
+    "sceneName": "debug",
+    "version": 1,
+    "entities": [
+        {
+            "name": "Group",
+            "transform": {
+                "pos": [
+                    5,
+                    0,
+                    2
+                ]
+            }
+        },
+        {
+            "name": "PlayerStart",
+            "hierarchy": {
+                "parent": "Group",
+                "children": []
+            },
+            "components": {
+                "PlayerStartTag": {}
+            }
+        },
+        {
+            "name": "Goblin_01",
+            "transform": {
+                "pos": [
+                    5,
+                    0,
+                    2
+                ],
+                "rot": [
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "components": {
+                "MeshRendering": {
+                    "asset": "enemies.glb",
+                    "node": "Goblin"
+                },
+                "EnemyAI": {
+                    "type": "melee",
+                    "aggroRadius": 8.0,
+                    "patrolPoints": [
+                        [
+                            5,
+                            0,
+                            2
+                        ],
+                        [
+                            5,
+                            0,
+                            10
+                        ],
+                        [
+                            1,
+                            0,
+                            10
+                        ]
+                    ]
+                },
+                "Health": {
+                    "max": 40
+                }
+            }
+        },
+        {
+            "name": "Goblin_01_Sword",
+            "transform": {
+                "pos": [
+                    0.3,
+                    1.1,
+                    0
+                ],
+                "rot": [
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "parent": "Goblin_01",
+            "components": {
+                "MeshRendering": {
+                    "asset": "enemies.glb",
+                    "node": "RustySword"
+                }
+            }
+        },
+        {
+            "name": "AmbienceZone",
+            "transform": {
+                "pos": [
+                    0,
+                    0,
+                    0
+                ],
+                "rot": [
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "components": {
+                "Trigger": {
+                    "shape": "box",
+                    "extent": [
+                        10,
+                        3,
+                        10
+                    ]
+                },
+                "AudioEmitter": {
+                    "clip": "forest_loop.ogg",
+                    "loop": true,
+                    "volume": 0.6
+                },
+                "OnEnter": {
+                    "event": "PlayMusic",
+                    "args": [
+                        "forest_theme"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "WindChime",
+            "transform": {
+                "pos": [
+                    -3,
+                    2,
+                    4
+                ],
+                "rot": [
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "components": {
+                "AudioEmitter": {
+                    "clip": "chime.ogg",
+                    "loop": true,
+                    "spatial": true,
+                    "radius": 6.0
+                }
+            }
+        },
+        {
+            "name": "SunLight",
+            "transform": {
+                "pos": [
+                    0,
+                    20,
+                    0
+                ],
+                "rot": [
+                    0.3,
+                    0,
+                    0,
+                    0.95
+                ]
+            },
+            "components": {
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        0.95,
+                        0.85
+                    ],
+                    "intensity": 3.0
+                }
+            }
+        },
+        {
+            "name": "MainCamera",
+            "transform": {
+                "pos": [
+                    0,
+                    5,
+                    -10
+                ],
+                "rot": [
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "components": {
+                "Camera": {
+                    "fov": 60,
+                    "near": 0.1,
+                    "far": 500,
+                    "active": true
+                }
+            }
+        }
+    ]
+}

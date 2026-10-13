@@ -22,11 +22,12 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
                       system.GetFileHandler(), mAssetParser)
     , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser,
                    mTextureManager)
-
+    , mEntityManager(mComponentManager)
     , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
               mCameraManager)
     , mUiRenderer(context, mComponentManager, mFontHandler, system,
-                  mBufferHandler.GetUiInstancesBuffer(), mPipelineFactory)
+                  mBufferHandler.GetUiInstancesBuffer(), mPipelineFactory,
+                  mEntityManager)
     , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {

@@ -1,45 +1,39 @@
 #include "engine/scene/SceneLoader.h"
 
 #include "engine/core/EngineLoop.h"
+#include "engine/core/EntityManager.h"
+#include "engine/scene/SceneDocumentParser.h"
+#include "engine/utils/ComponentParserRegistry.h"
 #include "engine/utils/FileHandler.h"
-#include "engine/utils/Logger.h"
 
 namespace Scene {
 CSceneLoader::CSceneLoader(Core::CEngineLoop& engineLoop,
-                           Utils::CFileHandler& fileHandler)
-    : mEngineLoop(engineLoop), mFileHandler(fileHandler) {
+                           Utils::CFileHandler& fileHandler,
+                           Core::CEntityManager& entityManager,
+                           Component::CManager& componentManager)
+    : mEngineLoop(engineLoop)
+    , mFileHandler(fileHandler)
+    , mEntityManager(entityManager)
+    , mComponentManager(componentManager) {
 }
-CSceneLoader::~CSceneLoader() = default;
 
 void CSceneLoader::LoadSceneFromFile(const std::filesystem::path& path) {
-    auto yamlData = mFileHandler.LoadYAML(path);
-    if (!yamlData.IsDefined()) {
-        LOG_ERROR("Failed to load scene file: {}", path.string());
-        return;
+    auto loaded = CSceneDocumentParser::Load(path);
+    for (const auto& entityJson : loaded.entities) {
+        auto entityObj =
+            mEntityManager.Create(CStringId(entityJson.name.c_str()));
+        if (entityJson.hierarchy) {
+            ComponentRegistry::Apply("Hierarchy", mComponentManager, entityObj,
+                                     entityJson.hierarchy);
+        }
+        ComponentRegistry::Apply("Transform", mComponentManager, entityObj,
+                                 entityJson.transform);
+
+        for (const auto& [componentName, componentData] :
+             entityJson.components) {
+            ComponentRegistry::Apply(componentName, mComponentManager,
+                                     entityObj, componentData);
+        }
     }
-    std::string sceneName = yamlData["name"].as<std::string>();
-    // TODO
-    // LOG_INFO("Loading scene: {}", sceneName);
-    // if (yamlData["resources"].IsDefined()) {
-    //     for (const auto& texture : yamlData["resources"]["textures"]) {
-    //         std::string texturePath = mFileHandler.GetAssetsFolder() + "/" +
-    //                                   texture.as<std::string>();
-
-    //         mTextureManager.LoadTexture(texturePath);
-    //         LOG_INFO("Loaded texture: {}", texturePath);
-    //     }
-    //     for (const auto& texture : yamlData["resources"]["spritesheets"]) {
-    //         std::string texturePath = mFileHandler.GetAssetsFolder() + "/" +
-    //                                   texture.as<std::string>();
-
-    //         mSpriteManager.LoadSpriteSheet(texturePath);
-    //         LOG_INFO("Loaded spritesheet: {}", texturePath);
-    //     }
-    // }
-    // auto scene = LoadGameSpecificScenePart(yamlData["gameSpecific"]);
-    // if (!scene) {
-    //     LOG_FATAL("Failed to load game specific scene part");
-    // }
-    // mEngineLoop.SetPendingScene(std::move(scene));
 }
 } // namespace Scene

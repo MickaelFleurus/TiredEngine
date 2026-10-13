@@ -1,7 +1,5 @@
 #include "engine/component/ComponentManager2.h"
 
-#include "engine/component/ComponentPool.h"
-
 namespace Component {
 
 void CManager::DestroyComponents(Core::SEntity entity) {

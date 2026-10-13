@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "engine/core/Entity.h"
@@ -19,7 +20,7 @@ public:
 
     bool IsAlive(SEntity e) const;
 
-    SEntity GetEntity(CStringId name) const;
+    std::optional<SEntity> GetEntity(CStringId name) const;
 
 private:
     std::vector<uint32_t> mEntityGeneration;

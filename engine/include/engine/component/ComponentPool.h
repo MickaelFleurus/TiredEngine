@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "engine/core/Entity.h"
-#include "engine/utils/Asserts.h"
 #include "engine/utils/GuardedContainer.h"
 #include "engine/utils/Token.h"
 

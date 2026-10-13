@@ -42,4 +42,13 @@ bool CEntityManager::IsAlive(SEntity e) const {
            mEntityGeneration[e.id] == e.generation;
 }
 
+std::optional<SEntity> CEntityManager::GetEntity(CStringId name) const {
+    auto it = mEntityNames.find(name);
+    if (it != mEntityNames.end()) {
+        uint32_t index = it->second;
+        return SEntity{name, index, mEntityGeneration[index]};
+    }
+    return std::nullopt;
+}
+
 } // namespace Core

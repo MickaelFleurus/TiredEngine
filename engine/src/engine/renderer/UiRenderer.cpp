@@ -93,9 +93,12 @@ void ResolveScreenTransform(
         const auto& hierarchy = hierarchyPool.Get(e);
         const auto& parent = screenTransformPool.Get(e);
         for (CStringId name : hierarchy.children) {
-            Core::SEntity childEntity = entityManager.GetEntity(name);
-            ResolveScreenTransform(screenTransformPool, hierarchyPool,
-                                   childEntity, parent.resolvedTransform);
+            auto childEntity = entityManager.GetEntity(name);
+            if (childEntity) {
+                ResolveScreenTransform(screenTransformPool, hierarchyPool,
+                                       *childEntity, entityManager,
+                                       parent.resolvedTransform);
+            }
         }
     }
 }
