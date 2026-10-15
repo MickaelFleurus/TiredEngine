@@ -22,6 +22,8 @@ public:
                    Renderer::CTextureManager& textureManager);
     ~CSpriteManager();
 
+    void Load();
+
     std::optional<Core::SSpriteRegion>
     GetSpriteInfo(const std::string& spriteName) const;
 

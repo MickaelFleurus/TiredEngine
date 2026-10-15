@@ -1,5 +1,7 @@
 #include "engine/vulkan/StagingBuffer.h"
 
+#include "engine/utils/Logger.h"
+
 namespace {
 constexpr VkDeviceSize kStagingBufferSize = 64 * 1024 * 1024; // 1 MB
 }
@@ -32,6 +34,15 @@ CStagingBuffer::CStagingBuffer(const SContext& context)
 
     VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
     vkCreateFence(mContext.device, &fenceInfo, nullptr, &mFence);
+
+    VkCommandBufferBeginInfo beginInfo{
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VkResult result = vkBeginCommandBuffer(mCmdBuffer, &beginInfo);
+    if (result != VK_SUCCESS) {
+        LOG_FATAL("Failed to begin staging command buffer: VkResult {}",
+                  static_cast<int>(result));
+    }
 }
 
 CStagingBuffer::~CStagingBuffer() {

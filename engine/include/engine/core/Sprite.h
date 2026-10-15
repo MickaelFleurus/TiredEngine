@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <unordered_map>
 
 #include <glm/vec2.hpp>
@@ -12,7 +13,7 @@ struct SSpriteRegion {
 };
 
 struct SSpriteAtlas {
-    int id = -1;
+    uint64_t id = -1;
     std::unordered_map<CStringId, SSpriteRegion, CStringIdHash> sprites;
 };
 } // namespace Core

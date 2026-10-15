@@ -1,14 +1,9 @@
 #include "scene/GameSceneLoader.h"
 
-#include <unordered_map>
-
 #include <magic_enum/magic_enum.hpp>
-#include <yaml-cpp/yaml.h>
-
-#include "engine/utils/Logger.h"
 
 #include "core/BrickType.h"
-#include "scene/GameplayScene.h"
+
 
 namespace {
 struct SBrickDefinition {

@@ -82,9 +82,12 @@ createTextureFromPixels(VmaAllocator allocator, VkDevice device,
     Renderer::LoadedTexture tex{};
     tex.width = width;
     tex.height = height;
-    if (!vmaCreateImage(allocator, &imageInfo, &allocInfo, &tex.image,
-                        &tex.allocation, nullptr)) {
-        LOG_FATAL("Failed to create Vulkan image!");
+    VkResult result = vmaCreateImage(allocator, &imageInfo, &allocInfo,
+                                     &tex.image, &tex.allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        LOG_FATAL(
+            "Failed to create Vulkan image (VkResult {}, {}x{}, format {})",
+            static_cast<int>(result), width, height, static_cast<int>(format));
     }
 
     // 1. Transition UNDEFINED -> TRANSFER_DST_OPTIMAL
@@ -176,16 +179,16 @@ CTextureManager::LoadTexture(const SAsset& asset) {
 
 std::optional<std::pair<CStringId, uint64_t>>
 CTextureManager::LoadTexture(const std::filesystem::path& filename) {
-    CStringId id{filename};
-    auto it = mLoadedTexturesIndices.find(id);
-    if (it != mLoadedTexturesIndices.end()) {
-        return std::make_pair(id, it->second);
-    }
-    auto textureAsset = mAssetParser.Get(EAssetType::Texture, filename);
-    if (!textureAsset) {
+    std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> surface{
+        mFileHandler.LoadTextureFile(filename.string()), kGPUSurfaceDeleter};
+    if (!surface) {
+        LOG_ERROR("Failed to load texture file: {}", filename.string());
         return std::nullopt;
     }
-    return LoadTexture(textureAsset->get());
+    auto textureIndex =
+        LoadTextureFromSurface(filename.stem().string(), surface.get());
+
+    return textureIndex;
 }
 
 std::optional<std::pair<CStringId, uint64_t>>

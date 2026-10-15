@@ -62,6 +62,7 @@ protected:
 
     Core::CMeshManager mMeshManager;
     Renderer::CTextureManager mTextureManager;
+    Renderer::CSpriteManager mSpriteManager;
 
     Font::CFontHandler mFontHandler;
     Component::CManager mComponentManager;

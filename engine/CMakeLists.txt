@@ -15,7 +15,7 @@ target_link_libraries(Angine_LIB PUBLIC
     GPUOpen::VulkanMemoryAllocator
     spirv-reflect-static
     fastgltf::fastgltf
-    
+    TiredPackerReadingLib
 )
 
 # On macOS, link required frameworks for MoltenVK

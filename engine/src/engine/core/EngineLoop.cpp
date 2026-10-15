@@ -20,6 +20,8 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     , mPipelineFactory(mContext, mSwapchain)
     , mTextureManager(context, swapchain, mVulkanRendering, mBufferHandler,
                       system.GetFileHandler(), mAssetParser)
+    , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
+                     mTextureManager)
     , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser,
                    mTextureManager)
     , mEntityManager(mComponentManager)
@@ -45,6 +47,7 @@ Scene::CAbstractScene* CEngineLoop::GetCurrentScene() const {
 }
 
 bool CEngineLoop::Run() {
+    mSpriteManager.Load();
     while (mInputs.Poll()) {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration_cast<std::chrono::seconds>(
