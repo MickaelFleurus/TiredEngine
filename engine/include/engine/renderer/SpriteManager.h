@@ -17,6 +17,10 @@ class CTextureManager;
 
 class CSpriteManager {
 public:
+    using AtlasContainer = std::unordered_map<
+        CStringId,
+        std::unordered_map<CStringId, Core::SSpriteRendering, CStringIdHash>,
+        CStringIdHash>;
     CSpriteManager(const CAssetParser& assetParser,
                    const Utils::CFileHandler& fileHandler,
                    Renderer::CTextureManager& textureManager);
@@ -24,7 +28,7 @@ public:
 
     void Load();
 
-    std::optional<Core::SSpriteRegion>
+    std::optional<Core::SSpriteRendering>
     GetSpriteInfo(const std::string& spriteName) const;
 
 private:
@@ -32,6 +36,6 @@ private:
     const Utils::CFileHandler& mFileHandler;
     Renderer::CTextureManager& mTextureManager;
 
-    std::unordered_map<CStringId, Core::SSpriteAtlas, CStringIdHash> mAtlases;
+    AtlasContainer mAtlases;
 };
 } // namespace Renderer

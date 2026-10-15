@@ -7,6 +7,8 @@ namespace Vulkan {
 CGPUBuffer::CGPUBuffer(const SContext& context, VkDeviceSize size,
                        VkBufferUsageFlags usage, bool hostVisible)
     : mContext(context) {
+    mMemoryBlocks.Init(size);
+
     VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     bufferInfo.size = size;
     bufferInfo.usage = usage;

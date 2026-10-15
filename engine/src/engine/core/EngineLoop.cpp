@@ -27,9 +27,9 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     , mEntityManager(mComponentManager)
     , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
               mCameraManager)
-    , mUiRenderer(context, mComponentManager, mFontHandler, system,
-                  mBufferHandler.GetUiInstancesBuffer(), mPipelineFactory,
-                  mEntityManager)
+    , mUiRenderer(context, mComponentManager, mFontHandler, mTextureManager,
+                  mSpriteManager, system, mBufferHandler.GetUiInstancesBuffer(),
+                  mPipelineFactory, mEntityManager)
     , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {

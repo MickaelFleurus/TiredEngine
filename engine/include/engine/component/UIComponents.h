@@ -66,30 +66,30 @@ static ComponentRegistrar RegisterSprite(
         }
         const auto spritePath = j.at("path").get<std::string>();
         auto& sprite = manager.Emplace<SSprite>(e);
-        // sprite.texIndex = j.at("texIndex").get<uint32_t>();
-        // const auto uv = j.at("uv").get<std::array<float, 4>>();
-        // sprite.uvMin = {uv[0], uv[1]};
-        // sprite.uvMax = {uv[2], uv[3]};
-        // sprite.color = {
-        //     j.at("color").at(0).get<float>(),
-        //     j.at("color").at(1).get<float>(),
-        //     j.at("color").at(2).get<float>(),
-        //     j.at("color").at(3).get<float>()};
-        // sprite.size = {j.at("size").at(0).get<float>(),
-        //                j.at("size").at(1).get<float>()};
+        sprite.spriteName = spritePath;
     });
 
 static ComponentRegistrar RegisterScreenTransform(
     "ScreenTransform",
     [](Component::CManager& manager, Core::SEntity e, const nlohmann::json& j) {
         auto& screenTransform = manager.Emplace<SScreenTransform>(e);
-        screenTransform.anchor = {j.at("anchor").at(0).get<float>(),
-                                  j.at("anchor").at(1).get<float>()};
-        screenTransform.position = {j.at("position").at(0).get<float>(),
-                                    j.at("position").at(1).get<float>()};
-        screenTransform.rotation = j.at("rotation").get<float>();
-        screenTransform.scale = {j.at("scale").at(0).get<float>(),
-                                 j.at("scale").at(1).get<float>()};
+        if (j.contains("anchor")) {
+            screenTransform.anchor = {j.at("anchor").at(0).get<float>(),
+                                      j.at("anchor").at(1).get<float>()};
+        }
+        if (j.contains("position")) {
+            screenTransform.position = {j.at("position").at(0).get<float>(),
+                                        j.at("position").at(1).get<float>()};
+        }
+
+        if (j.contains("rotation")) {
+            screenTransform.rotation = j.at("rotation").get<float>();
+        }
+
+        if (j.contains("scale")) {
+            screenTransform.scale = {j.at("scale").at(0).get<float>(),
+                                     j.at("scale").at(1).get<float>()};
+        }
     });
 
 static ComponentRegistrar RegisterText("Text", [](Component::CManager& manager,

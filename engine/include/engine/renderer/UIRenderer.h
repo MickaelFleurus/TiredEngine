@@ -30,12 +30,16 @@ class CFileHandler;
 }
 
 namespace Renderer {
+class CTextureManager;
+class CSpriteManager;
 
 class CUiRenderer {
 public:
     explicit CUiRenderer(const Vulkan::SContext& context,
                          Component::CManager& componentManager,
                          Font::CFontHandler& fontHandler,
+                         Renderer::CTextureManager& textureManager,
+                         Renderer::CSpriteManager& spriteManager,
                          System::CSystem& system,
                          Vulkan::CHostBuffer& instanceBuffer,
                          Vulkan::CPipelineFactory& pipelineFactory,
@@ -48,6 +52,8 @@ public:
 private:
     Component::CManager& mComponentManager;
     Font::CFontHandler& mFontHandler;
+    Renderer::CTextureManager& mTextureManager;
+    Renderer::CSpriteManager& mSpriteManager;
     std::vector<Core::SScreenQuadInstance> mInstances;
     Core::PC::SUiPushConstants mPushConstants;
     Vulkan::CHostBuffer& mInstanceBuffer;

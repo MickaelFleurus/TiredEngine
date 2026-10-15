@@ -11,30 +11,32 @@
 
 namespace {
 
-std::unordered_map<CStringId, Core::SSpriteAtlas, CStringIdHash>
+Renderer::CSpriteManager::AtlasContainer
 LoadSpritesheetsMetadata(std::filesystem::path path,
                          Renderer::CTextureManager& textureManager) {
 
-    std::unordered_map<CStringId, Core::SSpriteAtlas, CStringIdHash> data;
+    Renderer::CSpriteManager::AtlasContainer data;
     for (auto const& dir_entry : std::filesystem::directory_iterator{path}) {
         if (dir_entry.path().extension() != ".json") {
             continue;
         }
+
+        std::unordered_map<CStringId, Core::SSpriteRendering, CStringIdHash>
+            sprites;
         const auto metadata = AtlasReader::ParseMetadata(dir_entry.path());
         for (auto& atlas : metadata.atlases) {
-            Core::SSpriteAtlas sprites;
+            const auto loadedOpt =
+                textureManager.LoadTexture(path / atlas.fileName);
             for (auto& sprite : atlas.entries) {
-                Core::SSpriteRegion region{
+                Core::SSpriteRendering region{
+                    .id = loadedOpt->second,
                     .uvMin = glm::vec2(sprite.uvU, sprite.uvV),
                     .uvMax = glm::vec2(sprite.uvU + sprite.width,
                                        sprite.uvV + sprite.height)};
-                sprites.sprites.emplace(sprite.fileName, region);
+                sprites.emplace(sprite.fileName, region);
             }
-            const auto loadedOpt =
-                textureManager.LoadTexture(path / atlas.fileName);
-            sprites.id = loadedOpt->second;
-            data.emplace(CStringId(atlas.fileName), sprites);
         }
+        data.emplace(CStringId(metadata.name), sprites);
     }
     return data;
 }
@@ -56,6 +58,20 @@ void CSpriteManager::Load() {
 
     mAtlases = LoadSpritesheetsMetadata(mFileHandler.GetAssetsFolder("sprites"),
                                         mTextureManager);
+}
+
+std::optional<Core::SSpriteRendering>
+CSpriteManager::GetSpriteInfo(const std::string& spriteName) const {
+    auto splitPos = spriteName.find("/");
+    const CStringId atlasId = CStringId(spriteName.substr(0, splitPos));
+    const CStringId spriteId = CStringId(spriteName.substr(splitPos + 1));
+    if (mAtlases.contains(atlasId)) {
+        const auto& atlas = mAtlases.at(atlasId);
+        if (atlas.contains(spriteId)) {
+            return atlas.at(spriteId);
+        }
+    }
+    return std::nullopt;
 }
 
 } // namespace Renderer

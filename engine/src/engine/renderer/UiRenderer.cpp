@@ -1,5 +1,7 @@
 #include "engine/renderer/UiRenderer.h"
 
+#include <filesystem>
+
 #include "engine/component/ComponentManager2.h"
 #include "engine/component/ComponentPool.h"
 #include "engine/component/ComponentView.h"
@@ -8,6 +10,8 @@
 #include "engine/font/FontHandler.h"
 #include "engine/font/Police.h"
 #include "engine/renderer/PipelineTypes.h"
+#include "engine/renderer/SpriteManager.h"
+#include "engine/renderer/TextureManager.h"
 #include "engine/system/System.h"
 #include "engine/vulkan/HostBuffer.h"
 #include "engine/vulkan/PipelineFactory.h"
@@ -75,6 +79,44 @@ glm::mat3 MakeLocal2D(glm::vec2 position, float rotation, glm::vec2 scale) {
     return t * r * sc; // scale first, then rotate, then translate
 }
 
+std::optional<Core::SScreenQuadInstance>
+BuildSpriteQuad(const Component::SSprite& sprite,
+                const Component::SScreenTransform& xform,
+                const Renderer::CSpriteManager& spriteManager,
+                const Renderer::CTextureManager& textureManager) {
+    const auto spriteInfo = spriteManager.GetSpriteInfo(sprite.spriteName);
+    if (!spriteInfo) {
+        return std::nullopt;
+    }
+
+    std::vector<std::string> candidates = {sprite.spriteName};
+    const std::filesystem::path spritePath{sprite.spriteName};
+    if (!spritePath.filename().empty()) {
+        candidates.push_back(spritePath.filename().string());
+    }
+    if (!spritePath.stem().empty()) {
+        candidates.push_back(spritePath.stem().string());
+    }
+
+    const auto& texture = textureManager.GetTexture(spriteInfo->id);
+    const glm::vec2 spriteSize{static_cast<float>(texture.width),
+                               static_cast<float>(texture.height)};
+    const glm::vec2 size = spriteSize * xform.scale;
+
+    Core::SScreenQuadInstance inst{};
+    inst.posMin = xform.position;
+    inst.posMax = xform.position + size;
+    inst.uvMin = spriteInfo->uvMin;
+    inst.uvMax = spriteInfo->uvMax;
+    inst.color = sprite.color;
+    inst.anchor = xform.anchor;
+    inst.scale = {1.0f, 1.0f};
+    inst.rotation = xform.rotation;
+    inst.texIndex = static_cast<uint32_t>(spriteInfo->id);
+    inst.isText = 0u;
+    return inst;
+}
+
 void ResolveScreenTransform(
     Component::CPool<Component::SScreenTransform>& screenTransformPool,
     Component::CPool<Component::SHierarchy>& hierarchyPool, Core::SEntity e,
@@ -108,6 +150,8 @@ namespace Renderer {
 CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
                          Component::CManager& componentManager,
                          Font::CFontHandler& fontHandler,
+                         Renderer::CTextureManager& textureManager,
+                         Renderer::CSpriteManager& spriteManager,
                          System::CSystem& system,
                          Vulkan::CHostBuffer& instanceBuffer,
                          Vulkan::CPipelineFactory& pipelineFactory,
@@ -115,6 +159,8 @@ CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
     : mContext(context)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
+    , mTextureManager(textureManager)
+    , mSpriteManager(spriteManager)
     , mPushConstants{.screenSize = {static_cast<float>(
                                         system.GetDisplayParameters().width),
                                     static_cast<float>(
@@ -155,13 +201,14 @@ void CUiRenderer::Prepare() {
         mComponentManager
             .GetPools<Component::SScreenTransform, Component::SSprite>()};
     for (auto it = spriteView.begin(); it != spriteView.end(); ++it) {
+        auto& sprite = it.Get<Component::SSprite>();
+        auto& xform = it.Get<Component::SScreenTransform>();
+        const auto instance =
+            BuildSpriteQuad(sprite, xform, mSpriteManager, mTextureManager);
+        if (instance) {
+            mInstances.push_back(*instance);
+        }
     }
-    //     auto& sprite = spriteView.get<CSpriteComponent>(e);
-    //     auto& xform = spriteView.get<CScreenTransform>(e);
-    //     screenQuadInstances.push_back(
-    //         BuildSpriteQuad(sprite, xform.resolvedTransform));
-
-    //
 }
 
 void CUiRenderer::Update() {
