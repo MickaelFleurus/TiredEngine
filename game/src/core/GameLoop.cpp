@@ -14,7 +14,9 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     , mCamera3DWidget(mCameraManager)
     , mCameraUIWidget(mCameraManager)
     , mLevelSceneLoaderWidget(mAssetParser, mSceneLoader)
-    , mBufferWidget(mBufferHandler) {
+    , mBufferWidget(mBufferHandler)
+    , mSceneHierarchy(mEntityManager, mComponentManager)
+{
 
     mSceneMenu.SetVisible(true);
     Debug::COverlord::AddMenu(mSceneMenu, mOverlordToken);
@@ -22,6 +24,7 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     Debug::COverlord::AddWidget(mCameraUIWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mLevelSceneLoaderWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mBufferWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mSceneHierarchy, mOverlordToken);
 
     mOverlordManager.CreateOverlord(context.window.get());
     mSceneLoader.LoadSceneFromFile(std::format(

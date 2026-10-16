@@ -21,6 +21,7 @@ public:
     bool IsAlive(SEntity e) const;
 
     std::optional<SEntity> GetEntity(CStringId name) const;
+    std::vector<SEntity> GetEntities() const;
 
 private:
     std::vector<uint32_t> mEntityGeneration;

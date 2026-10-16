@@ -7,6 +7,7 @@
 #include "engine/debug/CameraUIWidget.h"
 #include "engine/debug/InputStateWatcher.h"
 #include "engine/debug/LevelSceneLoaderWidget.h"
+#include "engine/debug/SceneHierarchy.h"
 #include "engine/debug/SceneLoaderOverlord.h"
 #include "engine/utils/Token.h"
 
@@ -35,5 +36,6 @@ private:
     Debug::CCameraUIWidget mCameraUIWidget;
     Debug::CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
     Debug::CBufferWidget mBufferWidget;
+    Debug::CSceneHierarchy mSceneHierarchy;
 };
 } // namespace Core

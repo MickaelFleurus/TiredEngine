@@ -26,13 +26,20 @@ SEntity CEntityManager::Create(CStringId name) {
         mComponentManager.GetPool<Component::SLocalTransform>();
     localTransformPool.Create(entity);
     auto& worldMatricePool =
-        mComponentManager.GetPool<Component::SLocalTransform>();
+        mComponentManager.GetPool<Component::SWorldTransform>();
     worldMatricePool.Create(entity);
     return entity;
 }
 
 void CEntityManager::Destroy(SEntity e) {
+    if (!IsAlive(e)) {
+        return;
+    }
     mComponentManager.DestroyComponents(e);
+    const auto it = mEntityNames.find(e.name);
+    if (it != mEntityNames.end() && it->second == e.id) {
+        mEntityNames.erase(it);
+    }
     mEntityGeneration[e.id]++;
     mFreeIndices.push_back(e.id);
 }
@@ -49,6 +56,17 @@ std::optional<SEntity> CEntityManager::GetEntity(CStringId name) const {
         return SEntity{name, index, mEntityGeneration[index]};
     }
     return std::nullopt;
+}
+
+std::vector<SEntity> CEntityManager::GetEntities() const {
+    std::vector<SEntity> entities;
+    entities.reserve(mEntityNames.size());
+    for (const auto& [name, id] : mEntityNames) {
+        if (id < mEntityGeneration.size()) {
+            entities.push_back({name, id, mEntityGeneration[id]});
+        }
+    }
+    return entities;
 }
 
 } // namespace Core
