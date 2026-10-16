@@ -1,5 +1,5 @@
 #pragma once
-#include <glm/vec3.hpp>
+#include <glm/vec2.hpp>
 
 #include "engine/core/Camera.h"
 
@@ -10,6 +10,7 @@ public:
 
     void SetOrthographicSize(float size);
     float GetOrthographicSize() const;
+    glm::vec2 GetCanvasSize() const;
 
 protected:
     void EnsureUpToDate() override;

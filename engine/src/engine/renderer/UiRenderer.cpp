@@ -6,6 +6,7 @@
 #include "engine/component/ComponentPool.h"
 #include "engine/component/ComponentView.h"
 #include "engine/component/UIComponents.h"
+#include "engine/core/CameraUI.h"
 #include "engine/core/EntityManager.h"
 #include "engine/font/FontHandler.h"
 #include "engine/font/Police.h"
@@ -157,15 +158,13 @@ void ResolveScreenTransform(
 } // namespace
 
 namespace Renderer {
-CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
-                         Component::CManager& componentManager,
-                         Font::CFontHandler& fontHandler,
-                         Renderer::CTextureManager& textureManager,
-                         Renderer::CSpriteManager& spriteManager,
-                         System::CSystem& system,
-                         Vulkan::CHostBuffer& instanceBuffer,
-                         Vulkan::CPipelineFactory& pipelineFactory,
-                         Core::CEntityManager& entityManager)
+CUiRenderer::CUiRenderer(
+    const Vulkan::SContext& context, Component::CManager& componentManager,
+    Font::CFontHandler& fontHandler, Renderer::CTextureManager& textureManager,
+    Renderer::CSpriteManager& spriteManager, System::CSystem& system,
+    Vulkan::CHostBuffer& instanceBuffer,
+    Vulkan::CPipelineFactory& pipelineFactory,
+    Core::CEntityManager& entityManager, Core::CCameraUI& uiCamera)
     : mContext(context)
     , mComponentManager(componentManager)
     , mFontHandler(fontHandler)
@@ -176,7 +175,8 @@ CUiRenderer::CUiRenderer(const Vulkan::SContext& context,
                                     static_cast<float>(
                                         system.GetDisplayParameters().height)}}
     , mInstanceBuffer(instanceBuffer)
-    , mEntityManager(entityManager) {
+    , mEntityManager(entityManager)
+    , mUiCamera(uiCamera) {
     Renderer::SPipelineConfig uiConfig{};
     uiConfig.shaderName = "UIShader";
     uiConfig.shaderPath = system.GetFileHandler().GetAssetsFolder("shaders");
@@ -227,6 +227,7 @@ void CUiRenderer::Update() {
 
 void CUiRenderer::Render(VkCommandBuffer cmd) {
     mPushConstants.instances = mInstanceBuffer.GetDeviceAddress();
+    mPushConstants.screenSize = mUiCamera.GetCanvasSize();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                       mUiPipelineDescriptors.pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -5,7 +5,8 @@
 
 namespace Core {
 class CEntityManager;
-}
+class CCameraUI;
+} // namespace Core
 
 namespace Vulkan {
 class CHostBuffer;
@@ -43,7 +44,8 @@ public:
                          System::CSystem& system,
                          Vulkan::CHostBuffer& instanceBuffer,
                          Vulkan::CPipelineFactory& pipelineFactory,
-                         Core::CEntityManager& entityManager);
+                         Core::CEntityManager& entityManager,
+                         Core::CCameraUI& uiCamera);
 
     void Prepare();
     void Update();
@@ -60,6 +62,7 @@ private:
     Renderer::SPipelineDescriptors mUiPipelineDescriptors;
     const Vulkan::SContext& mContext;
     Core::CEntityManager& mEntityManager;
+    Core::CCameraUI& mUiCamera;
 };
 
 } // namespace Renderer

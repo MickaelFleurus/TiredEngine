@@ -13,12 +13,18 @@ CCameraUI::CCameraUI() : CCamera(kUICameraName) {
 }
 
 void CCameraUI::SetOrthographicSize(float size) {
-    mOrthographicSize = std::min(size, std::numeric_limits<float>::max());
+    mOrthographicSize = std::max(size, 0.001f);
     mIsDirty = true;
 }
 
 float CCameraUI::GetOrthographicSize() const {
     return mOrthographicSize;
+}
+
+glm::vec2 CCameraUI::GetCanvasSize() const {
+    const float zoom = std::max(mZoom, 0.001f);
+    const float height = mOrthographicSize / zoom;
+    return {height * mAspectRatio, height};
 }
 
 void CCameraUI::EnsureUpToDate() {
@@ -28,7 +34,9 @@ void CCameraUI::EnsureUpToDate() {
 
     auto position = glm::vec3(0.0f, 0.0f, 0.1f);
 
-    mProjMatrix = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, 0.0f, 1.0f);
+    const auto canvasSize = GetCanvasSize();
+    mProjMatrix = glm::ortho(0.0f, canvasSize.x, 0.0f, canvasSize.y,
+                             mNearFarZ.x, mNearFarZ.y);
 
     mViewMatrix = glm::translate(glm::mat4(1.0f), position);
     mViewProjMatrix = mProjMatrix * mViewMatrix;

@@ -1,10 +1,11 @@
 #include "engine/debug/InputStateWatcher.h"
 
+#include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
+
 #include "engine/debug/Overlord.h"
 #include "engine/input/InputTypes.h"
 
-#include <imgui.h>
-#include <magic_enum/magic_enum.hpp>
 
 namespace Debug {
 

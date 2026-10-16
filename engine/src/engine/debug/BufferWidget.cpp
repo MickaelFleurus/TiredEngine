@@ -32,8 +32,8 @@ void CBufferWidget::Render() {
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted(name.c_str());
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.2f MiB", static_cast<double>(size) /
-                                         (1024.0 * 1024.0));
+            ImGui::Text("%.2f MiB",
+                        static_cast<double>(size) / (1024.0 * 1024.0));
         }
         ImGui::EndTable();
     }

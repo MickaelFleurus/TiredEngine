@@ -1,12 +1,13 @@
 #include "engine/vulkan/BufferHandler.h"
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "engine/core/DataTypes.h"
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/GPUBuffer.h"
 
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace {
 
