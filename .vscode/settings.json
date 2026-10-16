@@ -111,5 +111,6 @@
         "resumable": "cpp",
         "ranges": "cpp"
     },
+    "clangd.arguments": ["--compile-commands-dir=build"],
     "C_Cpp.errorSquiggles": "disabled"
 }

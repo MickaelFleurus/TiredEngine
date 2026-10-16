@@ -5,31 +5,34 @@
 #include "engine/renderer/Window.h"
 #include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
-#include "engine/utils/Logger.h"
 #include "engine/vulkan/VulkanContext.h"
 
 namespace Core {
 
-CEngineLoop::CEngineLoop(System::CSystem& system, SDL_Window* window,
-                         Vulkan::CVulkanContext& vulkanContext)
-    : mVulkanContext(vulkanContext)
-    , mVulkanRendering(vulkanContext)
-    , mDescriptorStorage(mVulkanContext)
-    , mMemoryAllocator(mVulkanContext)
-    , mBufferHandler(mVulkanContext, mMemoryAllocator)
-    , mMaterialManager(mTextureManager, system.GetFileHandler(), mVulkanContext,
-                       mDescriptorStorage)
-    , mRendererManager(mBufferHandler, mMaterialManager)
-    , mMeshManager(mRendererManager.GetMeshRenderer())
-    , mWindow(system, window, vulkanContext, mVulkanRendering, mBufferHandler,
-              mMaterialManager, mDescriptorStorage, mRendererManager)
-    , mTextureManager(mVulkanContext, mVulkanRendering, mMemoryAllocator,
-                      mBufferHandler, system.GetFileHandler(),
-                      mDescriptorStorage)
-    , mFontHandler(mTextureManager, system.GetFileHandler(), mMaterialManager)
-    , mComponentManager(mFontHandler, mRendererManager.GetTextRenderer(),
-                        mMaterialManager)
-    , mOverlordManager(mVulkanContext, mVulkanRendering)
+CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
+                         Vulkan::CSwapchain& swapchain)
+    : mContext(context)
+    , mSwapchain(swapchain)
+    , mVulkanRendering(context, swapchain)
+    , mViewportTarget(context, swapchain, mVulkanRendering)
+    , mAssetParser(system.GetAssetParser())
+    , mCameraManager(system.GetFileHandler())
+    , mBufferHandler(mContext)
+    , mPipelineFactory(mContext, mSwapchain)
+    , mTextureManager(context, swapchain, mVulkanRendering, mBufferHandler,
+                      system.GetFileHandler(), mAssetParser)
+    , mSpriteManager(system.GetAssetParser(), system.GetFileHandler(),
+                     mTextureManager)
+    , mFontHandler(system.GetFileHandler(), mThreadPool, mAssetParser,
+                   mTextureManager)
+    , mEntityManager(mComponentManager)
+    , mWindow(system, context, swapchain, mVulkanRendering, mBufferHandler,
+              mCameraManager)
+    , mUiRenderer(context, mComponentManager, mFontHandler, mTextureManager,
+                  mSpriteManager, system, mBufferHandler.GetUiInstancesBuffer(),
+                  mPipelineFactory, mEntityManager,
+                  mCameraManager.GetCameraUI())
+    , mOverlordManager(context, swapchain, mVulkanRendering)
     , mInputs(mOverlordManager)
     , mLastFrameTime(std::chrono::high_resolution_clock::now()) {
 }
@@ -46,6 +49,7 @@ Scene::CAbstractScene* CEngineLoop::GetCurrentScene() const {
 }
 
 bool CEngineLoop::Run() {
+    mSpriteManager.Load();
     while (mInputs.Poll()) {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration_cast<std::chrono::seconds>(
@@ -54,15 +58,25 @@ bool CEngineLoop::Run() {
         mLastFrameTime = currentTime;
 
         mInputHandler.Update();
+        mUiRenderer.Prepare();
+        mUiRenderer.Update();
+
+        mViewportTarget.ApplyPendingResize();
+        if (auto viewportCmd = mViewportTarget.BeginRender();
+            viewportCmd != VK_NULL_HANDLE) {
+            mUiRenderer.Render(viewportCmd);
+            mViewportTarget.EndRender();
+        }
 
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
         if (mWindow.BeginRender()) {
             if (mCurrentScene) {
-                mWindow.Render(*mCurrentScene, mComponentManager);
+                mWindow.Render(*mCurrentScene);
             }
-            mOverlordManager.Render(mVulkanContext.GetCommandBuffer(
-                mWindow.GetImageIndex().value()));
+            auto cmd =
+                mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value());
+            mOverlordManager.Render(cmd);
 
             mWindow.EndRender();
         }
@@ -70,15 +84,14 @@ bool CEngineLoop::Run() {
             if (mCurrentScene) {
                 mCurrentScene->Unload();
             }
-            mRendererManager.FreeSceneData();
 
             mPendingScene->Load();
-            mRendererManager.Prepare();
 
             mCurrentScene.swap(mPendingScene);
             mPendingScene.reset();
         }
         mInputHandler.Swap();
+        mAssetParser.CheckAndUpdateAssets();
     }
     return true;
 }

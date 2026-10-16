@@ -17,7 +17,7 @@ function(setup_freetype)
     FetchContent_Declare(
         freetype
         GIT_REPOSITORY https://github.com/freetype/freetype.git
-        GIT_TAG VER-2-14-1
+        GIT_TAG VER-2-14-3
         SOURCE_DIR external/freetype
     )
     FetchContent_MakeAvailable(freetype)   

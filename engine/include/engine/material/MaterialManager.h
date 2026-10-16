@@ -5,8 +5,8 @@
 #include "engine/material/MaterialTypes.h"
 
 namespace Vulkan {
-class CVulkanContext;
-class CDescriptorStorage;
+struct SContext;
+class CSwapchain;
 } // namespace Vulkan
 
 namespace Renderer {
@@ -24,8 +24,7 @@ class CMaterialManager {
 public:
     explicit CMaterialManager(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Vulkan::CVulkanContext& contextGetter,
-                              Vulkan::CDescriptorStorage& descriptorStorage);
+                              Vulkan::CPipelineFactory& pipelineFactory);
     ~CMaterialManager();
 
     CAbstractMaterial* GetorCreateMaterial(EMaterialType type);

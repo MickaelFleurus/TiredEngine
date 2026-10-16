@@ -1,10 +1,11 @@
 #pragma once
 
-#include "engine/utils/BufferTypes.h"
-
 #include <cstdint>
 #include <list>
 #include <optional>
+
+#include "engine/utils/BufferTypes.h"
+
 
 namespace Utils {
 
@@ -12,6 +13,11 @@ class CBufferMemoryBlocks {
 public:
     CBufferMemoryBlocks();
     ~CBufferMemoryBlocks();
+    CBufferMemoryBlocks(CBufferMemoryBlocks&&) noexcept = default;
+    CBufferMemoryBlocks& operator=(CBufferMemoryBlocks&&) noexcept = default;
+
+    CBufferMemoryBlocks(const CBufferMemoryBlocks&) = default;
+    CBufferMemoryBlocks& operator=(const CBufferMemoryBlocks&) = default;
 
     void Init(uint64_t totalSize);
     std::optional<SBufferRange> Allocate(uint64_t size);

@@ -1,6 +1,5 @@
 #pragma once
 #include <memory>
-#include <span>
 
 #include "engine/scene/ISceneHandler.h"
 
@@ -16,6 +15,7 @@ namespace Core {
 class CWindowData;
 class CEngineLoop;
 class CMeshManager;
+class CGameObjectManager;
 } // namespace Core
 
 namespace Font {
@@ -26,11 +26,8 @@ namespace Scene {
 
 class CAbstractSceneHandler : public ISceneHandler {
 public:
-    explicit CAbstractSceneHandler(
-        Core::CEngineLoop& engineLoop,
-        Component::CComponentManager& componentManager,
-        Font::CFontHandler& fontHandler, Core::CMeshManager& meshManager,
-        const System::CSystem& system);
+    explicit CAbstractSceneHandler(Core::CEngineLoop& engineLoop,
+                                   const System::CSystem& system);
 
     CAbstractScene* GetCurrentScene() const override;
 
@@ -41,16 +38,12 @@ protected:
                       "GameSceneType must derive from CAbstractScene");
 
         auto scene = std::make_unique<GameSceneType>(
-            mComponentManager, mFontHandler, mMeshManager, mSystem,
-            std::forward<Args>(args)...);
+            mSystem, std::forward<Args>(args)...);
         SetCurrentScene(std::move(scene));
     }
     void SetCurrentScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
 
     Core::CEngineLoop& mEngineLoop;
-    Component::CComponentManager& mComponentManager;
-    Font::CFontHandler& mFontHandler;
-    Core::CMeshManager& mMeshManager;
     const System::CSystem& mSystem;
 };
 } // namespace Scene

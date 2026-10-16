@@ -2,7 +2,7 @@ function(setup_msdfatlasgen)
     FetchContent_Declare(
         msdfatlasgen
         GIT_REPOSITORY https://github.com/Chlumsky/msdf-atlas-gen.git
-        GIT_TAG v1.3
+        GIT_TAG v1.4
         SOURCE_DIR external/msdfatlasgen
     )
     

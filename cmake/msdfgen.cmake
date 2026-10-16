@@ -2,7 +2,7 @@ function(setup_msdfgen)
     FetchContent_Declare(
         msdfgen
         GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
-        GIT_TAG v1.12.1
+        GIT_TAG v1.13
         SOURCE_DIR external/msdfgen
     ) 
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static" FORCE)

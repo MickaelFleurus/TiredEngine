@@ -1,10 +1,14 @@
 #pragma once
+#include <cstdint>
+
 #include <glm/vec2.hpp>
 
 namespace Core {
-struct SSpriteInfo {
-    int textureIndex = -1;
-    glm::ivec2 origin{};
-    glm::ivec2 size{};
+struct SSpriteRendering {
+    uint64_t id = -1;
+    glm::vec2 uvMin{};
+    glm::vec2 uvMax{};
+    glm::vec2 pixelSize{};
 };
+
 } // namespace Core

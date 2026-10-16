@@ -1,22 +1,37 @@
 #include "scene/DebugScene.h"
 
-#include "engine/core/Camera3D.h"
-
 namespace Scene {
-CDebugScene::CDebugScene(Component::CComponentManager& componentManager,
-                         Font::CFontHandler& fontHandler,
-                         Core::CMeshManager& meshManager,
-                         const System::CSystem& system)
-    : CAbstractScene(componentManager, fontHandler, meshManager, system) {
-    mActiveCamera = std::make_unique<Core::CCamera3D>(
-        *mSceneRoot, mGameObjectBuilder, mComponentManager);
+CDebugScene::CDebugScene(const System::CSystem& system) {
+    // mLoadCallback = [this](CAbstractScene& scene) {
+    //     auto& objBuilder = scene.GetObjectBuilder();
+    //     objBuilder.Start("Camera")
+    //         .SetLocalPosition({0.0f, 0.0f, -15.0f})
+    //         .AddCameraComponent()
+    //         .Build();
 
-    // Position camera to look at the cube
-    // Camera at (0, 0, -5) looking at (0, 0, 1)
-    // auto& cameraTransform =
-    //     *mComponentManager.GetComponent<Component::CTransformComponent>(
-    //         mActiveCamera->mEntity.GetId());
-    // cameraTransform.SetPosition({0.0f, 2.0f, -5.0f});
+    //     objBuilder.Start("Cube!")
+    //         .Add3DCube(1.0f)
+    //         .SetLocalPosition({0.0f, 0.0f, -5.0f})
+    //         .SetMaterialType(Material::EMaterialType::Normal)
+    //         .Build();
+
+    //     objBuilder.Start("Cube2!")
+    //         .Add3DCube(3.0f)
+    //         .SetLocalPosition({50.0f, 0.0f, -5.0f})
+    //         .SetMaterialType(Material::EMaterialType::Normal)
+    //         .Build();
+
+    //     objBuilder.Start("Cube3!")
+    //         .Add3DCube(2.0f)
+    //         .SetLocalPosition({-50.0f, 0.0f, -5.0f})
+    //         .SetMaterialType(Material::EMaterialType::Normal)
+    //         .Build();
+
+    //     auto id =
+    //         objBuilder.Start("Text").AddText("Hello Debug! \nYo",
+    //         60).Build();
+    //     objBuilder.CloneObject(id);
+    // };
 }
 
 void CDebugScene::Update(float deltaTime) {
@@ -32,22 +47,7 @@ const char* CDebugScene::GetName() const {
 }
 
 void CDebugScene::Load() {
-    CreateGameObjectBuilder("Cube!")
-        .Add3DCube(1.0f)
-        .SetLocalPosition({0.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("Cube2!")
-        .Add3DCube(3.0f)
-        .SetLocalPosition({050.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("Cube3!")
-        .Add3DCube(2.0f)
-        .SetLocalPosition({-50.0f, 0.0f, -5.0f})
-        .SetMaterialType(Material::EMaterialType::Normal)
-        .Build();
-    CreateGameObjectBuilder("TEXT!").AddText("Hello Debug! \nYo", 60).Build();
+    mLoadCallback(*this);
 }
 
 void CDebugScene::Unload() {

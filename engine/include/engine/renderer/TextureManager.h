@@ -1,11 +1,16 @@
 #pragma once
 
+#include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
+
+#include "engine/utils/StringId.h"
 
 struct SDL_Surface;
 
@@ -14,58 +19,66 @@ class CFileHandler;
 }
 
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
+class CSwapchain;
 class CVulkanRendering;
-class CDescriptorStorage;
 class CBufferHandler;
 } // namespace Vulkan
 
+class CAssetParser;
+struct SAsset;
+
 namespace Renderer {
 
-struct VulkanTexture {
+struct LoadedTexture {
     VkImage image = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
     VkImageView imageView = VK_NULL_HANDLE;
-    VkSampler sampler = VK_NULL_HANDLE;
     uint32_t width = 0;
     uint32_t height = 0;
 };
 
-class CMemoryAllocator;
-
 class CTextureManager {
 public:
-    CTextureManager(const Vulkan::CVulkanContext& context,
+    CTextureManager(const Vulkan::SContext& context,
+                    Vulkan::CSwapchain& swapchain,
                     Vulkan::CVulkanRendering& renderer,
-                    Renderer::CMemoryAllocator& memoryAllocator,
                     Vulkan::CBufferHandler& bufferHandler,
                     Utils::CFileHandler& fileHandler,
-                    Vulkan::CDescriptorStorage& descriptorStorage);
+                    const CAssetParser& assetParser);
     ~CTextureManager();
 
-    int LoadTexture(const std::string& filename);
-    int LoadTextureFromSurface(const std::string& filename,
-                               SDL_Surface* surface);
-    std::optional<VulkanTexture> GetTexture(const std::string& filename);
-    std::optional<int> GetTextureIndex(const std::string& filename) const;
+    std::optional<std::pair<CStringId, uint64_t>>
+    LoadTexture(const SAsset& asset);
 
-    const VulkanTexture& GetTexture(int index) const;
-    const std::unordered_map<std::string, int>& GetAllTextureIndices() const;
+    std::optional<std::pair<CStringId, uint64_t>>
+    LoadTexture(const std::filesystem::path& filename);
 
-    void UnloadTexture(int index);
+    std::optional<std::pair<CStringId, uint64_t>>
+    LoadTextureFromSurface(const std::string& filename, SDL_Surface* surface);
+
+    std::optional<LoadedTexture> GetTexture(CStringId filename);
+    std::optional<uint64_t> GetTextureIndex(CStringId filename) const;
+
+    void UnloadTexture(uint64_t index);
+
+    // ONLY IMGUI
+    const LoadedTexture& GetTexture(uint64_t index) const;
+    const std::unordered_map<CStringId, uint64_t, CStringIdHash>&
+    GetAllTextureIndices() const;
 
 private:
-    void UpdateDescriptor(int index);
-
-    const Vulkan::CVulkanContext& mContext;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering& mRenderer;
-    Renderer::CMemoryAllocator& mMemoryAllocator;
+    VkSampler mSampler = VK_NULL_HANDLE;
 
     Vulkan::CBufferHandler& mBufferHandler;
     Utils::CFileHandler& mFileHandler;
-    Vulkan::CDescriptorStorage& mDescriptorStorage;
+    const CAssetParser& mAssetParser;
 
-    std::vector<VulkanTexture> mLoadedTextures;
-    std::unordered_map<std::string, int> mLoadedTexturesIndices;
+    std::vector<LoadedTexture> mLoadedTextures;
+    std::unordered_map<CStringId, uint64_t, CStringIdHash>
+        mLoadedTexturesIndices;
 };
 } // namespace Renderer

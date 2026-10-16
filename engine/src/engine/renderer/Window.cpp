@@ -1,40 +1,15 @@
 #include "engine/renderer/Window.h"
 
-#include <functional>
-#include <vector>
-
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
-#include "engine/component/CameraComponent.h"
-#include "engine/component/ComponentManager.h"
-#include "engine/component/MeshComponent.h"
-#include "engine/component/MovementComponent.h"
-#include "engine/component/SpriteComponent.h"
-#include "engine/component/TextUIComponent.h"
-#include "engine/component/TransformComponent.h"
-#include "engine/core/DataTypes.h"
-#include "engine/core/GameObject.h"
-#include "engine/core/Mesh.h"
-#include "engine/debug/Overlord.h"
-#include "engine/font/Police.h"
-#include "engine/material/AbstractMaterial.h"
-#include "engine/material/MaterialManager.h"
-#include "engine/renderer/MeshRenderer.h"
-#include "engine/renderer/Renderables.h"
-#include "engine/renderer/RendererManager.h"
-#include "engine/renderer/RendererUtils.h"
-#include "engine/renderer/TextRenderer.h"
-#include "engine/scene/AbstractScene.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/BufferHandleWrapper.h"
 #include "engine/vulkan/BufferHandler.h"
-#include "engine/vulkan/DescriptorStorage.h"
-#include "engine/vulkan/VulkanContext.h"
 #include "engine/vulkan/VulkanRendering.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 
@@ -62,87 +37,23 @@ VkRect2D GetScissor(VkViewport viewport) {
     return scissor;
 }
 
-void ExtractMeshes(
-    Core::CGameObject& root, Component::CComponentManager& componentManager,
-    Renderer::CRenderables<Renderer::SMeshRenderable>& meshRenderables,
-    Renderer::CRenderables<Renderer::STextRenderable>& textRenderables,
-    glm::mat4 transform = glm::mat4(1.0f)) {
-    if (!root.IsVisible()) {
-        return;
-    }
-    auto gameObjectId = root.GetId();
-    auto& transformComponent =
-        *componentManager.GetComponent<Component::CTransformComponent>(
-            root.GetId());
-    bool alreadyUpdated = false;
-    if (root.GetDirtyFlags() != Core::EDirtyType::None) {
-        if (auto* meshComponent =
-                componentManager.GetComponent<Component::CMeshComponent>(
-                    root.GetId())) {
-            transformComponent.UpdateMatrix(transform,
-                                            meshComponent->GetSize());
-            Renderer::SMeshRenderable renderable{};
-            renderable.id = gameObjectId;
-            renderable.transform = transform;
-            renderable.materialId =
-                meshComponent->GetMesh()->GetMaterial()->GetId();
-            renderable.meshHash = meshComponent->GetMesh()->GetHash();
-            renderable.color = meshComponent->GetColor();
-            renderable.textureIndex = meshComponent->GetTextureIndex();
-
-            meshRenderables.AddRenderable(
-                renderable, Core::RequireReordering(root.GetDirtyFlags()));
-            alreadyUpdated = true;
-        }
-        if (auto* textComponent =
-                componentManager.GetComponent<Component::CTextUIComponent>(
-                    root.GetId())) {
-
-            Renderer::STextRenderable renderable{};
-            renderable.id = gameObjectId;
-            renderable.instancesData = textComponent->GetInstances();
-
-            transformComponent.UpdateMatrix(transform,
-                                            textComponent->GetSize());
-            for (auto& instance : renderable.instancesData) {
-                instance.modelMatrix = transform * instance.modelMatrix;
-            }
-            textRenderables.AddRenderable(
-                renderable, Core::RequireReordering(root.GetDirtyFlags()));
-            alreadyUpdated = true;
-        }
-    }
-    if (!alreadyUpdated) {
-        transformComponent.UpdateMatrix(transform);
-    }
-    root.ClearDirtyFlags();
-
-    for (auto& child : root.GetChildren()) {
-        ExtractMeshes(*child, componentManager, meshRenderables,
-                      textRenderables, transform);
-    }
-}
-
 } // namespace
 
 namespace Renderer {
 
-CWindow::CWindow(System::CSystem& system, SDL_Window* window,
-                 Vulkan::CVulkanContext& vulkanContext,
+CWindow::CWindow(System::CSystem& system, Vulkan::SContext& context,
+                 Vulkan::CSwapchain& swapchain,
                  Vulkan::CVulkanRendering& renderer,
                  Vulkan::CBufferHandler& bufferHandler,
-                 Material::CMaterialManager& materialManager,
-                 Vulkan::CDescriptorStorage& descriptorStorage,
-                 CRendererManager& rendererManager)
+                 Core::CCameraManager& cameraManager)
     : mSystem(system)
-    , mVulkanContext(vulkanContext)
+    , mContext(context)
+    , mSwapchain(swapchain)
     , mRenderer(renderer)
     , mBufferHandler(bufferHandler)
-    , mMaterialManager(materialManager)
-    , mDescriptorStorage(descriptorStorage)
-    , mRendererManager(rendererManager)
-    , mSDLWindow(window)
-    , mViewport(GetViewport(window, mSystem.GetDisplayParameters()))
+    , mCameraManager(cameraManager)
+    , mSDLWindow(context.window.get())
+    , mViewport(GetViewport(mSDLWindow, mSystem.GetDisplayParameters()))
     , mScissor(GetScissor(mViewport))
 
 {
@@ -153,22 +64,14 @@ CWindow::~CWindow() {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-void CWindow::Render(Scene::CAbstractScene& scene,
-                     Component::CComponentManager& componentManager) {
-    Renderer::CRenderables<Renderer::SMeshRenderable> meshRenderables;
-    Renderer::CRenderables<Renderer::STextRenderable> textRenderables;
+void CWindow::Render(Scene::CAbstractScene& scene) {
 
-    for (auto& child : scene.GetRoot().GetChildren()) {
-        ExtractMeshes(*child, componentManager, meshRenderables,
-                      textRenderables);
-    }
-
-    mRendererManager.GenerateInstances(meshRenderables, textRenderables);
-    VkCommandBuffer commandBuffer =
-        mVulkanContext.GetCommandBuffer(mImageIndex.value());
-    mRendererManager.Render(commandBuffer,
-                            mDescriptorStorage.GetDescriptorSet(),
-                            scene.GetActiveCamera(), scene.GetUICamera());
+    // mRendererManager.GenerateInstances(componentManager);
+    // VkCommandBuffer commandBuffer =
+    //     mSwapchain.GetCommandBuffer(mImageIndex.value());
+    // mRendererManager.Render(commandBuffer, mContext.bindelessTextureSet,
+    //                         mCameraManager.GetDefaultCamera3D(),
+    //                         mCameraManager.GetCameraUI());
 }
 
 bool CWindow::BeginRender() {
@@ -185,9 +88,8 @@ void CWindow::EndRender() {
     if (mImageIndex.has_value()) {
         mRenderer.EndRenderPass(mImageIndex.value());
 
-        mRenderer.SubmitAsync(
-            mVulkanContext.GetCommandBuffer(mImageIndex.value()),
-            mImageIndex.value());
+        mRenderer.SubmitAsync(mSwapchain.GetCommandBuffer(mImageIndex.value()),
+                              mImageIndex.value());
         mRenderer.Present(mImageIndex.value());
         mRenderer.WaitIdle();
         mImageIndex = std::nullopt;

@@ -5,20 +5,23 @@
 
 namespace Renderer {
 struct SPipelineConfig;
+struct SComputePipelineConfig;
 } // namespace Renderer
 
 namespace Vulkan {
-class CVulkanContext;
-class CDescriptorStorage;
+struct SContext;
+class CSwapchain;
 
 class CPipelineFactory {
 public:
-    CPipelineFactory(const Vulkan::CVulkanContext& contextGetter);
+    CPipelineFactory(const Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain);
     ~CPipelineFactory();
 
     Renderer::SPipelineDescriptors
-    GetOrCreateGraphicsPipeline(const Renderer::SPipelineConfig& config,
-                                Vulkan::CDescriptorStorage& layoutStorage);
+    GetOrCreateGraphicsPipeline(const Renderer::SPipelineConfig& config);
+    Renderer::SPipelineDescriptors
+    GetOrCreateComputePipeline(const Renderer::SComputePipelineConfig& config);
 
 private:
     class CImpl;

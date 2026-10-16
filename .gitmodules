@@ -1,0 +1,3 @@
+[submodule "tools/TiredPacker"]
+	path = tools/TiredPacker
+	url = git@github.com:MickaelFleurus/TiredPacker.git

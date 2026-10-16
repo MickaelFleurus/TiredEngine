@@ -1,31 +1,23 @@
 #pragma once
-#include "engine/core/Mesh.h"
-#include "engine/core/MeshFactory.h"
-
 #include <unordered_map>
 
-namespace Renderer {
-class CMeshRenderer;
-} // namespace Renderer
+#include "engine/core/Mesh.h"
+#include "engine/core/MeshFactory.h"
+#include "engine/utils/StringId.h"
 
 namespace Core {
 
 class CMeshManager {
 public:
-    CMeshManager(Renderer::CMeshRenderer& meshRenderer);
-    ~CMeshManager();
+    CMeshManager();
 
-    bool HasMesh(std::size_t meshHash) const;
-    CMesh* GetMesh(std::size_t meshHash);
+    bool HasMesh(CStringId id) const;
+    SMesh GetMesh(CStringId id);
     void ClearMeshes();
-
-    CMesh* CreateCube(float size);
-    CMesh* CreateTriangle();
 
 private:
     CMeshFactory mFactory;
-    Renderer::CMeshRenderer& mMeshRenderer;
-    std::unordered_map<std::size_t, CMesh> mMeshes;
+    std::unordered_map<CStringId, SMesh, CStringIdHash> mMeshes;
 };
 
 } // namespace Core

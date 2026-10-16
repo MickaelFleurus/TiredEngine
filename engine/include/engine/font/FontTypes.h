@@ -6,18 +6,10 @@
 
 namespace Font {
 struct GlyphInfo {
-    glm::vec4 uv{};
+    glm::vec4 planeBounds{}; // left, bottom, right, top in em space
+    glm::vec2 uvMin{};
+    glm::vec2 uvMax{};
     float advance;
-    glm::vec2 offset{};
-    glm::vec2 size{};
-    int index;
-};
-
-struct alignas(32) GlyphVertex {
-    glm::vec3 position;
-    float pad0;
-    glm::vec2 uv;
-    float pad1[2];
 };
 
 } // namespace Font

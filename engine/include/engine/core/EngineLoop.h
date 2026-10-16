@@ -1,6 +1,10 @@
 #pragma once
 
-#include "engine/component/ComponentManager.h"
+#include <chrono>
+
+#include "engine/component/ComponentManager2.h"
+#include "engine/core/CameraManager.h"
+#include "engine/core/EntityManager.h"
 #include "engine/core/Inputs.h"
 #include "engine/core/MeshFactory.h"
 #include "engine/core/MeshManager.h"
@@ -9,21 +13,17 @@
 #include "engine/input/InputHandler.h"
 #include "engine/material/MaterialFactory.h"
 #include "engine/material/MaterialManager.h"
-#include "engine/renderer/MemoryAllocator.h"
-#include "engine/renderer/RendererManager.h"
+#include "engine/renderer/SpriteManager.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/renderer/UiRenderer.h"
 #include "engine/renderer/Window.h"
-#include "engine/utils/FileHandler.h"
+#include "engine/thread/Pool.h"
 #include "engine/vulkan/BufferHandler.h"
-#include "engine/vulkan/DescriptorStorage.h"
+#include "engine/vulkan/ViewportTarget.h"
 #include "engine/vulkan/VulkanRendering.h"
 
-#include <chrono>
-
-struct SDL_Window;
-
 namespace Vulkan {
-class CVulkanContext;
+struct SContext;
 } // namespace Vulkan
 
 namespace Scene {
@@ -35,11 +35,13 @@ namespace System {
 class CSystem;
 }
 
+class CAssetParser;
+
 namespace Core {
 class CEngineLoop {
 public:
-    CEngineLoop(System::CSystem& system, SDL_Window* window,
-                Vulkan::CVulkanContext& vulkanContext);
+    CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
+                Vulkan::CSwapchain& swapchain);
     virtual ~CEngineLoop();
 
     void SetPendingScene(std::unique_ptr<Scene::CAbstractScene>&& scene);
@@ -50,22 +52,25 @@ public:
     virtual void GameLoop(float deltaTime) = 0;
 
 protected:
-    Vulkan::CVulkanContext& mVulkanContext;
+    Thread::CPool mThreadPool;
+    Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering mVulkanRendering;
-
-    Vulkan::CDescriptorStorage mDescriptorStorage;
-    Renderer::CMemoryAllocator mMemoryAllocator;
+    Vulkan::CViewportTarget mViewportTarget;
+    CAssetParser& mAssetParser;
+    Core::CCameraManager mCameraManager;
     Vulkan::CBufferHandler mBufferHandler;
-
-    Material::CMaterialManager mMaterialManager;
-    Renderer::CRendererManager mRendererManager;
+    Vulkan::CPipelineFactory mPipelineFactory;
 
     Core::CMeshManager mMeshManager;
-
-    Renderer::CWindow mWindow;
     Renderer::CTextureManager mTextureManager;
+    Renderer::CSpriteManager mSpriteManager;
+
     Font::CFontHandler mFontHandler;
-    Component::CComponentManager mComponentManager;
+    Component::CManager mComponentManager;
+    CEntityManager mEntityManager;
+    Renderer::CWindow mWindow;
+    Renderer::CUiRenderer mUiRenderer;
 
     Debug::COverlordManager mOverlordManager;
     CInputs mInputs;

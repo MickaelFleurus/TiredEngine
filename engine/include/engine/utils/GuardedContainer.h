@@ -1,9 +1,9 @@
 #pragma once
 
-#include "engine/utils/Hashing.h"
-#include "engine/utils/Token.h"
 #include <algorithm>
-#include <unordered_set>
+#include <vector>
+
+#include "engine/utils/Token.h"
 
 namespace {
 
@@ -27,12 +27,12 @@ private:
     std::unique_ptr<CToken::CTokenHandle> mHandle;
 };
 
-struct SStoredObjectHasher {
-    template <typename T>
-    std::size_t operator()(const ::CStoredObject<T>& obj) const {
-        return Utils::CreateHash(&obj.mStoredItem);
-    }
-};
+// struct SStoredObjectHasher {
+//     template <typename T>
+//     std::size_t operator()(const ::CStoredObject<T>& obj) const {
+//         return Utils::CreateHash(&obj.mStoredItem);
+//     }
+// };
 
 } // namespace
 
@@ -41,8 +41,7 @@ class CGuardedContainer {
 public:
     // Custom iterator that checks validity
     struct iterator {
-        using BaseIter = std::unordered_set<::CStoredObject<T>,
-                                            SStoredObjectHasher>::iterator;
+        using BaseIter = typename std::vector<::CStoredObject<T>>::iterator;
 
         iterator(BaseIter i, BaseIter e) : mCurrent(i), mEnd(e) {
             skipInvalid();
@@ -89,38 +88,38 @@ public:
     ~CGuardedContainer() = default;
 
     void Add(T& obj, CToken& token) {
-        mSet.emplace(obj, token.GetTokenHandle());
+        mData.emplace_back(obj, token.GetTokenHandle());
     }
 
     void Remove(const T& obj) {
         auto it = std::find_if(
-            mSet.begin(), mSet.end(),
+            mData.begin(), mData.end(),
             [&obj](const ::CStoredObject<T>& o) { return *o == &obj; });
-        if (it != mSet.end()) {
-            mSet.erase(it);
+        if (it != mData.end()) {
+            mData.erase(it);
         }
     }
 
     void Clear() {
-        mSet.clear();
+        mData.clear();
     }
 
     iterator begin() {
-        return std::move(iterator(mSet.begin(), mSet.end()));
+        return iterator(mData.begin(), mData.end());
     }
 
     iterator end() {
-        return std::move(iterator(mSet.end(), mSet.end()));
+        return iterator(mData.end(), mData.end());
     }
 
     iterator cbegin() const {
-        return iterator(mSet.begin(), mSet.end());
+        return iterator(mData.begin(), mData.end());
     }
 
     iterator cend() const {
-        return iterator(mSet.end(), mSet.end());
+        return iterator(mData.end(), mData.end());
     }
 
 private:
-    std::unordered_set<::CStoredObject<T>, SStoredObjectHasher> mSet;
+    std::vector<::CStoredObject<T>> mData;
 };

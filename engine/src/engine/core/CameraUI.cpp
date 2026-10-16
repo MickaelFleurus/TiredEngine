@@ -2,8 +2,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/component/CameraComponent.h"
-#include "engine/component/TransformComponent.h"
 #include "engine/utils/Logger.h"
 
 namespace {
@@ -11,30 +9,38 @@ constexpr const char* kUICameraName = "UI Canvas";
 }
 
 namespace Core {
-CCameraUI::CCameraUI(CGameObject& parent, CGameObjectBuilder& builder,
-                     Component::CComponentManager& componentManager)
-    : CCamera(parent, builder, componentManager, kUICameraName) {
-    mCameraComponent.SetOrthographicSize(1080.0f);
-    mCameraComponent.SetAspectRatio(16.0f / 9.0f);
-    mCameraComponent.SetZoom(1.0f);
-    mCameraComponent.SetClipPlanes(-1.0f, 1.0f);
-    mTransformComponent.SetPosition({0.0f, 0.0f, 0.1f});
+CCameraUI::CCameraUI() : CCamera(kUICameraName) {
+}
+
+void CCameraUI::SetOrthographicSize(float size) {
+    mOrthographicSize = std::max(size, 0.001f);
+    mIsDirty = true;
+}
+
+float CCameraUI::GetOrthographicSize() const {
+    return mOrthographicSize;
+}
+
+glm::vec2 CCameraUI::GetCanvasSize() const {
+    const float zoom = std::max(mZoom, 0.001f);
+    const float height = mOrthographicSize / zoom;
+    return {height * mAspectRatio, height};
 }
 
 void CCameraUI::EnsureUpToDate() {
-    if (!mCameraComponent.IsDirty() && !mTransformComponent.IsDirty())
+    if (!mIsDirty) {
         return;
+    }
 
-    auto position = mTransformComponent.GetPosition();
+    auto position = glm::vec3(0.0f, 0.0f, 0.1f);
 
-    auto& nearFarZ = mCameraComponent.GetClipPlanes();
-    mProjMatrix =
-        glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, nearFarZ.x, nearFarZ.y);
+    const auto canvasSize = GetCanvasSize();
+    mProjMatrix = glm::ortho(0.0f, canvasSize.x, 0.0f, canvasSize.y,
+                             mNearFarZ.x, mNearFarZ.y);
 
     mViewMatrix = glm::translate(glm::mat4(1.0f), position);
     mViewProjMatrix = mProjMatrix * mViewMatrix;
 
-    mCameraComponent.SetDirty(false);
-    mTransformComponent.SetDirty(false);
+    mIsDirty = false;
 }
 } // namespace Core

@@ -1,33 +1,32 @@
 #include "engine/vulkan/ShaderFactory.h"
 
-#include "engine/utils/Logger.h"
-#include "engine/vulkan/DescriptorStorage.h"
-#include "engine/vulkan/VulkanContext.h"
-
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_iostream.h>
 #include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
+
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_iostream.h>
 #include <vulkan/vulkan.h>
+
+#include "engine/utils/Logger.h"
+#include "engine/vulkan/VulkanContext.h"
 
 namespace Vulkan {
 
 class CShaderFactory::CImpl {
 public:
-    CImpl(const Vulkan::CVulkanContext& contextGetter)
-        : mContextGetter(contextGetter) {
+    CImpl(const Vulkan::SContext& context) : mContext(context) {
     }
 
     ~CImpl() {
         for (auto& [path, shader] : mShaderCache) {
-            vkDestroyShaderModule(mContextGetter.GetDevice(), shader, nullptr);
+            vkDestroyShaderModule(mContext.device, shader, nullptr);
         }
     }
 
     VkShaderModule CreateShader(std::string name, std::string path) {
-        path += name + ".spv";
+        path += "/" + name + ".spv";
 
         if (!mShaderCache.contains(name)) {
             size_t codeSize = 0;
@@ -50,10 +49,9 @@ public:
             shaderModuleCreateInfo.pCode =
                 reinterpret_cast<const uint32_t*>(rawCode.get());
 
-            auto device = mContextGetter.GetDevice();
             VkShaderModule shaderModule;
-            if (vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr,
-                                     &shaderModule) == VK_SUCCESS) {
+            if (vkCreateShaderModule(mContext.device, &shaderModuleCreateInfo,
+                                     nullptr, &shaderModule) == VK_SUCCESS) {
                 mShaderCache.emplace(name, shaderModule);
             } else {
                 LOG_ERROR("Failed to create shader module for shader: {}",
@@ -65,12 +63,12 @@ public:
     }
 
 private:
-    const Vulkan::CVulkanContext& mContextGetter;
+    const Vulkan::SContext& mContext;
     std::unordered_map<std::string, VkShaderModule> mShaderCache;
 };
 
-CShaderFactory::CShaderFactory(const Vulkan::CVulkanContext& contextGetter)
-    : mImpl(std::make_unique<CImpl>(contextGetter)) {
+CShaderFactory::CShaderFactory(const Vulkan::SContext& context)
+    : mImpl(std::make_unique<CImpl>(context)) {
 }
 
 CShaderFactory::~CShaderFactory() = default;
@@ -83,6 +81,11 @@ VkShaderModule CShaderFactory::CreateFragmentShader(std::string name,
 VkShaderModule CShaderFactory::CreateVertexShader(std::string name,
                                                   std::string path) {
     return mImpl->CreateShader(name + ".vert", path);
+}
+
+VkShaderModule CShaderFactory::CreateComputeShader(std::string name,
+                                                   std::string path) {
+    return mImpl->CreateShader(name + ".comp", path);
 }
 
 } // namespace Vulkan

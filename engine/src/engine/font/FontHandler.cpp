@@ -6,6 +6,8 @@
 #include "engine/material/AbstractMaterial.h"
 #include "engine/material/MaterialManager.h"
 #include "engine/renderer/TextureManager.h"
+#include "engine/thread/Pool.h"
+#include "engine/utils/AssetParser.h"
 #include "engine/utils/FileHandler.h"
 #include "engine/utils/Logger.h"
 
@@ -24,14 +26,16 @@ GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
     jsonData["glyphs"] = nlohmann::json::object();
     for (const auto it : glyphs) {
         nlohmann::json glyphJson;
-        glyphJson["uv"] = {{"x", it.second.uv.x},
-                           {"y", it.second.uv.y},
-                           {"w", it.second.uv.z},
-                           {"h", it.second.uv.w}};
+        glyphJson["uvMin"] = {{"x", it.second.uvMin.x},
+                              {"y", it.second.uvMin.y}};
+        glyphJson["uvMax"] = {{"x", it.second.uvMax.x},
+                              {"y", it.second.uvMax.y}};
+        glyphJson["planeBounds"] = {{"x", it.second.planeBounds.x},
+                                    {"y", it.second.planeBounds.y},
+                                    {"z", it.second.planeBounds.z},
+                                    {"w", it.second.planeBounds.w}};
         glyphJson["advance"] = it.second.advance;
-        glyphJson["offset"] = {{"x", it.second.offset.x},
-                               {"y", it.second.offset.y}};
-        glyphJson["size"] = {{"x", it.second.size.x}, {"y", it.second.size.y}};
+
         jsonData["glyphs"][it.first] = glyphJson;
     }
     jsonData["fontMetrics"] = {
@@ -47,9 +51,9 @@ GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
 std::unordered_map<std::string, Font::GlyphInfo>
 JsonToGlyphs(const nlohmann::json& jsonData) {
     constexpr auto validateGlyphJson = [](const nlohmann::json& glyphJson) {
-        return !glyphJson.is_null() && glyphJson.contains("uv") &&
-               glyphJson.contains("advance") && glyphJson.contains("offset") &&
-               glyphJson.contains("size");
+        return !glyphJson.is_null() && glyphJson.contains("uvMin") &&
+               glyphJson.contains("planeBounds") &&
+               glyphJson.contains("uvMax") && glyphJson.contains("advance");
     };
     std::unordered_map<std::string, Font::GlyphInfo> glyphs;
     if (jsonData.contains("glyphs")) {
@@ -61,25 +65,25 @@ JsonToGlyphs(const nlohmann::json& jsonData) {
             Font::GlyphInfo info;
 
             info.advance = glyphJson["advance"];
-            const auto& uv = glyphJson["uv"];
-            if (uv.contains("x") && uv.contains("y") && uv.contains("w") &&
-                uv.contains("h")) {
-                info.uv.x = uv["x"];
-                info.uv.y = uv["y"];
-                info.uv.z = uv["w"];
-                info.uv.w = uv["h"];
+            const auto& uvMin = glyphJson["uvMin"];
+            if (uvMin.contains("x") && uvMin.contains("y")) {
+                info.uvMin.x = uvMin["x"];
+                info.uvMin.y = uvMin["y"];
             }
 
-            const auto& offset = glyphJson["offset"];
-            if (offset.contains("x") && offset.contains("y")) {
-                info.offset.x = offset["x"];
-                info.offset.y = offset["y"];
+            const auto& uvMax = glyphJson["uvMax"];
+            if (uvMax.contains("x") && uvMax.contains("y")) {
+                info.uvMax.x = uvMax["x"];
+                info.uvMax.y = uvMax["y"];
             }
 
-            const auto& size = glyphJson["size"];
-            if (size.contains("x") && size.contains("y")) {
-                info.size.x = size["x"];
-                info.size.y = size["y"];
+            const auto& size = glyphJson["planeBounds"];
+            if (size.contains("x") && size.contains("y") &&
+                size.contains("z") && size.contains("w ")) {
+                info.planeBounds.x = size["x"];
+                info.planeBounds.y = size["y"];
+                info.planeBounds.z = size["z"];
+                info.planeBounds.w = size["w"];
             }
             glyphs.emplace(it.key(), info);
         }
@@ -99,25 +103,20 @@ msdfgen::FontMetrics JsonToFontMetrics(const nlohmann::json& jsonData) {
     return fontMetrics;
 }
 
-void LoadExistingFontData(const std::string& filePath, SFontData& fontData,
+void LoadExistingFontData(const SAsset& asset, SFontData& fontData,
                           Utils::CFileHandler& fileHandler) {
-    fontData.surface = fileHandler.LoadTextureFileBMP(filePath);
-    nlohmann::json jsonData = fileHandler.LoadJson(filePath);
+    fontData.surface = fileHandler.LoadTextureFile(asset.mPath);
+    nlohmann::json jsonData = fileHandler.LoadJson(asset.mMetadata.value());
     fontData.glyphInfos = JsonToGlyphs(jsonData);
     fontData.fontMetrics = JsonToFontMetrics(jsonData);
 }
 
-SFontData CreateFontData(const std::string& fontPath) {
+SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
+                         const std::string& fontPath) {
     SFontData fontData{};
 
-    auto freeType = msdfgen::initializeFreetype();
-    if (!freeType) {
-        LOG_ERROR("Failed to initialize FreeType for font: {}", fontPath);
-        return fontData;
-    }
-    msdfgen::FontHandle* font = msdfgen::loadFont(freeType, fontPath.c_str());
+    msdfgen::FontHandle* font = msdfgen::loadFont(freetype, fontPath.c_str());
     if (!font) {
-        msdfgen::deinitializeFreetype(freeType);
         LOG_ERROR("Failed to load font: {}", fontPath);
         return fontData;
     }
@@ -183,28 +182,18 @@ SFontData CreateFontData(const std::string& fontPath) {
         Font::GlyphInfo info;
         double l, b, r, t;
         glyph.getQuadAtlasBounds(l, b, r, t);
-        l /= width;
-        r /= width;
-        b /= height;
-        t /= height;
+        info.planeBounds = {static_cast<float>(l), static_cast<float>(b),
+                            static_cast<float>(r), static_cast<float>(t)};
 
-        // UV coordinates (normalized to 0-1)
-        info.uv.x = static_cast<float>(l);
-        info.uv.y = static_cast<float>(b);
-        info.uv.z = static_cast<float>(r - l);
-        info.uv.w = static_cast<float>(t - b);
+        glyph.getQuadPlaneBounds(l, b, r, t);
+        info.uvMin = {static_cast<float>(l) / width,
+                      1.0f - static_cast<float>(b) / height};
+        info.uvMax = {static_cast<float>(r) / width,
+                      1.0f - static_cast<float>(t) / height};
 
-        // Glyph metrics
         double advance = glyph.getAdvance();
         info.advance = static_cast<float>(advance);
 
-        glyph.getQuadPlaneBounds(l, b, r, t);
-        info.offset.x = static_cast<float>(l);
-        info.offset.y = static_cast<float>(b);
-        info.size.x = static_cast<float>(r - l);
-        info.size.y = static_cast<float>(t - b);
-
-        info.index = static_cast<int>(fontData.glyphInfos.size());
         std::string charKey(1,
                             static_cast<unsigned char>(glyph.getCodepoint()));
         fontData.glyphInfos.emplace(charKey, info);
@@ -212,7 +201,6 @@ SFontData CreateFontData(const std::string& fontPath) {
 
     // Cleanup
     msdfgen::destroyFont(font);
-    msdfgen::deinitializeFreetype(freeType);
 
     return fontData;
 }
@@ -220,51 +208,109 @@ SFontData CreateFontData(const std::string& fontPath) {
 } // namespace
 
 namespace Font {
-CFontHandler::CFontHandler(Renderer::CTextureManager& textureManager,
-                           Utils::CFileHandler& fileHandler,
-                           Material::CMaterialManager& materialManager)
-    : mTextureManager(textureManager)
-    , mFileHandler(fileHandler)
-    , mMaterialManager(materialManager) {
+CFontHandler::CFontHandler(Utils::CFileHandler& fileHandler,
+                           Thread::CPool& threadPool,
+                           const CAssetParser& assetParser,
+                           Renderer::CTextureManager& textureManager)
+    : mFileHandler(fileHandler)
+    , mThreadPool(threadPool)
+    , mAssetParser(assetParser)
+    , mTextureManager(textureManager) {
 }
 
 CFontHandler::~CFontHandler() {
 }
 
-CPolice& CFontHandler::GetPolice(std::string name) {
-    auto it = mPolices.find(name);
-    if (it != mPolices.end()) {
-        return it->second;
+std::optional<std::reference_wrapper<CPolice>>
+CFontHandler::GetPolice(std::size_t id) {
+    if (mPolices.size() <= id) {
+        return std::nullopt;
+    }
+    return mPolices[id];
+}
+
+CPolice& CFontHandler::GetPolice(const std::string& name) {
+    auto it = mPoliceNameToIndex.find(name);
+    if (it != mPoliceNameToIndex.end()) {
+        return mPolices[it->second];
     }
 
-    const std::string glyphTexFilePath =
-        std::format("{}/font_textures/{}", mFileHandler.GetTempFolder(), name);
+    auto fontTexturePath = mAssetParser.Get(EAssetType::Texture, name);
+    if (!fontTexturePath || !fontTexturePath->get().mMetadata.has_value()) {
+        LOG_FATAL("Font {} does not seems to exists or has not be loaded yet: "
+                  "file not found",
+                  name);
+    }
 
     SFontData fontData;
-    if (mFileHandler.DoesFileExist(glyphTexFilePath, ".bmp")) {
-        LoadExistingFontData(glyphTexFilePath, fontData, mFileHandler);
-    } else {
-        fontData = CreateFontData(std::format(
-            "{}/fonts/{}.ttf", mFileHandler.GetAssetsFolder(), name));
-
-        mFileHandler.SaveTextureFileBMP(glyphTexFilePath, fontData.surface);
-        mFileHandler.SaveJson(
-            glyphTexFilePath,
-            GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics));
-    }
-
+    LoadExistingFontData(fontTexturePath->get(), fontData, mFileHandler);
     auto textureIndex =
         mTextureManager.LoadTextureFromSurface(name, fontData.surface);
 
     SDL_DestroySurface(fontData.surface);
-    auto [emplaced_it, inserted] = mPolices.try_emplace(
-        name, name.c_str(), textureIndex, fontData.glyphInfos,
+    std::size_t index = mPolices.size();
+    mPoliceNameToIndex.emplace(name, index);
+
+    mPolices.emplace_back(
+        name.c_str(), textureIndex->second, fontData.glyphInfos,
         CPolice::SMetrics{
             fontData.fontMetrics.emSize, fontData.fontMetrics.ascenderY,
             fontData.fontMetrics.descenderY, fontData.fontMetrics.lineHeight,
             fontData.fontMetrics.underlineY,
             fontData.fontMetrics.underlineThickness});
-    return emplaced_it->second;
+    return mPolices.back();
+}
+
+void CFontHandler::LoadAllThePolices() {
+    auto freeType = msdfgen::initializeFreetype();
+    if (!freeType) {
+        LOG_ERROR("Failed to initialize FreeType!");
+        return;
+    }
+
+    LOG_INFO("Loading fonts...");
+    std::vector<std::function<void()>> jobs;
+    const auto fontFiles = mAssetParser.Get(EAssetType::Font);
+    for (const auto& fontFile : fontFiles) {
+        const std::string glyphTexFilePath =
+            std::format("{}/textures/{}.png", mFileHandler.GetTempFolder(),
+                        fontFile.mPath.stem().string());
+        if (!mFileHandler.DoesFileExist(glyphTexFilePath)) {
+            jobs.push_back(
+                [this, fontFile, freeType]() { LoadFont(fontFile, freeType); });
+        }
+    }
+    auto group = mThreadPool.EnqueueJobs(jobs);
+    group->WaitForCompletion();
+    LOG_INFO("All fonts loaded.");
+}
+
+bool CFontHandler::LoadFont(const SAsset& fontAsset,
+                            msdfgen::FreetypeHandle* freeType) {
+
+    const auto fontName = fontAsset.mPath.stem().string();
+    if (!freeType) {
+        freeType = msdfgen::initializeFreetype();
+        if (!freeType) {
+            LOG_ERROR("Failed to initialize FreeType for font: {}", fontName);
+            return false;
+        }
+    }
+
+    SFontData fontData = CreateFontData(freeType, fontAsset.mPath.string());
+
+    if (!mFileHandler.SaveTextureFile(fontName, fontData.surface)) {
+        LOG_ERROR("Could not save font texture {}.", fontName);
+        return false;
+    }
+    if (!mFileHandler.SaveJson(
+            fontName, "textures",
+            GlyphsToJson(fontData.glyphInfos, fontData.fontMetrics))) {
+        LOG_ERROR("Could not save font metadata {}.", fontName);
+        return false;
+    }
+    LOG_INFO("Loaded font: {}", fontName);
+    return true;
 }
 
 } // namespace Font

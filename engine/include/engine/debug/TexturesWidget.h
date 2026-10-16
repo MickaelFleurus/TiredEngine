@@ -1,28 +1,32 @@
 #pragma once
 
+#include <cstdint>
 #include <unordered_map>
 
-#include <imgui.h>
+#include <vulkan/vulkan.h>
 
 #include "engine/debug/IOverlordItem.h"
 
 namespace Renderer {
 class CTextureManager;
-} // namespace Renderer
+}
 
 namespace Debug {
-
 class CTexturesWidget : public IOverlordItem {
 public:
-    CTexturesWidget(Renderer::CTextureManager& textureManager);
+    explicit CTexturesWidget(Renderer::CTextureManager& textureManager);
     ~CTexturesWidget() override;
 
-    const char* GetName() const override;
     void Render() override;
+    const char* GetName() const override;
 
 private:
-    Renderer::CTextureManager& mTextureManager;
-    std::unordered_map<int, ImTextureID> mImGuiTextureIDs;
-};
+    struct STexturePreview {
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+    };
 
+    Renderer::CTextureManager& mTextureManager;
+    std::unordered_map<uint64_t, STexturePreview> mPreviews;
+};
 } // namespace Debug

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -20,21 +19,21 @@ public:
         double underlineThickness;
     };
 
-    CPolice(const char* name, int textureIndex,
+    CPolice(const char* name, uint64_t textureIndex,
             std::unordered_map<std::string, Font::GlyphInfo> glyphs,
             SMetrics fontMetrics);
     ~CPolice();
 
-    const Font::GlyphInfo& GetGlyphInfo(char c) const;
+    std::optional<Font::GlyphInfo> GetGlyphInfo(char c) const;
     const SMetrics& GetFontMetrics() const;
 
-    int GetTextureIndex() const;
+    uint64_t GetTextureIndex() const;
 
     const std::string& GetName() const;
 
 private:
     const std::string mName;
-    int mTextureIndex;
+    uint64_t mTextureIndex;
 
     std::unordered_map<std::string, Font::GlyphInfo> mGlyphs;
     SMetrics mFontMetrics;

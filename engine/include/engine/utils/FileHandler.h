@@ -1,9 +1,9 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 #include <nlohmann/json.hpp>
-#include <yaml-cpp/yaml.h>
 
 struct SDL_Surface;
 
@@ -11,32 +11,28 @@ namespace Utils {
 
 class CFileHandler {
 public:
+    enum class ETextureExtension { PNG, JPG };
     CFileHandler();
 
     void CreateTempFolder(const std::string& gameName);
+    bool DoesFileExist(const std::string& filePath) const;
 
     std::string GetTempFolder() const;
-    std::string GetAssetsFolder() const;
+    std::string GetAssetsFolder(std::string type = std::string()) const;
+    std::filesystem::path
+    ResolveSourceAssetPath(const std::filesystem::path& runtimePath) const;
 
-    bool DoesFileExist(const std::string& filePath,
-                       const char* extension) const;
-    bool DoesDirectoryExists(const std::string& filePath) const;
-    void CreateDirectories(const std::string& path) const;
-    void CreateDirectories(const std::filesystem::path& path) const;
+    bool SaveTextureFile(const std::string& fileName, SDL_Surface* surface,
+                         ETextureExtension ext = ETextureExtension::PNG) const;
+    bool SaveJson(const std::string& fileName, const std::string& folderName,
+                  const nlohmann::json& data) const;
 
-    bool DeleteFile(const std::string& filePath, const char* extension);
+    nlohmann::json LoadJson(const std::string& filePath) const;
 
-    bool SaveTextureFileBMP(const std::string& filePath, SDL_Surface* surface);
-    bool SaveJson(const std::string& filePath, const nlohmann::json& data);
-
-    nlohmann::json LoadJson(const std::string& filePath);
-    YAML::Node LoadYAML(const std::string& filePath);
-    SDL_Surface* LoadTextureFileBMP(const std::string& filePath);
-
-    std::vector<std::string> GetFileNames(const char* extension) const;
+    SDL_Surface* LoadTextureFile(const std::string& filePath) const;
 
 private:
-    std::string mTempFolder;
-    const std::string mAssetFolder;
+    std::filesystem::path mTempFolder;
+    const std::filesystem::path mAssetFolder;
 };
 } // namespace Utils

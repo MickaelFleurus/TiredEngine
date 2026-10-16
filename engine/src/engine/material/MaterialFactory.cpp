@@ -8,14 +8,12 @@
 
 namespace Material {
 
-CMaterialFactory::CMaterialFactory(
-    Renderer::CTextureManager& textureManager, Utils::CFileHandler& fileHandler,
-    const Vulkan::CVulkanContext& contextGetter,
-    Vulkan::CDescriptorStorage& descriptorStorage)
+CMaterialFactory::CMaterialFactory(Renderer::CTextureManager& textureManager,
+                                   Utils::CFileHandler& fileHandler,
+                                   Vulkan::CPipelineFactory& pipelineFactory)
     : mTextureManager(textureManager)
     , mFileHandler(fileHandler)
-    , mPipelineFactory(contextGetter)
-    , mDescriptorStorage(descriptorStorage) {
+    , mPipelineFactory(pipelineFactory) {
 }
 
 CMaterialFactory::~CMaterialFactory() = default;
@@ -24,9 +22,8 @@ std::unique_ptr<CAbstractMaterial>
 CMaterialFactory::CreateMaterial(EMaterialType type,
                                  const Renderer::SPipelineConfig& info) {
 
-    auto pipeline =
-        mPipelineFactory.GetOrCreateGraphicsPipeline(info, mDescriptorStorage);
-    return std::make_unique<CMaterial>(type, info.vertexLayout, pipeline);
+    auto pipeline = mPipelineFactory.GetOrCreateGraphicsPipeline(info);
+    return std::make_unique<CMaterial>(type, pipeline);
 }
 
 std::unique_ptr<CAbstractMaterial>
@@ -35,11 +32,10 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
     case EMaterialType::Normal:
         return CreateMaterial(
             type, Renderer::SPipelineConfig{
-                      .shaderName = "NormalShader",
-                      .shaderPath = mFileHandler.GetAssetsFolder() + "shaders/",
-                      .vertexLayout = Renderer::EVertexLayout::Mesh3D,
+                      .cullMode = Renderer::ECullMode::Back,
                       .frontFace = Renderer::EFrontFace::Clockwise,
-                      .cullMode = Renderer::ECullMode::Back});
+                      .shaderName = "NormalShader",
+                      .shaderPath = mFileHandler.GetAssetsFolder("shaders")});
     case EMaterialType::UI:
         return CreateUIMaterial();
     default:
@@ -50,8 +46,7 @@ CMaterialFactory::GetMaterial(EMaterialType type) {
 std::unique_ptr<CAbstractMaterial> CMaterialFactory::CreateUIMaterial() {
     Renderer::SPipelineConfig config;
     config.shaderName = "UIShader";
-    config.shaderPath = mFileHandler.GetAssetsFolder() + "shaders/";
-    config.vertexLayout = Renderer::EVertexLayout::UI;
+    config.shaderPath = mFileHandler.GetAssetsFolder("shaders");
     config.cullMode = Renderer::ECullMode::None;
     config.enableBlending = true;
     config.enableDepthTest = false;

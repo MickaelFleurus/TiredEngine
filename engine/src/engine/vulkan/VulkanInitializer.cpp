@@ -1,13 +1,16 @@
 #include "engine/vulkan/VulkanInitializer.h"
 
+#include <set>
+#include <string>
+
+#include <SDL3/SDL_vulkan.h>
+
 #include "engine/renderer/RendererUtils.h"
 #include "engine/system/System.h"
 #include "engine/utils/Logger.h"
+#include "engine/vulkan/Constants.h"
 #include "engine/vulkan/VulkanContext.h"
-
-#include <SDL3/SDL_vulkan.h>
-#include <set>
-#include <string>
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -181,8 +184,8 @@ VkSurfaceKHR CreateVulkanSurface(SDL_Window* window, VkInstance instance) {
     return surface;
 }
 
-std::tuple<int, int> FindQueueFamilies(VkPhysicalDevice device,
-                                       VkSurfaceKHR surface) {
+std::tuple<int, int, int> FindQueueFamilies(VkPhysicalDevice device,
+                                            VkSurfaceKHR surface) {
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
@@ -191,32 +194,51 @@ std::tuple<int, int> FindQueueFamilies(VkPhysicalDevice device,
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
                                              queueFamilies.data());
 
-    for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        int graphicsIndex = -1;
-        int presentIndex = -1;
-        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            graphicsIndex = i;
-        }
+    int graphicsFamily = -1;
+    int presentFamily = -1;
+    int transferFamily = -1;
 
-        // Presentation support
+    for (uint32_t i = 0; i < queueFamilyCount; i++) {
+        const bool hasGraphics =
+            queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+        const bool hasTransfer =
+            queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT;
+
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
                                              &presentSupport);
-        if (presentSupport) {
-            presentIndex = i;
+        const bool hasPresent = presentSupport == VK_TRUE;
+
+        if (hasGraphics && hasPresent && hasTransfer) {
+            return {static_cast<int>(i), static_cast<int>(i),
+                    static_cast<int>(i)};
         }
 
-        if (graphicsIndex != -1 && presentIndex != -1) {
-            return {graphicsIndex, presentIndex};
+        if (graphicsFamily == -1 && hasGraphics) {
+            graphicsFamily = static_cast<int>(i);
+        }
+        if (presentFamily == -1 && hasPresent) {
+            presentFamily = static_cast<int>(i);
+        }
+        if (transferFamily == -1 && hasTransfer) {
+            transferFamily = static_cast<int>(i);
         }
     }
 
-    return {-1, -1};
+    if (graphicsFamily == -1 || presentFamily == -1) {
+        return {-1, -1, -1};
+    }
+
+    if (transferFamily == -1) {
+        transferFamily = graphicsFamily;
+    }
+
+    return {graphicsFamily, presentFamily, transferFamily};
 }
 
 std::tuple<VkPhysicalDevice, VkPhysicalDeviceProperties,
            VkPhysicalDeviceFeatures, VkPhysicalDeviceMemoryProperties, uint32_t,
-           uint32_t>
+           uint32_t, uint32_t>
 PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -228,36 +250,82 @@ PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
+    // Scoring GPU to pick the best one
+
+    int bestScore = 0;
+    VkPhysicalDevice bestDevice = nullptr;
     for (const auto& device : devices) {
-        auto [graphicsFamily, presentFamily] =
-            FindQueueFamilies(device, surface);
-        if (graphicsFamily == -1 && presentFamily == -1) {
-            LOG_FATAL("Selected GPU does not support required queue families!");
-        }
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(device, &properties);
-
-        VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceFeatures(device, &features);
+        int score = 0;
+        switch (properties.deviceType) {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            score += 1000;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            score += 500;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            score += 0;
+            break;
+        default:
+            break;
+        }
+        score += VK_VERSION_MAJOR(properties.apiVersion) * 100;
+        score += VK_VERSION_MINOR(properties.apiVersion) * 10;
 
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+        for (uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
+            if (memProperties.memoryHeaps[i].flags &
+                VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+                score += static_cast<int>(memProperties.memoryHeaps[i].size /
+                                          (1024 * 1024 * 1024));
+            }
+        }
 
-        return {device,        properties,     features,
-                memProperties, graphicsFamily, presentFamily};
+        auto [graphicsFamily, presentFamily, transferFamily] =
+            FindQueueFamilies(device, surface);
+        if (graphicsFamily == -1 || presentFamily == -1) {
+            continue;
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestDevice = device;
+        }
+    }
+
+    if (bestDevice) {
+        auto [graphicsFamily, presentFamily, transferFamily] =
+            FindQueueFamilies(bestDevice, surface);
+        if (graphicsFamily == -1 || presentFamily == -1) {
+            LOG_FATAL("Selected GPU does not support required queue families!");
+        }
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(bestDevice, &properties);
+
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceFeatures(bestDevice, &features);
+
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(bestDevice, &memProperties);
+
+        return {bestDevice,     properties,    features,      memProperties,
+                graphicsFamily, presentFamily, transferFamily};
     }
 
     LOG_FATAL("Failed to find a suitable GPU!");
     return {};
 }
 
-std::tuple<VkDevice, VkQueue, VkQueue>
+std::tuple<VkDevice, VkQueue, VkQueue, VkQueue>
 CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
-                    VkPhysicalDevice physicalDevice) {
+                    uint32_t transferFamily, VkPhysicalDevice physicalDevice) {
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     // Use a set to avoid duplicate queue families
-    std::set<uint32_t> uniqueQueueFamilies = {graphicsFamily, presentFamily};
+    std::set<uint32_t> uniqueQueueFamilies = {graphicsFamily, presentFamily,
+                                              transferFamily};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -270,6 +338,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.shaderInt64 = VK_TRUE;
 
     // Check for available device extensions
     uint32_t extensionCount = 0;
@@ -303,7 +372,15 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures{};
+    addressFeatures.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    addressFeatures.bufferDeviceAddress = VK_TRUE;
+    addressFeatures.pNext = &indexingFeatures;
 
     // deviceFeatures.multiDrawIndirect = VK_TRUE;
 
@@ -316,7 +393,7 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
     createInfo.enabledExtensionCount =
         static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-    createInfo.pNext = &indexingFeatures;
+    createInfo.pNext = &addressFeatures;
 
     VkDevice device;
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) !=
@@ -325,11 +402,12 @@ CreateLogicalDevice(uint32_t graphicsFamily, uint32_t presentFamily,
         return {};
     }
 
-    VkQueue graphicsQueue, presentQueue;
+    VkQueue graphicsQueue, presentQueue, transferQueue;
     vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
     vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(device, transferFamily, 0, &transferQueue);
 
-    return {device, graphicsQueue, presentQueue};
+    return {device, graphicsQueue, presentQueue, transferQueue};
 }
 
 std::tuple<VkSurfaceCapabilitiesKHR, std::vector<VkSurfaceFormatKHR>,
@@ -371,7 +449,7 @@ VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& modes) {
     for (const auto& m : modes)
         if (m == VK_PRESENT_MODE_MAILBOX_KHR)
             return m;
-    return VK_PRESENT_MODE_FIFO_KHR; // guaranteed
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,
@@ -392,51 +470,69 @@ VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& caps,
     return actualExtent;
 }
 
-VkCommandPool CreateCommandBufferPool(VkDevice device,
-                                      uint32_t queueFamilyIndex) {
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndex;
+VmaAllocator InitializeVmaAllocator(VkInstance instance,
+                                    VkPhysicalDevice physicalDevice,
+                                    VkDevice device) {
 
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
-        VK_SUCCESS) {
-        LOG_FATAL("Failed to create command pool!");
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.vulkanApiVersion =
+        VK_API_VERSION_1_3; // Match your Vulkan version
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance;
+    allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+    VmaAllocator vmaAllocator;
+    if (vmaCreateAllocator(&allocatorInfo, &vmaAllocator) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create VMA allocator!");
+        return VK_NULL_HANDLE;
     }
-    return commandPool;
+    return vmaAllocator;
 }
 
 } // namespace
 
 namespace Vulkan {
-void InitializeVulkan(CVulkanContext& context, SDL_Window* window,
-                      const System::CSystem& system) {
+SContext
+InitializeVulkan(std::unique_ptr<SDL_Window, void (*)(SDL_Window*)>&& window,
+                 const System::CSystem& system) {
     VkInstance instance = CreateVulkanInstance(system.GetGameName());
 
-    context.SetInstance(instance);
-    context.SetDebugMessenger(CreateDebugUtilsMessenger(instance));
-
-    VkSurfaceKHR surface = CreateVulkanSurface(window, instance);
-    context.SetSurface(surface);
+    VkSurfaceKHR surface = CreateVulkanSurface(window.get(), instance);
 
     auto [physicalDevice, properties, features, memoryProperties,
-          graphicsFamily, presentFamily] =
+          graphicsFamily, presentFamily, transferFamily] =
         PickPhysicalDevice(instance, surface);
-    context.SetPhysicalDevice(physicalDevice);
-    context.SetPhysicalDeviceProperties(properties);
-    context.SetPhysicalDeviceFeatures(features);
-    context.SetPhysicalDeviceMemoryProperties(memoryProperties);
-    context.SetGraphicsQueueFamilyIndex(graphicsFamily);
-    context.SetPresentQueueFamilyIndex(presentFamily);
 
-    auto [device, graphicsQueue, presentQueue] =
-        CreateLogicalDevice(graphicsFamily, presentFamily, physicalDevice);
-    context.SetDevice(device);
-    context.SetGraphicsQueue(graphicsQueue);
-    context.SetPresentQueue(presentQueue);
-    VkCommandPool commandPool = CreateCommandBufferPool(device, graphicsFamily);
-    context.SetCommandPool(commandPool);
+    auto [device, graphicsQueue, presentQueue, transferQueue] =
+        CreateLogicalDevice(graphicsFamily, presentFamily, transferFamily,
+                            physicalDevice);
+
+    auto vmaAllocator =
+        InitializeVmaAllocator(instance, physicalDevice, device);
+
+    auto [descriptorPool, bindelessTextureSetLayout, bindelessTextureSet] =
+        CreateBindlessTexturePool(device, kMaxTextures);
+
+    return {std::move(window),
+            instance,
+            CreateDebugUtilsMessenger(instance),
+            surface,
+            device,
+            physicalDevice,
+            properties,
+            features,
+            memoryProperties,
+            graphicsQueue,
+            presentQueue,
+            transferQueue,
+            graphicsFamily,
+            presentFamily,
+            transferFamily,
+            vmaAllocator,
+            descriptorPool,
+            bindelessTextureSetLayout,
+            bindelessTextureSet};
 }
 
 std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,
@@ -498,35 +594,56 @@ CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
     // Create image views
     imageViews.resize(images.size());
     for (size_t i = 0; i < images.size(); i++) {
-        Renderer::CreateImageView(device, images[i], imageFormat,
-                                  VK_IMAGE_ASPECT_COLOR_BIT, imageViews[i]);
+        VkImageViewCreateInfo viewInfo{
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        viewInfo.image = images[i];
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = imageFormat;
+        viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        if (vkCreateImageView(device, &viewInfo, nullptr, &imageViews[i]) !=
+            VK_SUCCESS) {
+            LOG_FATAL("Failed to create image views!");
+        }
     }
-
     return {swapchain, imageFormat, extent, images, imageViews};
 }
 
-VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = swapchainFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat,
+                              VkFormat depthFormat) {
+    VkAttachmentDescription attachments[2]{};
+    attachments[0].format = swapchainFormat;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachments[1].format = depthFormat;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference colorReference{};
+    colorReference.attachment = 0;
+    colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference depthReference{};
+    depthReference.attachment = 1;
+    depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pColorAttachments = &colorReference;
+    subpass.pDepthStencilAttachment = &depthReference;
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = 2;
+    renderPassInfo.pAttachments = attachments;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
@@ -559,15 +676,15 @@ std::vector<VkCommandBuffer> CreateCommandBuffers(VkDevice device,
 std::vector<VkFramebuffer>
 CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
                    const std::vector<VkImageView>& imageViews,
-                   VkExtent2D extent) {
+                   VkImageView depthView, VkExtent2D extent) {
     std::vector<VkFramebuffer> framebuffers(imageViews.size());
     for (size_t i = 0; i < imageViews.size(); i++) {
-        VkImageView attachments[] = {imageViews[i]};
+        VkImageView attachments[] = {imageViews[i], depthView};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.attachmentCount = 2;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = extent.width; // TODO: Might be an issue here.
         framebufferInfo.height = extent.height;
@@ -579,5 +696,100 @@ CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
         }
     }
     return framebuffers;
+}
+
+std::tuple<VkDescriptorPool, VkDescriptorSetLayout, VkDescriptorSet>
+CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures) {
+    VkDescriptorPool pool;
+    VkDescriptorSetLayout layout;
+    VkDescriptorSet set;
+
+    VkDescriptorSetLayoutBinding textureBinding{};
+    textureBinding.binding = 0;
+    textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureBinding.descriptorCount = maxTextures;
+    textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorBindingFlags bindingFlags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    bindingFlagsInfo.bindingCount = 1;
+    bindingFlagsInfo.pBindingFlags = &bindingFlags;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    layoutInfo.pNext = &bindingFlagsInfo;
+    layoutInfo.flags =
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &textureBinding;
+    vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &layout);
+
+    VkDescriptorPoolSize poolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  maxTextures};
+
+    VkDescriptorPoolCreateInfo poolInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    vkCreateDescriptorPool(device, &poolInfo, nullptr, &pool);
+
+    VkDescriptorSetAllocateInfo allocInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout;
+
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variableCountInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO};
+    variableCountInfo.descriptorSetCount = 1;
+    variableCountInfo.pDescriptorCounts = &maxTextures;
+    allocInfo.pNext = &variableCountInfo;
+    vkAllocateDescriptorSets(device, &allocInfo, &set);
+
+    return {pool, layout, set};
+}
+
+Vulkan::CSwapchain::SDepthBuffer
+CreateDepthBuffer(VmaAllocator allocator, VkDevice device, VkExtent2D extent) {
+    VkFormat format = VK_FORMAT_D32_SFLOAT; // or query support first if you
+                                            // want a fallback chain
+
+    VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = format;
+    imageInfo.extent = {extent.width, extent.height, 1};
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+    Vulkan::CSwapchain::SDepthBuffer db{};
+    db.format = format;
+    if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &db.image,
+                       &db.allocation, nullptr) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create image!");
+    }
+
+    VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    viewInfo.image = db.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    if (vkCreateImageView(device, &viewInfo, nullptr, &db.view) != VK_SUCCESS) {
+        LOG_FATAL("Failed to create image view!");
+    }
+
+    return db;
 }
 } // namespace Vulkan

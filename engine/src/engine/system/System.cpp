@@ -1,14 +1,15 @@
 #include "engine/system/System.h"
 
-#include "engine/utils/Logger.h"
 #include <format>
+
+#include "engine/utils/Logger.h"
 
 namespace {
 constexpr const char* kSystemFile = "system_config";
 }
 
 namespace System {
-CSystem::CSystem() {
+CSystem::CSystem() : mAssetsParser(mFileHandler) {
 }
 
 CSystem::~CSystem() {
@@ -23,23 +24,24 @@ const SDisplayParameter& CSystem::GetDisplayParameters() const {
     return mDisplayParameters;
 }
 
+CAssetParser& CSystem::GetAssetParser() {
+    return mAssetsParser;
+}
+
 const std::string& CSystem::GetGameName() const {
     return mGameName;
 }
 
 bool CSystem::Initialize() {
     auto json = mFileHandler.LoadJson(
-        std::format("{}/{}", mFileHandler.GetAssetsFolder(), kSystemFile));
+        std::format("{}/{}.json", mFileHandler.GetAssetsFolder(), kSystemFile));
     if (json.is_null()) {
         return false;
     }
     if (json.contains("parameter")) {
         mGameName = json["parameter"].value("gameName", "DefaultGameName");
         mFileHandler.CreateTempFolder(mGameName);
-        auto logsDirectory =
-            std::format("{}logs", mFileHandler.GetTempFolder());
-        mFileHandler.CreateDirectories(logsDirectory);
-        Utils::Logger::Init(logsDirectory);
+        Utils::Logger::Init(mFileHandler.GetTempFolder() + "/logs/");
 
         if (json.contains("settings")) {
             const auto& settings = json["settings"];
@@ -55,6 +57,7 @@ bool CSystem::Initialize() {
             }
         }
     }
+    mAssetsParser.InitializeMonitoredFolders();
 
     return true;
 }

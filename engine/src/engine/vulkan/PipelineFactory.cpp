@@ -1,17 +1,15 @@
 #include "engine/vulkan/PipelineFactory.h"
 
 #include <array>
-#include <functional>
 
 #include <vulkan/vulkan.h>
 
 #include "engine/core/DataTypes.h"
 #include "engine/renderer/PipelineTypes.h"
-#include "engine/renderer/RendererUtils.h"
 #include "engine/utils/Logger.h"
-#include "engine/vulkan/DescriptorStorage.h"
 #include "engine/vulkan/ShaderFactory.h"
 #include "engine/vulkan/VulkanContext.h"
+#include "engine/vulkan/VulkanSwapchain.h"
 
 namespace {
 
@@ -86,22 +84,78 @@ namespace Vulkan {
 
 class CPipelineFactory::CImpl {
 public:
-    CImpl(const Vulkan::CVulkanContext& contextGetter)
-        : mContextGetter(contextGetter), mShaderFactory(contextGetter) {
+    CImpl(const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain)
+        : mContext(context), mSwapchain(swapchain), mShaderFactory(context) {
     }
 
     ~CImpl() {
         for (auto& [path, pipeline] : mPipelineCache) {
-            vkDestroyPipelineLayout(mContextGetter.GetDevice(),
-                                    pipeline.pipelineLayout, nullptr);
-            vkDestroyPipeline(mContextGetter.GetDevice(), pipeline.pipeline,
-                              nullptr);
+            vkDestroyPipelineLayout(mContext.device, pipeline.pipelineLayout,
+                                    nullptr);
+            vkDestroyPipeline(mContext.device, pipeline.pipeline, nullptr);
         }
     }
 
     Renderer::SPipelineDescriptors
-    GetOrCreateGraphicsPipeline(Renderer::SPipelineConfig config,
-                                CDescriptorStorage& layoutStorage) {
+    GetOrCreateComputePipeline(const Renderer::SComputePipelineConfig& config) {
+        if (!mComputePipelineCache.contains(config)) {
+            auto computeShader = mShaderFactory.CreateComputeShader(
+                config.shaderName, config.shaderPath);
+
+            if (computeShader == VK_NULL_HANDLE) {
+                LOG_ERROR("Failed to create compute shader for pipeline: {}",
+                          config.shaderName);
+                return {};
+            }
+            VkPushConstantRange cullPcRange{};
+            cullPcRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            cullPcRange.offset = 0;
+            cullPcRange.size = sizeof(Core::PC::SCullPushConstants);
+
+            VkPipelineLayoutCreateInfo cullLayoutInfo{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+            cullLayoutInfo.setLayoutCount = 0; // see note below
+            cullLayoutInfo.pSetLayouts = nullptr;
+            cullLayoutInfo.pushConstantRangeCount = 1;
+            cullLayoutInfo.pPushConstantRanges = &cullPcRange;
+
+            VkPipelineLayout pipelineLayout;
+            if (vkCreatePipelineLayout(mContext.device, &cullLayoutInfo,
+                                       nullptr,
+                                       &pipelineLayout) != VK_SUCCESS) {
+                LOG_ERROR(
+                    "Failed to create pipeline layout for compute pipeline: {}",
+                    config.shaderName);
+                return {};
+            }
+
+            VkComputePipelineCreateInfo pipelineInfo{};
+            pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineInfo.stage.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            pipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            pipelineInfo.stage.module = computeShader;
+            pipelineInfo.stage.pName = "main";
+            pipelineInfo.layout = pipelineLayout;
+
+            VkPipeline computePipeline;
+            if (vkCreateComputePipelines(mContext.device, VK_NULL_HANDLE, 1,
+                                         &pipelineInfo, nullptr,
+                                         &computePipeline) != VK_SUCCESS) {
+                LOG_ERROR("Failed to create compute pipeline: {}",
+                          config.shaderName);
+                vkDestroyPipelineLayout(mContext.device, pipelineLayout,
+                                        nullptr);
+                return {};
+            }
+
+            mComputePipelineCache[config] = {computePipeline, pipelineLayout};
+        }
+        return mComputePipelineCache[config];
+    }
+
+    Renderer::SPipelineDescriptors
+    GetOrCreateGraphicsPipeline(Renderer::SPipelineConfig config) {
         if (!mPipelineCache.contains(config)) {
             auto vertexShader = mShaderFactory.CreateVertexShader(
                 config.shaderName, config.shaderPath);
@@ -202,28 +256,22 @@ public:
             colorBlending.blendConstants[2] = 0.0f;
             colorBlending.blendConstants[3] = 0.0f;
 
-            auto layoutInfo = CreateVertexLayout(config.vertexLayout);
-
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
             vertexInputInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
             vertexInputInfo.pNext = nullptr;
 
-            vertexInputInfo.pVertexBindingDescriptions =
-                layoutInfo.bufferDescriptions.data();
-            vertexInputInfo.vertexBindingDescriptionCount =
-                static_cast<uint32_t>(layoutInfo.bufferDescriptions.size());
-            vertexInputInfo.pVertexAttributeDescriptions =
-                layoutInfo.attributes.data();
-            vertexInputInfo.vertexAttributeDescriptionCount =
-                static_cast<uint32_t>(layoutInfo.attributes.size());
+            vertexInputInfo.pVertexBindingDescriptions = nullptr;
+            vertexInputInfo.vertexBindingDescriptionCount = 0;
+            vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+            vertexInputInfo.vertexAttributeDescriptionCount = 0;
 
             VkPipelineLayout pipelineLayout;
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
             pipelineLayoutInfo.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
-                layoutStorage.GetLayout()};
+                mContext.bindelessTextureSetLayout};
 
             pipelineLayoutInfo.setLayoutCount =
                 static_cast<uint32_t>(descriptorSetLayouts.size());
@@ -233,14 +281,14 @@ public:
             pushConstantRange.stageFlags =
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             pushConstantRange.offset = 0;
-            pushConstantRange.size = sizeof(Core::SPushConstantData);
+            pushConstantRange.size = config.pushConstantSize;
 
             pipelineLayoutInfo.pushConstantRangeCount = 1;
             pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
             // Create the pipeline layout first
-            if (vkCreatePipelineLayout(mContextGetter.GetDevice(),
-                                       &pipelineLayoutInfo, nullptr,
+            if (vkCreatePipelineLayout(mContext.device, &pipelineLayoutInfo,
+                                       nullptr,
                                        &pipelineLayout) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create pipeline layout!");
                 return {};
@@ -274,13 +322,13 @@ public:
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
             pipelineInfo.pDepthStencilState = &depthStencil;
             pipelineInfo.layout = pipelineLayout;
-            pipelineInfo.renderPass = mContextGetter.GetRenderPass();
+            pipelineInfo.renderPass = mSwapchain.GetRenderPass();
             pipelineInfo.subpass = 0;
 
             VkPipeline graphicsPipeline;
-            if (vkCreateGraphicsPipelines(
-                    mContextGetter.GetDevice(), VK_NULL_HANDLE, 1,
-                    &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+            if (vkCreateGraphicsPipelines(mContext.device, VK_NULL_HANDLE, 1,
+                                          &pipelineInfo, nullptr,
+                                          &graphicsPipeline) != VK_SUCCESS) {
                 LOG_ERROR("Failed to create graphics pipeline!");
                 return {};
             }
@@ -293,24 +341,34 @@ public:
     }
 
 private:
-    const Vulkan::CVulkanContext& mContextGetter;
+    const Vulkan::SContext& mContext;
+    Vulkan::CSwapchain& mSwapchain;
     CShaderFactory mShaderFactory;
     std::unordered_map<Renderer::SPipelineConfig,
                        Renderer::SPipelineDescriptors,
                        Renderer::SPipelineConfigHash>
         mPipelineCache;
+    std::unordered_map<Renderer::SComputePipelineConfig,
+                       Renderer::SPipelineDescriptors,
+                       Renderer::SComputePipelineConfigHash>
+        mComputePipelineCache;
 };
 
-CPipelineFactory::CPipelineFactory(const Vulkan::CVulkanContext& contextGetter)
-    : mImpl(std::make_unique<CImpl>(contextGetter)) {
+CPipelineFactory::CPipelineFactory(const Vulkan::SContext& context,
+                                   Vulkan::CSwapchain& swapchain)
+    : mImpl(std::make_unique<CImpl>(context, swapchain)) {
 }
 
 CPipelineFactory::~CPipelineFactory() = default;
 
 Renderer::SPipelineDescriptors CPipelineFactory::GetOrCreateGraphicsPipeline(
-    const Renderer::SPipelineConfig& config,
-    CDescriptorStorage& layoutStorage) {
-    return mImpl->GetOrCreateGraphicsPipeline(config, layoutStorage);
+    const Renderer::SPipelineConfig& config) {
+    return mImpl->GetOrCreateGraphicsPipeline(config);
+}
+
+Renderer::SPipelineDescriptors CPipelineFactory::GetOrCreateComputePipeline(
+    const Renderer::SComputePipelineConfig& config) {
+    return mImpl->GetOrCreateComputePipeline(config);
 }
 
 } // namespace Vulkan

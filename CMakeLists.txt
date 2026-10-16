@@ -10,6 +10,11 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) #Clang feature
+option(EDITOR_MODE "Build with editor/debug features" ON)
+if(EDITOR_MODE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(EDITOR_MODE)
+endif()
 
 add_compile_definitions($<$<CONFIG:Debug>:DEBUG_BUILD>)
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
@@ -17,14 +22,19 @@ add_compile_definitions(GLM_FORCE_LEFT_HANDED)
 
 include (Dependencies)
 setup_dependencies()
+include (TiredPacker)
 
 include (CopyDLLs)
 
 add_subdirectory(engine)
 add_subdirectory(game)
 
+add_dependencies(Angine_LIB GenerateAtlases)
+add_dependencies(Breakout_LIB GenerateAtlases)
+
 add_executable(BreakoutExclamationMark src/main.cpp)
 target_link_libraries(BreakoutExclamationMark PRIVATE Angine_LIB Breakout_LIB)
+add_dependencies(BreakoutExclamationMark GenerateAtlases)
 
 copy_dll_dependencies(BreakoutExclamationMark)
 compile_shaders_to_target(BreakoutExclamationMark)

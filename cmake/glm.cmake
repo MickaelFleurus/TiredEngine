@@ -5,7 +5,7 @@ function(setup_glm)
     FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 1.0.2
+        GIT_TAG 1.0.3
         SOURCE_DIR external/glm
     )
     FetchContent_MakeAvailable(glm)

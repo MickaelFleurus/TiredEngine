@@ -1,0 +1,17 @@
+- Rendering of these data is not done through the indirect draw array: 
+vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiPipelineLayout,
+                         0, 1, &bindlessTextureSet, 0, nullptr);
+
+vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiGlyphPipeline);
+UiPushConstants uiPc{ fb.uiGlyphBuffer.deviceAddress, screenSize, msdfPxRange };
+vkCmdPushConstants(cmd, uiPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(uiPc), &uiPc);
+vkCmdDraw(cmd, 6, fb.uiGlyphCount, 0, 0);
+
+vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiSpritePipeline);
+uiPc.instances = fb.uiSpriteBuffer.deviceAddress;
+vkCmdPushConstants(cmd, uiPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(uiPc), &uiPc);
+vkCmdDraw(cmd, 6, fb.uiSpriteCount, 0, 0);
+
+Seperate draw commands with seperate pipelines. 

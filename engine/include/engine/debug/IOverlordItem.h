@@ -7,7 +7,7 @@ public:
 
     virtual void Render() = 0;
     virtual const char* GetName() const = 0;
-    
+
     bool IsVisible() const {
         return mVisible;
     }
@@ -20,7 +20,7 @@ public:
         mVisible = visible;
     }
 
-private:
+protected:
     bool mVisible = false;
 };
 } // namespace Debug

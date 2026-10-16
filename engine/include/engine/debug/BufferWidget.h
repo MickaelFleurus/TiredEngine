@@ -17,7 +17,6 @@ public:
 
 private:
     Vulkan::CBufferHandler& mBufferHandler;
-    int mBufferIndex;
 };
 
 } // namespace Debug

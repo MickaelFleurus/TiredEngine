@@ -1,18 +1,15 @@
 #include "scene/SceneHandler.h"
-#include "scene/SceneEnum.h"
 
-#include "scene/DebugScene.h"
 #include <engine/utils/Logger.h>
 #include <magic_enum/magic_enum.hpp>
 
+#include "scene/DebugScene.h"
+#include "scene/SceneEnum.h"
+
 namespace Scene {
 CSceneHandler::CSceneHandler(Core::CEngineLoop& engineLoop,
-                             Component::CComponentManager& componentManager,
-                             Font::CFontHandler& fontHandler,
-                             Core::CMeshManager& meshManager,
                              const System::CSystem& system)
-    : CAbstractSceneHandler(engineLoop, componentManager, fontHandler,
-                            meshManager, system) {
+    : CAbstractSceneHandler(engineLoop, system) {
 }
 
 void CSceneHandler::CreateAndSetScene(const std::string& sceneName) {

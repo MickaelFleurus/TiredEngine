@@ -7,8 +7,7 @@
 #include "engine/vulkan/PipelineFactory.h"
 
 namespace Vulkan {
-class CVulkanContext;
-class CDescriptorStorage;
+class CPipelineFactory;
 } // namespace Vulkan
 
 namespace Renderer {
@@ -27,8 +26,7 @@ class CMaterialFactory {
 public:
     explicit CMaterialFactory(Renderer::CTextureManager& textureManager,
                               Utils::CFileHandler& fileHandler,
-                              const Vulkan::CVulkanContext& contextGetter,
-                              Vulkan::CDescriptorStorage& descriptorStorage);
+                              Vulkan::CPipelineFactory& pipelineFactory);
     ~CMaterialFactory();
 
     std::unique_ptr<CAbstractMaterial> GetMaterial(EMaterialType type);
@@ -41,8 +39,7 @@ private:
 
     Renderer::CTextureManager& mTextureManager;
     Utils::CFileHandler& mFileHandler;
-    Vulkan::CPipelineFactory mPipelineFactory;
-    Vulkan::CDescriptorStorage& mDescriptorStorage;
+    Vulkan::CPipelineFactory& mPipelineFactory;
 };
 
 } // namespace Material

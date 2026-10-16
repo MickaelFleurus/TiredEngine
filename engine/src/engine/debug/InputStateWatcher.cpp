@@ -1,15 +1,16 @@
 #include "engine/debug/InputStateWatcher.h"
 
+#include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
+
 #include "engine/debug/Overlord.h"
 #include "engine/input/InputTypes.h"
 
-#include <imgui.h>
-#include <magic_enum/magic_enum.hpp>
 
 namespace Debug {
 
 CInputStateWatcher::CInputStateWatcher() {
-    COverlord::AddMenu(*this, mToken);
+    COverlord::AddWidget(*this, mToken);
 }
 
 const char* CInputStateWatcher::GetName() const {

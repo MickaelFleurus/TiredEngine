@@ -1,18 +1,46 @@
 #include "core/GameLoop.h"
+
+#include "engine/debug/Overlord.h"
 #include "engine/system/System.h"
-#include "engine/utils/Asserts.h"
 
 namespace Core {
-CGameLoop::CGameLoop(System::CSystem& system, SDL_Window* window,
-                     Vulkan::CVulkanContext& vulkanContext)
-    : CEngineLoop(system, window, vulkanContext)
-    , mSceneHandler(*this, mComponentManager, mFontHandler, mMeshManager,
-                    system)
-    , mToolHandler(mComponentManager, system.GetFileHandler(), mSceneHandler,
-                   mFontHandler, mBufferHandler, mTextureManager) {
+CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
+                     Vulkan::CSwapchain& swapchain)
+    : CEngineLoop(system, context, swapchain)
+    , mSceneHandler(*this, system)
+    , mSceneLoader(*this, system.GetFileHandler(), mEntityManager,
+                   mComponentManager, system)
+    , mSceneMenu(mSceneHandler)
+    , mCamera3DWidget(mCameraManager)
+    , mCameraUIWidget(mCameraManager)
+    , mLevelSceneLoaderWidget(mAssetParser, mSceneLoader)
+    , mBufferWidget(mBufferHandler)
+    , mSceneHierarchy(mEntityManager, mComponentManager, mEntitySelection,
+                      mSceneLoader)
+    , mEntityInspector(mEntityManager, mComponentManager, mEntitySelection)
+    , mTexturesWidget(mTextureManager)
+    , mSpritesWidget(mSpriteManager, mTextureManager)
+    , mGameViewportWidget(mViewportTarget)
+    , mAssetExplorerWidget(system.GetFileHandler()) {
 
-    mOverlordManager.CreateOverlord(window);
-    mToolHandler.Initialize();
+    mSceneMenu.SetVisible(true);
+    Debug::COverlord::AddMenu(mSceneMenu, mOverlordToken);
+    Debug::COverlord::AddWidget(mCamera3DWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mCameraUIWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mLevelSceneLoaderWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mBufferWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mSceneHierarchy, mOverlordToken);
+    Debug::COverlord::AddWidget(mEntityInspector, mOverlordToken);
+    Debug::COverlord::AddWidget(mTexturesWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mSpritesWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mGameViewportWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mAssetExplorerWidget, mOverlordToken);
+
+    mOverlordManager.CreateOverlord(context.window.get());
+    mSceneLoader.LoadSceneFromFile(std::format(
+        "{}/debug.json", system.GetFileHandler().GetAssetsFolder("scene")));
+
+    mFontHandler.LoadAllThePolices();
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

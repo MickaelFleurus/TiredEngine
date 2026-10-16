@@ -3,9 +3,10 @@
 #include "engine/debug/Overlord.h"
 
 namespace Debug {
-COverlordManager::COverlordManager(const Vulkan::CVulkanContext& context,
+COverlordManager::COverlordManager(const Vulkan::SContext& context,
+                                   Vulkan::CSwapchain& swapchain,
                                    const Vulkan::CVulkanRendering& rendering)
-    : mContext(context), mRendering(rendering) {
+    : mContext(context), mSwapchain(swapchain), mRendering(rendering) {
 }
 
 COverlordManager::~COverlordManager() = default;
@@ -30,7 +31,8 @@ void COverlordManager::HandleEvent(const SDL_Event* e) {
 }
 
 void COverlordManager::CreateOverlord(SDL_Window* window) {
-    mOverlordImpl = std::make_unique<COverlord>(mContext, mRendering);
+    mOverlordImpl =
+        std::make_unique<COverlord>(mContext, mSwapchain, mRendering);
     mOverlordImpl->Initialize(window);
 }
 

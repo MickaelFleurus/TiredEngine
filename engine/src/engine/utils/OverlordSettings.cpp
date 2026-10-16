@@ -1,8 +1,9 @@
 #include "engine/utils/OverlordSettings.h"
 
+#include <nlohmann/json.hpp>
+
 #include "engine/scene/ISceneHandler.h"
 #include "engine/utils/FileHandler.h"
-#include <nlohmann/json.hpp>
 
 namespace {
 constexpr const char* kSettingsFile = "overlord_settings";
@@ -18,8 +19,8 @@ COverlordSettings::COverlordSettings(CFileHandler& fileHandler,
 }
 
 bool COverlordSettings::Initialize() {
-    mPath = mFileHandler.GetTempFolder() + kSettingsFile;
-    if (mFileHandler.DoesFileExist(mPath, ".json")) {
+    mPath = mFileHandler.GetTempFolder() + kSettingsFile + ".json";
+    if (mFileHandler.DoesFileExist(mPath)) {
         LoadSettings();
         ApplySettings();
     }
@@ -34,7 +35,7 @@ void COverlordSettings::LoadSettings() {
 void COverlordSettings::SaveSettings() const {
     nlohmann::json config;
     config[kDefaultSceneKey] = mDefaultSceneToLoad;
-    mFileHandler.SaveJson(mPath, config);
+    mFileHandler.SaveJson(kSettingsFile, "", config);
 }
 
 void COverlordSettings::ApplySettings() {

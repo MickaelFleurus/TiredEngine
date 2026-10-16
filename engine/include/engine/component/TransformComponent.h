@@ -1,40 +1,41 @@
 #pragma once
+#include "engine/component/ComponentManager2.h"
 
-#include <glm/gtc/quaternion.hpp>
-#include <glm/mat4x4.hpp>
+#include "glm/fwd.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 #include <glm/vec3.hpp>
 
-#include "engine/component/IComponent.h"
-#include "engine/utils/Anchors.h"
+#include "engine/core/Entity.h"
+#include "engine/utils/ComponentParserRegistry.h"
 
 namespace Component {
-class CTransformComponent : public IComponent {
-public:
-    CTransformComponent(Core::CGameObject& owner,
-                        CComponentManager& componentManager);
-
-    void Update(float deltaTime) override;
-
-    void SetPosition(const glm::vec3& position);
-    const glm::vec3& GetPosition() const;
-
-    void SetRotation(const glm::vec3& rotation);
-    glm::vec3 GetRotation() const;
-
-    void SetScale(const glm::vec3& scale);
-    const glm::vec3& GetScale() const;
-
-    void SetAnchor(Utils::EAnchors anchor);
-    Utils::EAnchors GetAnchor() const;
-
-    void UpdateMatrix(glm::mat4& parentTransform,
-                      const glm::vec2& size = glm::vec2{1.0f}) const;
-
-private:
-    glm::vec3 mPosition{0.f, 0.f, 0.f};
-    glm::vec3 mRotation{0.f, 0.f, 0.f};
-    glm::quat mRotationQuat{1.f, 0.f, 0.f, 0.f};
-    glm::vec3 mScale{1.f, 1.f, 1.f};
-    Utils::EAnchors mAnchor{Utils::EAnchors::BottomLeft};
+struct SLocalTransform {
+    glm::vec3 position{};
+    glm::quat rotation{};
+    glm::vec3 scale{1.0f, 1.0f, 1.0f};
 };
+
+struct SWorldTransform {
+    glm::mat4 matrice{glm::identity<glm::mat4>()};
+};
+
+static ComponentRegistrar RegisterTransform(
+    "Transform",
+    [](Component::CManager& manager, Core::SEntity e, const nlohmann::json& j) {
+        auto& transform = manager.Emplace<SLocalTransform>(e);
+        if (j.contains("pos")) {
+            auto& pos = j.at("pos");
+            transform.position = glm::vec3(pos[0], pos[1], pos[2]);
+        }
+        if (j.contains("rot")) {
+            auto& rot = j.at("rot");
+            transform.rotation = glm::quat(rot[3], rot[0], rot[1], rot[2]);
+        }
+        if (j.contains("scale")) {
+            auto& scale = j.at("scale");
+            transform.scale = glm::vec3(scale[0], scale[1], scale[2]);
+        }
+    });
+
 } // namespace Component
