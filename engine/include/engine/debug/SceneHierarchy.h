@@ -16,6 +16,10 @@ namespace Core {
 class CEntityManager;
 }
 
+namespace Scene {
+class CSceneLoader;
+}
+
 namespace Debug {
 struct SEntitySelection {
     std::optional<Core::SEntity> entity;
@@ -25,7 +29,8 @@ class CSceneHierarchy : public IOverlordItem {
 public:
     CSceneHierarchy(Core::CEntityManager& entityManager,
                     Component::CManager& componentManager,
-                    SEntitySelection& selection);
+                    SEntitySelection& selection,
+                    Scene::CSceneLoader& sceneLoader);
 
     void Render() override;
     const char* GetName() const override;
@@ -52,8 +57,11 @@ private:
     Core::CEntityManager& mEntityManager;
     Component::CManager& mComponentManager;
     SEntitySelection& mSelection;
+    Scene::CSceneLoader& mSceneLoader;
     std::optional<Core::SEntity> mRenameEntity;
     std::string mRenameBuffer;
+    std::string mSaveMessage;
+    bool mSaveSucceeded = false;
     bool mRenameError = false;
     bool mRenamePopupRequested = false;
     bool mRenameNeedsFocus = false;

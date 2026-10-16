@@ -15,7 +15,8 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     , mCameraUIWidget(mCameraManager)
     , mLevelSceneLoaderWidget(mAssetParser, mSceneLoader)
     , mBufferWidget(mBufferHandler)
-    , mSceneHierarchy(mEntityManager, mComponentManager, mEntitySelection)
+    , mSceneHierarchy(mEntityManager, mComponentManager, mEntitySelection,
+                      mSceneLoader)
     , mEntityInspector(mEntityManager, mComponentManager, mEntitySelection)
     , mTexturesWidget(mTextureManager)
     , mSpritesWidget(mSpriteManager, mTextureManager)

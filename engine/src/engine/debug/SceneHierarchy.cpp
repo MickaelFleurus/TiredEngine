@@ -13,14 +13,17 @@
 #include "engine/component/TransformComponent.h"
 #include "engine/component/UIComponents.h"
 #include "engine/core/EntityManager.h"
+#include "engine/scene/SceneLoader.h"
 
 namespace Debug {
 CSceneHierarchy::CSceneHierarchy(Core::CEntityManager& entityManager,
                                  Component::CManager& componentManager,
-                                 SEntitySelection& selection)
+                                 SEntitySelection& selection,
+                                 Scene::CSceneLoader& sceneLoader)
     : mEntityManager(entityManager)
     , mComponentManager(componentManager)
-    , mSelection(selection) {
+    , mSelection(selection)
+    , mSceneLoader(sceneLoader) {
     SetVisible(true);
 }
 
@@ -37,6 +40,17 @@ void CSceneHierarchy::Render() {
 
     if (ImGui::Button("+ Entity")) {
         CreateEntity(std::nullopt);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save Scene")) {
+        mSaveSucceeded = mSceneLoader.SaveCurrentScene();
+        mSaveMessage = mSaveSucceeded ? "Scene saved" : "Failed to save scene";
+    }
+    if (!mSaveMessage.empty()) {
+        ImGui::SameLine();
+        ImGui::TextColored(mSaveSucceeded ? ImVec4(0.4f, 0.9f, 0.5f, 1.0f)
+                                          : ImVec4(1.0f, 0.35f, 0.3f, 1.0f),
+                           "%s", mSaveMessage.c_str());
     }
     ImGui::Button("Drop here to make a root", ImVec2(-1.0f, 24.0f));
     if (ImGui::BeginDragDropTarget()) {
@@ -136,8 +150,8 @@ void CSceneHierarchy::RenderEntityNode(
     }
 
     ImGui::PushID(static_cast<int>(entity.id));
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
-                               ImGuiTreeNodeFlags_SpanAvailWidth;
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (children.empty()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <string>
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_surface.h>
@@ -43,6 +44,36 @@ std::string CFileHandler::GetTempFolder() const {
 
 std::string CFileHandler::GetAssetsFolder(std::string type) const {
     return (mAssetFolder / type).string();
+}
+
+std::filesystem::path CFileHandler::ResolveSourceAssetPath(
+    const std::filesystem::path& runtimePath) const {
+    std::error_code error;
+    const auto relativePath =
+        std::filesystem::relative(runtimePath, mAssetFolder, error);
+    if (error || relativePath.empty() || relativePath.is_absolute() ||
+        *relativePath.begin() == "..") {
+        return runtimePath;
+    }
+
+    const auto sourceMap = mAssetFolder / ".asset_sources";
+    std::ifstream input(sourceMap);
+    std::string line;
+    const auto requested = relativePath.generic_string();
+    std::filesystem::path resolved = runtimePath;
+    while (std::getline(input, line)) {
+        const auto separator = line.find('|');
+        if (separator == std::string::npos ||
+            line.substr(0, separator) != requested) {
+            continue;
+        }
+
+        const std::filesystem::path candidate{line.substr(separator + 1)};
+        if (std::filesystem::exists(candidate)) {
+            resolved = candidate;
+        }
+    }
+    return resolved;
 }
 
 bool CFileHandler::DoesFileExist(const std::string& filePath) const {

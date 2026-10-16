@@ -77,6 +77,13 @@ static ComponentRegistrar RegisterSprite(
             sprite.maintainAspectRatio =
                 j.at("maintainAspectRatio").get<bool>();
         }
+        if (j.contains("color") && j.at("color").is_array() &&
+            j.at("color").size() == 4) {
+            sprite.color = {j.at("color").at(0).get<float>(),
+                            j.at("color").at(1).get<float>(),
+                            j.at("color").at(2).get<float>(),
+                            j.at("color").at(3).get<float>()};
+        }
     });
 
 static ComponentRegistrar RegisterScreenTransform(

@@ -18,4 +18,11 @@ foreach(asset_file IN LISTS asset_files)
         "${DESTINATION_DIR}/${relative_path}"
         ONLY_IF_DIFFERENT
     )
+
+    if(DEFINED SOURCE_MAP_FILE)
+        file(TO_CMAKE_PATH "${relative_path}" normalized_relative_path)
+        file(TO_CMAKE_PATH "${asset_file}" normalized_source_path)
+        file(APPEND "${SOURCE_MAP_FILE}"
+            "${normalized_relative_path}|${normalized_source_path}\n")
+    endif()
 endforeach()

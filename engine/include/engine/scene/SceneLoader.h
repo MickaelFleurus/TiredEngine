@@ -1,6 +1,8 @@
 #pragma once
 
 #include <filesystem>
+#include <unordered_map>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -33,11 +35,15 @@ public:
     virtual ~CSceneLoader() = default;
 
     void LoadSceneFromFile(const std::filesystem::path& path);
+    bool SaveCurrentScene() const;
 
 private:
     Core::CEngineLoop& mEngineLoop;
     Utils::CFileHandler& mFileHandler;
     Core::CEntityManager& mEntityManager;
     Component::CManager& mComponentManager;
+    std::filesystem::path mCurrentScenePath;
+    std::unordered_map<uint32_t, std::pair<uint32_t, nlohmann::json>>
+        mOriginalEntityData;
 };
 } // namespace Scene

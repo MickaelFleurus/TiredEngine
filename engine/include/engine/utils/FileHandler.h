@@ -19,6 +19,8 @@ public:
 
     std::string GetTempFolder() const;
     std::string GetAssetsFolder(std::string type = std::string()) const;
+    std::filesystem::path
+    ResolveSourceAssetPath(const std::filesystem::path& runtimePath) const;
 
     bool SaveTextureFile(const std::string& fileName, SDL_Surface* surface,
                          ETextureExtension ext = ETextureExtension::PNG) const;

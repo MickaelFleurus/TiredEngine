@@ -1,67 +1,109 @@
 {
-    "sceneName": "debug",
-    "version": 1,
     "entities": [
         {
             "name": "Group",
             "transform": {
                 "pos": [
-                    5,
-                    0,
-                    2
-                ]
-            }
-        },
-        {
-            "name": "PlayerStart",
-            "hierarchy": {
-                "parent": "Group",
-                "children": []
-            },
-            "components": {
-                "PlayerStartTag": {}
-            }
-        },
-        {
-            "name": "Sprite",
-            "components": {
-                "SpriteRenderer": {
-                    "path": "paddles/Hearts.png"
-                },
-                "ScreenTransform": {
-                    "scale": [
-                        1,
-                        1
-                    ],
-                    "position": [
-                        400,
-                        400
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Goblin_01",
-            "transform": {
-                "pos": [
-                    5,
-                    0,
-                    2
+                    5.0,
+                    0.0,
+                    2.0
                 ],
                 "rot": [
-                    0,
-                    0,
-                    0,
-                    1
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
                 ]
-            },
+            }
+        },
+        {
             "components": {
-                "MeshRendering": {
-                    "asset": "enemies.glb",
-                    "node": "Goblin"
+                "PlayerStartTag": {}
+            },
+            "hierarchy": {
+                "children": [],
+                "parent": "Group"
+            },
+            "name": "PlayerStart",
+            "transform": {
+                "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "components": {
+                "ScreenTransform": {
+                    "anchor": [
+                        0.0,
+                        0.0
+                    ],
+                    "position": [
+                        751.0,
+                        400.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        1.0,
+                        1.0
+                    ]
                 },
+                "SpriteRenderer": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "maintainAspectRatio": true,
+                    "path": "paddles/Hearts.png",
+                    "size": [
+                        387.0,
+                        485.0
+                    ]
+                }
+            },
+            "name": "Sprite",
+            "transform": {
+                "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "components": {
                 "EnemyAI": {
-                    "type": "melee",
                     "aggroRadius": 8.0,
                     "patrolPoints": [
                         [
@@ -79,112 +121,136 @@
                             0,
                             10
                         ]
-                    ]
+                    ],
+                    "type": "melee"
                 },
                 "Health": {
                     "max": 40
+                },
+                "MeshRendering": {
+                    "asset": "enemies.glb",
+                    "node": "Goblin"
                 }
+            },
+            "name": "Goblin_01",
+            "transform": {
+                "pos": [
+                    5.0,
+                    0.0,
+                    2.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         },
         {
-            "name": "Goblin_01_Sword",
-            "transform": {
-                "pos": [
-                    0.3,
-                    1.1,
-                    0
-                ],
-                "rot": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
-            },
-            "parent": "Goblin_01",
             "components": {
                 "MeshRendering": {
                     "asset": "enemies.glb",
                     "node": "RustySword"
                 }
+            },
+            "name": "Goblin_01_Sword",
+            "transform": {
+                "pos": [
+                    0.30000001192092896,
+                    1.100000023841858,
+                    0.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         },
         {
-            "name": "AmbienceZone",
-            "transform": {
-                "pos": [
-                    0,
-                    0,
-                    0
-                ],
-                "rot": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
-            },
             "components": {
-                "Trigger": {
-                    "shape": "box",
-                    "extent": [
-                        10,
-                        3,
-                        10
-                    ]
-                },
                 "AudioEmitter": {
                     "clip": "forest_loop.ogg",
                     "loop": true,
                     "volume": 0.6
                 },
                 "OnEnter": {
-                    "event": "PlayMusic",
                     "args": [
                         "forest_theme"
-                    ]
+                    ],
+                    "event": "PlayMusic"
+                },
+                "Trigger": {
+                    "extent": [
+                        10,
+                        3,
+                        10
+                    ],
+                    "shape": "box"
                 }
+            },
+            "name": "AmbienceZone",
+            "transform": {
+                "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         },
         {
-            "name": "WindChime",
-            "transform": {
-                "pos": [
-                    -3,
-                    2,
-                    4
-                ],
-                "rot": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
-            },
             "components": {
                 "AudioEmitter": {
                     "clip": "chime.ogg",
                     "loop": true,
-                    "spatial": true,
-                    "radius": 6.0
+                    "radius": 6.0,
+                    "spatial": true
                 }
+            },
+            "name": "WindChime",
+            "transform": {
+                "pos": [
+                    -3.0,
+                    16.299999237060547,
+                    4.0
+                ],
+                "rot": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         },
         {
-            "name": "SunLight",
-            "transform": {
-                "pos": [
-                    0,
-                    20,
-                    0
-                ],
-                "rot": [
-                    0.3,
-                    0,
-                    0,
-                    0.95
-                ]
-            },
             "components": {
                 "DirectionalLight": {
                     "color": [
@@ -194,31 +260,57 @@
                     ],
                     "intensity": 3.0
                 }
+            },
+            "name": "SunLight",
+            "transform": {
+                "pos": [
+                    0.0,
+                    20.0,
+                    0.0
+                ],
+                "rot": [
+                    0.30000001192092896,
+                    0.0,
+                    0.0,
+                    0.949999988079071
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         },
         {
+            "components": {
+                "Camera": {
+                    "active": true,
+                    "far": 500,
+                    "fov": 60,
+                    "near": 0.1
+                }
+            },
             "name": "MainCamera",
             "transform": {
                 "pos": [
-                    0,
-                    5,
-                    -10
+                    0.0,
+                    5.0,
+                    -10.0
                 ],
                 "rot": [
-                    0,
-                    0,
-                    0,
-                    1
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
                 ]
-            },
-            "components": {
-                "Camera": {
-                    "fov": 60,
-                    "near": 0.1,
-                    "far": 500,
-                    "active": true
-                }
             }
         }
-    ]
+    ],
+    "sceneName": "debug",
+    "version": 1
 }
