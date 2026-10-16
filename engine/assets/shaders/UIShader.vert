@@ -57,7 +57,7 @@ void main() {
     vec2 screenPos = pivot + rotated;
     vec2 ndc = vec2(
         screenPos.x / pc.screenSize.x * 2.0 - 1.0,
-        1.0 - screenPos.y / pc.screenSize.y * 2.0
+        screenPos.y / pc.screenSize.y * 2.0 - 1.0
     );
     gl_Position = vec4(ndc, 0.0, 1.0);
 

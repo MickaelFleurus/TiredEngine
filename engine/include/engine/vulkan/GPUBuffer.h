@@ -23,6 +23,7 @@ public:
 
     VmaAllocation GetAllocation() const;
     VkBuffer GetBuffer() const;
+    VkDeviceSize GetSize() const;
     Utils::CBufferMemoryBlocks& GetMemoryBlocks();
 
 private:

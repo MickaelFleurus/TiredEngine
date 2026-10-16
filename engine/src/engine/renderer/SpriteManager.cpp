@@ -30,9 +30,16 @@ LoadSpritesheetsMetadata(std::filesystem::path path,
             for (auto& sprite : atlas.entries) {
                 Core::SSpriteRendering region{
                     .id = loadedOpt->second,
-                    .uvMin = glm::vec2(sprite.uvU, sprite.uvV),
-                    .uvMax = glm::vec2(sprite.uvU + sprite.width,
-                                       sprite.uvV + sprite.height)};
+                    .uvMin =
+                        glm::vec2(static_cast<float>(sprite.x) / atlas.width,
+                                  static_cast<float>(sprite.y) / atlas.height),
+                    .uvMax =
+                        glm::vec2(static_cast<float>(sprite.x + sprite.width) /
+                                      atlas.width,
+                                  static_cast<float>(sprite.y + sprite.height) /
+                                      atlas.height),
+                    .pixelSize = {static_cast<float>(sprite.width),
+                                  static_cast<float>(sprite.height)}};
                 sprites.emplace(sprite.fileName, region);
             }
         }

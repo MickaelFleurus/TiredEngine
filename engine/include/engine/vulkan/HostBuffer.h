@@ -80,6 +80,9 @@ public:
     }
 
     VkDeviceAddress GetDeviceAddress() const;
+    VkDeviceSize GetSize() const {
+        return mBuffer.GetSize();
+    }
 
 private:
     bool WriteData(const uint8_t* items, size_t itemSize,

@@ -27,6 +27,8 @@ struct SText {
 struct SSprite {
     std::string spriteName;
     glm::vec4 color{1.0f};
+    glm::vec2 size{};
+    bool maintainAspectRatio{false};
 };
 
 struct SScreenTransform {
@@ -67,6 +69,14 @@ static ComponentRegistrar RegisterSprite(
         const auto spritePath = j.at("path").get<std::string>();
         auto& sprite = manager.Emplace<SSprite>(e);
         sprite.spriteName = spritePath;
+        if (j.contains("size")) {
+            sprite.size = {j.at("size").at(0).get<float>(),
+                           j.at("size").at(1).get<float>()};
+        }
+        if (j.contains("maintainAspectRatio")) {
+            sprite.maintainAspectRatio =
+                j.at("maintainAspectRatio").get<bool>();
+        }
     });
 
 static ComponentRegistrar RegisterScreenTransform(

@@ -4,6 +4,10 @@
 #include "engine/vulkan/Constants.h"
 #include "engine/vulkan/GPUBuffer.h"
 
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace {
 
 constexpr auto kScreenQuadDataSize = sizeof(Core::SScreenQuadInstance);
@@ -51,6 +55,29 @@ CBufferHandler::CBufferHandler(const Vulkan::SContext& context)
     , mMaterialBuffer(CreateVertexBuffer(context))
     , mMeshInfoBuffer(CreateVertexBuffer(context))
     , mTransformBuffer(CreateVertexBuffer(context)) {
+}
+
+std::vector<std::pair<std::string, VkDeviceSize>>
+CBufferHandler::GetBufferSizes() const {
+    std::vector<std::pair<std::string, VkDeviceSize>> sizes{
+        {"Vertex buffer", mVertexBuffer.GetSize()},
+        {"Index buffer", mIndexBuffer.GetSize()},
+        {"Instance buffer", mInstanceBuffer.GetSize()},
+        {"Material buffer", mMaterialBuffer.GetSize()},
+        {"Mesh info buffer", mMeshInfoBuffer.GetSize()},
+        {"Transform buffer", mTransformBuffer.GetSize()},
+        {"UI instances buffer", mUiInstancesBuffer.GetSize()},
+    };
+
+    const auto& drawGroups = mIndirectDrawBuffers.GetDrawGroups();
+    for (size_t index = 0; index < drawGroups.size(); ++index) {
+        const auto suffix = std::to_string(index);
+        sizes.emplace_back("Indirect draw buffer " + suffix,
+                           drawGroups[index].indirectBuffer.GetSize());
+        sizes.emplace_back("Indirect count buffer " + suffix,
+                           drawGroups[index].countBuffer.GetSize());
+    }
+    return sizes;
 }
 
 } // namespace Vulkan

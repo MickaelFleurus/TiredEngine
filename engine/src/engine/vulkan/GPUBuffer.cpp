@@ -89,6 +89,10 @@ VkBuffer CGPUBuffer::GetBuffer() const {
     return mBuffer;
 }
 
+VkDeviceSize CGPUBuffer::GetSize() const {
+    return mMemoryBlocks.GetTotalSize();
+}
+
 Utils::CBufferMemoryBlocks& CGPUBuffer::GetMemoryBlocks() {
     return mMemoryBlocks;
 }

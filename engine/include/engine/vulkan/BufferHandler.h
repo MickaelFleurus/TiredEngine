@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "engine/vulkan/DeviceBuffer.h"
 #include "engine/vulkan/GPUBuffer.h"
 #include "engine/vulkan/HostBuffer.h"
@@ -13,6 +17,7 @@ struct SContext;
 class CBufferHandler {
 public:
     CBufferHandler(const SContext& context);
+    std::vector<std::pair<std::string, VkDeviceSize>> GetBufferSizes() const;
 
     CStagingBuffer& GetStagingBuffer() {
         return mStagingBuffer;

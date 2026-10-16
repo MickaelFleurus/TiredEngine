@@ -89,19 +89,29 @@ BuildSpriteQuad(const Component::SSprite& sprite,
         return std::nullopt;
     }
 
-    std::vector<std::string> candidates = {sprite.spriteName};
-    const std::filesystem::path spritePath{sprite.spriteName};
-    if (!spritePath.filename().empty()) {
-        candidates.push_back(spritePath.filename().string());
+    const glm::vec2 naturalSize = spriteInfo->pixelSize;
+    glm::vec2 size = naturalSize;
+    const bool hasWidthOverride = sprite.size.x > 0.0f;
+    const bool hasHeightOverride = sprite.size.y > 0.0f;
+    if (sprite.maintainAspectRatio) {
+        if (hasWidthOverride && hasHeightOverride) {
+            const float fitScale = std::min(sprite.size.x / naturalSize.x,
+                                            sprite.size.y / naturalSize.y);
+            size = naturalSize * fitScale;
+        } else if (hasWidthOverride) {
+            size = naturalSize * (sprite.size.x / naturalSize.x);
+        } else if (hasHeightOverride) {
+            size = naturalSize * (sprite.size.y / naturalSize.y);
+        }
+    } else {
+        if (hasWidthOverride) {
+            size.x = sprite.size.x;
+        }
+        if (hasHeightOverride) {
+            size.y = sprite.size.y;
+        }
     }
-    if (!spritePath.stem().empty()) {
-        candidates.push_back(spritePath.stem().string());
-    }
-
-    const auto& texture = textureManager.GetTexture(spriteInfo->id);
-    const glm::vec2 spriteSize{static_cast<float>(texture.width),
-                               static_cast<float>(texture.height)};
-    const glm::vec2 size = spriteSize * xform.scale;
+    size *= xform.scale;
 
     Core::SScreenQuadInstance inst{};
     inst.posMin = xform.position;

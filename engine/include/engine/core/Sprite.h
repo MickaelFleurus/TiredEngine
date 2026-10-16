@@ -8,6 +8,7 @@ struct SSpriteRendering {
     uint64_t id = -1;
     glm::vec2 uvMin{};
     glm::vec2 uvMax{};
+    glm::vec2 pixelSize{};
 };
 
 } // namespace Core
