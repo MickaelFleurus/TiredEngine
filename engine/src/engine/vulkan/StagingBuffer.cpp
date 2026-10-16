@@ -96,6 +96,18 @@ void CStagingBuffer::UploadToImage(const void* srcData, VkDeviceSize size,
 }
 
 void CStagingBuffer::Flush() {
+    if (mWriteCursor == 0) {
+        return;
+    }
+
+    const VkResult flushResult = vmaFlushAllocation(
+        mContext.vmaAllocator, mStagingBuffer.GetAllocation(), 0, mWriteCursor);
+    if (flushResult != VK_SUCCESS) {
+        LOG_FATAL("Failed to flush staging memory: VkResult {}",
+                  static_cast<int>(flushResult));
+        return;
+    }
+
     vkEndCommandBuffer(mCmdBuffer);
 
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};

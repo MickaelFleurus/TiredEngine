@@ -9,6 +9,8 @@
 #include "engine/debug/LevelSceneLoaderWidget.h"
 #include "engine/debug/SceneHierarchy.h"
 #include "engine/debug/SceneLoaderOverlord.h"
+#include "engine/debug/SpritesWidget.h"
+#include "engine/debug/TexturesWidget.h"
 #include "engine/utils/Token.h"
 
 #include "scene/GameSceneLoader.h"
@@ -37,5 +39,7 @@ private:
     Debug::CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
     Debug::CBufferWidget mBufferWidget;
     Debug::CSceneHierarchy mSceneHierarchy;
+    Debug::CTexturesWidget mTexturesWidget;
+    Debug::CSpritesWidget mSpritesWidget;
 };
 } // namespace Core

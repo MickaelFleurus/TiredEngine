@@ -81,4 +81,16 @@ CSpriteManager::GetSpriteInfo(const std::string& spriteName) const {
     return std::nullopt;
 }
 
+std::vector<CSpriteManager::SLoadedSprite>
+CSpriteManager::GetLoadedSprites() const {
+    std::vector<SLoadedSprite> sprites;
+    for (const auto& [atlasId, atlas] : mAtlases) {
+        for (const auto& [spriteId, rendering] : atlas) {
+            sprites.push_back(
+                {atlasId.GetName(), spriteId.GetName(), rendering});
+        }
+    }
+    return sprites;
+}
+
 } // namespace Renderer

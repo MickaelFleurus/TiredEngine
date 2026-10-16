@@ -1,7 +1,10 @@
 #include "engine/renderer/TextureManager.h"
 
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <optional>
+#include <vector>
 
 #include <SDL3/SDL_surface.h>
 
@@ -22,10 +25,6 @@ constexpr auto kGPUSurfaceDeleter = [](SDL_Surface* surface) {
         SDL_DestroySurface(surface);
     }
 };
-
-uint32_t GetBytesPerPixel(SDL_PixelFormat format) {
-    return SDL_BYTESPERPIXEL(format);
-}
 
 void TransitionImageLayout(Vulkan::CStagingBuffer& uploader, VkImage image,
                            VkFormat format, VkImageLayout oldLayout,
@@ -194,11 +193,41 @@ CTextureManager::LoadTexture(const std::filesystem::path& filename) {
 std::optional<std::pair<CStringId, uint64_t>>
 CTextureManager::LoadTextureFromSurface(const std::string& filename,
                                         SDL_Surface* surface) {
+    std::unique_ptr<SDL_Surface, decltype(kGPUSurfaceDeleter)> rgbaSurface{
+        SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32),
+        kGPUSurfaceDeleter};
+    if (!rgbaSurface) {
+        LOG_ERROR("Failed to convert texture to RGBA32: {}", filename);
+        return std::nullopt;
+    }
+
+    if (SDL_MUSTLOCK(rgbaSurface.get()) &&
+        !SDL_LockSurface(rgbaSurface.get())) {
+        LOG_ERROR("Failed to lock converted texture surface: {}", filename);
+        return std::nullopt;
+    }
+
+    const auto width = static_cast<uint32_t>(rgbaSurface->w);
+    const auto height = static_cast<uint32_t>(rgbaSurface->h);
+    const std::size_t rowSize = static_cast<std::size_t>(width) * 4;
+    std::vector<uint8_t> rgbaPixels(rowSize * height);
+    const auto* sourcePixels = static_cast<const uint8_t*>(rgbaSurface->pixels);
+    for (uint32_t row = 0; row < height; ++row) {
+        std::memcpy(rgbaPixels.data() + rowSize * row,
+                    sourcePixels +
+                        static_cast<std::size_t>(rgbaSurface->pitch) * row,
+                    rowSize);
+    }
+    if (SDL_MUSTLOCK(rgbaSurface.get())) {
+        SDL_UnlockSurface(rgbaSurface.get());
+    }
+
     CStringId id{filename};
     LoadedTexture tex = createTextureFromPixels(
         mContext.vmaAllocator, mContext.device,
-        mBufferHandler.GetStagingBuffer(), surface->pixels,
-        uint32_t(surface->w), uint32_t(surface->h), VK_FORMAT_R8G8B8A8_UNORM);
+        mBufferHandler.GetStagingBuffer(), rgbaPixels.data(), width, height,
+        VK_FORMAT_R8G8B8A8_UNORM);
+    mBufferHandler.GetStagingBuffer().Flush();
     int index = static_cast<int>(mLoadedTextures.size());
     mLoadedTextures.push_back(tex);
     mLoadedTexturesIndices[id] = index;
