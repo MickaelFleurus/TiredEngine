@@ -2,6 +2,7 @@
 
 #include <engine/core/EngineLoop.h>
 
+#include "engine/debug/AssetExplorerWidget.h"
 #include "engine/debug/BufferWidget.h"
 #include "engine/debug/Camera3DWidget.h"
 #include "engine/debug/CameraUIWidget.h"
@@ -45,5 +46,6 @@ private:
     Debug::CTexturesWidget mTexturesWidget;
     Debug::CSpritesWidget mSpritesWidget;
     Debug::CGameViewportWidget mGameViewportWidget;
+    Debug::CAssetExplorerWidget mAssetExplorerWidget;
 };
 } // namespace Core
