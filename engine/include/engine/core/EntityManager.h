@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "engine/core/Entity.h"
@@ -15,6 +16,7 @@ class CEntityManager {
 public:
     explicit CEntityManager(Component::CManager& componentManager);
     SEntity Create(CStringId name);
+    bool Rename(SEntity& entity, const std::string& name);
 
     void Destroy(SEntity e);
 

@@ -31,13 +31,38 @@ SEntity CEntityManager::Create(CStringId name) {
     return entity;
 }
 
+bool CEntityManager::Rename(SEntity& entity, const std::string& name) {
+    if (!IsAlive(entity) || name.empty()) {
+        return false;
+    }
+
+    const CStringId newName{name};
+    const auto existing = mEntityNames.find(newName);
+    if (existing != mEntityNames.end() && existing->second != entity.id) {
+        return false;
+    }
+
+    const auto oldName = entity.name;
+    const auto current = mEntityNames.find(oldName);
+    if (current == mEntityNames.end() || current->second != entity.id) {
+        return false;
+    }
+
+    mEntityNames.erase(current);
+    mEntityNames.emplace(newName, entity.id);
+    entity.name = newName;
+    return true;
+}
+
 void CEntityManager::Destroy(SEntity e) {
     if (!IsAlive(e)) {
         return;
     }
     mComponentManager.DestroyComponents(e);
-    const auto it = mEntityNames.find(e.name);
-    if (it != mEntityNames.end() && it->second == e.id) {
+    const auto it =
+        std::find_if(mEntityNames.begin(), mEntityNames.end(),
+                     [&e](const auto& item) { return item.second == e.id; });
+    if (it != mEntityNames.end()) {
         mEntityNames.erase(it);
     }
     mEntityGeneration[e.id]++;

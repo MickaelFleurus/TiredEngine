@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -30,12 +31,32 @@ public:
     const char* GetName() const override;
 
 private:
+    struct SEntityPayload {
+        uint32_t id;
+        uint32_t generation;
+    };
+
     void RenderEntityNode(Core::SEntity entity,
                           const std::vector<Core::SEntity>& entities,
                           std::unordered_set<uint32_t>& visited);
+    bool RenderEntityContextMenu(Core::SEntity entity);
+    void RenderRenameModal();
+    Core::SEntity CreateEntity(std::optional<Core::SEntity> parent);
+    bool RenameEntity(Core::SEntity entity, const std::string& name);
+    void DeleteEntity(Core::SEntity entity);
+    void DeleteEntityRecursive(Core::SEntity entity,
+                               std::unordered_set<uint32_t>& visited);
+    bool ReparentEntity(Core::SEntity entity,
+                        std::optional<Core::SEntity> parent);
+
     Core::CEntityManager& mEntityManager;
     Component::CManager& mComponentManager;
     SEntitySelection& mSelection;
+    std::optional<Core::SEntity> mRenameEntity;
+    std::string mRenameBuffer;
+    bool mRenameError = false;
+    bool mRenamePopupRequested = false;
+    bool mRenameNeedsFocus = false;
 };
 
 class CEntityInspector : public IOverlordItem {

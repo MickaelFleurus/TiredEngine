@@ -152,10 +152,10 @@ void CSwapchain::Recreate() {
     mImages = std::move(images);
     mImageViews = std::move(imageViews);
 
-    mDepthBuffer = CreateDepthBuffer(mContext.vmaAllocator, mContext.device,
-                                     mExtent);
-    mRenderPass = CreateRenderPass(mContext.device, mImageFormat,
-                                   mDepthBuffer.format);
+    mDepthBuffer =
+        CreateDepthBuffer(mContext.vmaAllocator, mContext.device, mExtent);
+    mRenderPass =
+        CreateRenderPass(mContext.device, mImageFormat, mDepthBuffer.format);
 
     mCommandBuffers = std::move(CreateCommandBuffers(
         mContext.device, mCommandPool, mImageViews.size()));

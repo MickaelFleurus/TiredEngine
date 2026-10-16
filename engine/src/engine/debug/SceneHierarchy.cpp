@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 #include <glm/gtc/quaternion.hpp>
 #include <imgui.h>
@@ -33,6 +35,29 @@ void CSceneHierarchy::Render() {
         return entity.name.GetName();
     });
 
+    if (ImGui::Button("+ Entity")) {
+        CreateEntity(std::nullopt);
+    }
+    ImGui::Button("Drop here to make a root", ImVec2(-1.0f, 24.0f));
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload("ENTITY_NODE")) {
+            if (payload->DataSize == sizeof(SEntityPayload)) {
+                const auto* source =
+                    static_cast<const SEntityPayload*>(payload->Data);
+                const auto found = std::ranges::find_if(
+                    entities, [source](const Core::SEntity& candidate) {
+                        return candidate.id == source->id &&
+                               candidate.generation == source->generation;
+                    });
+                if (found != entities.end()) {
+                    ReparentEntity(*found, std::nullopt);
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     std::unordered_set<uint32_t> visited;
     auto& hierarchyPool = mComponentManager.GetPool<Component::SHierarchy>();
 
@@ -49,10 +74,45 @@ void CSceneHierarchy::Render() {
     }
 
     for (const auto& entity : entities) {
-        if (!visited.contains(entity.id)) {
-            RenderEntityNode(entity, entities, visited);
+        if (visited.contains(entity.id) || !hierarchyPool.Has(entity)) {
+            continue;
+        }
+
+        std::vector<Core::SEntity> ancestry;
+        std::unordered_map<uint32_t, std::size_t> ancestryIndices;
+        auto current = std::optional<Core::SEntity>{entity};
+        while (current && hierarchyPool.Has(*current)) {
+            const auto [it, inserted] =
+                ancestryIndices.emplace(current->id, ancestry.size());
+            if (!inserted) {
+                const auto cycleBegin = it->second;
+                const auto cycleRoot = std::ranges::min_element(
+                    ancestry.begin() + static_cast<std::ptrdiff_t>(cycleBegin),
+                    ancestry.end(), {}, &Core::SEntity::id);
+                if (cycleRoot != ancestry.end() && cycleRoot->id == entity.id) {
+                    RenderEntityNode(entity, entities, visited);
+                }
+                break;
+            }
+
+            ancestry.push_back(*current);
+            const auto& hierarchy = hierarchyPool.Get(*current);
+            if (hierarchy.parent.GetName().empty()) {
+                break;
+            }
+            current = mEntityManager.GetEntity(hierarchy.parent);
         }
     }
+
+    if (ImGui::BeginPopupContextWindow("HierarchyContext",
+                                       ImGuiPopupFlags_MouseButtonRight |
+                                           ImGuiPopupFlags_NoOpenOverItems)) {
+        if (ImGui::MenuItem("Add Entity")) {
+            CreateEntity(std::nullopt);
+        }
+        ImGui::EndPopup();
+    }
+    RenderRenameModal();
     ImGui::End();
 }
 
@@ -77,7 +137,6 @@ void CSceneHierarchy::RenderEntityNode(
 
     ImGui::PushID(static_cast<int>(entity.id));
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
-                               ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                ImGuiTreeNodeFlags_SpanAvailWidth;
     if (children.empty()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -92,14 +151,309 @@ void CSceneHierarchy::RenderEntityNode(
     if (ImGui::IsItemClicked()) {
         mSelection.entity = entity;
     }
+    if (ImGui::IsItemHovered() &&
+        ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        mSelection.entity = entity;
+        mRenameEntity = entity;
+        mRenameBuffer = entity.name.GetName();
+        mRenameError = false;
+        mRenamePopupRequested = true;
+        mRenameNeedsFocus = true;
+    }
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload("ENTITY_NODE")) {
+            if (payload->DataSize == sizeof(SEntityPayload)) {
+                const auto* source =
+                    static_cast<const SEntityPayload*>(payload->Data);
+                const auto found = std::ranges::find_if(
+                    entities, [source](const Core::SEntity& candidate) {
+                        return candidate.id == source->id &&
+                               candidate.generation == source->generation;
+                    });
+                if (found != entities.end()) {
+                    ReparentEntity(*found, entity);
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    if (ImGui::BeginDragDropSource()) {
+        const SEntityPayload payload{entity.id, entity.generation};
+        ImGui::SetDragDropPayload("ENTITY_NODE", &payload, sizeof(payload));
+        ImGui::TextUnformatted(label.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    const bool deleted = RenderEntityContextMenu(entity);
 
     if (open && !children.empty()) {
-        for (const auto& child : children) {
-            RenderEntityNode(child, entities, visited);
+        if (!deleted) {
+            for (const auto& child : children) {
+                RenderEntityNode(child, entities, visited);
+            }
         }
         ImGui::TreePop();
     }
     ImGui::PopID();
+}
+
+bool CSceneHierarchy::RenderEntityContextMenu(Core::SEntity entity) {
+    bool deleted = false;
+    if (ImGui::BeginPopupContextItem("EntityContext")) {
+        if (ImGui::MenuItem("Add Child Entity")) {
+            CreateEntity(entity);
+        }
+        if (ImGui::MenuItem("Rename")) {
+            mRenameEntity = entity;
+            mRenameBuffer = entity.name.GetName();
+            mRenameError = false;
+            mRenamePopupRequested = true;
+            mRenameNeedsFocus = true;
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Delete")) {
+            DeleteEntity(entity);
+            deleted = true;
+        }
+        ImGui::EndPopup();
+    }
+    return deleted;
+}
+
+void CSceneHierarchy::RenderRenameModal() {
+    if (mRenamePopupRequested) {
+        ImGui::OpenPopup("Rename Entity");
+        mRenamePopupRequested = false;
+    }
+    if (!ImGui::BeginPopupModal("Rename Entity", nullptr,
+                                ImGuiWindowFlags_AlwaysAutoResize)) {
+        return;
+    }
+
+    ImGui::TextUnformatted("Entity name");
+    ImGui::SetNextItemWidth(280.0f);
+    if (mRenameNeedsFocus) {
+        ImGui::SetKeyboardFocusHere();
+        mRenameNeedsFocus = false;
+    }
+    const bool submitted =
+        ImGui::InputText("##EntityName", &mRenameBuffer,
+                         ImGuiInputTextFlags_EnterReturnsTrue |
+                             ImGuiInputTextFlags_AutoSelectAll);
+    if (mRenameError) {
+        ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.3f, 1.0f),
+                           "Name is empty or already in use.");
+    }
+
+    if (ImGui::Button("Rename") || submitted) {
+        if (mRenameEntity && RenameEntity(*mRenameEntity, mRenameBuffer)) {
+            mRenameEntity.reset();
+            ImGui::CloseCurrentPopup();
+        } else {
+            mRenameError = true;
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+        mRenameEntity.reset();
+        mRenameError = false;
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
+Core::SEntity
+CSceneHierarchy::CreateEntity(std::optional<Core::SEntity> parent) {
+    std::string name = "Entity";
+    for (uint32_t suffix = 1;
+         mEntityManager.GetEntity(CStringId{name}).has_value(); ++suffix) {
+        name = "Entity " + std::to_string(suffix + 1);
+    }
+
+    const Core::SEntity entity = mEntityManager.Create(CStringId{name});
+    if (parent && mEntityManager.IsAlive(*parent)) {
+        auto& hierarchyPool =
+            mComponentManager.GetPool<Component::SHierarchy>();
+        auto& hierarchy = hierarchyPool.Create(entity);
+        hierarchy.parent = parent->name;
+
+        if (hierarchyPool.Has(*parent)) {
+            hierarchyPool.Update(*parent, [&](auto& parentHierarchy) {
+                parentHierarchy.children.push_back(entity.name);
+            });
+        } else {
+            auto& parentHierarchy = hierarchyPool.Create(*parent);
+            parentHierarchy.children.push_back(entity.name);
+        }
+    }
+    mSelection.entity = entity;
+    return entity;
+}
+
+bool CSceneHierarchy::RenameEntity(Core::SEntity entity,
+                                   const std::string& name) {
+    if (!mEntityManager.Rename(entity, name)) {
+        return false;
+    }
+
+    const CStringId oldName = mRenameEntity->name;
+    const CStringId newName = entity.name;
+    auto& hierarchyPool = mComponentManager.GetPool<Component::SHierarchy>();
+    for (std::size_t index = 0; index < hierarchyPool.Size(); ++index) {
+        const auto componentEntity = hierarchyPool.GetEntity(index);
+        auto hierarchy = hierarchyPool.Get(componentEntity);
+        bool changed = false;
+        if (hierarchy.parent == oldName) {
+            hierarchy.parent = newName;
+            changed = true;
+        }
+        for (auto& child : hierarchy.children) {
+            if (child == oldName) {
+                child = newName;
+                changed = true;
+            }
+        }
+        if (changed) {
+            hierarchyPool.Update(componentEntity,
+                                 [&](auto& value) { value = hierarchy; });
+        }
+    }
+
+    if (mSelection.entity && mSelection.entity->id == entity.id) {
+        mSelection.entity = entity;
+    }
+    *mRenameEntity = entity;
+    return true;
+}
+
+void CSceneHierarchy::DeleteEntity(Core::SEntity entity) {
+    std::unordered_set<uint32_t> visited;
+    DeleteEntityRecursive(entity, visited);
+}
+
+void CSceneHierarchy::DeleteEntityRecursive(
+    Core::SEntity entity, std::unordered_set<uint32_t>& visited) {
+    if (!mEntityManager.IsAlive(entity) || !visited.insert(entity.id).second) {
+        return;
+    }
+
+    auto& hierarchyPool = mComponentManager.GetPool<Component::SHierarchy>();
+    std::vector<Core::SEntity> children;
+    for (const auto& candidate : mEntityManager.GetEntities()) {
+        if (candidate.id != entity.id && hierarchyPool.Has(candidate) &&
+            hierarchyPool.Get(candidate).parent == entity.name) {
+            children.push_back(candidate);
+        }
+    }
+    for (const auto& child : children) {
+        DeleteEntityRecursive(child, visited);
+    }
+
+    for (std::size_t index = 0; index < hierarchyPool.Size(); ++index) {
+        const auto componentEntity = hierarchyPool.GetEntity(index);
+        if (componentEntity.id == entity.id) {
+            continue;
+        }
+        auto hierarchy = hierarchyPool.Get(componentEntity);
+        bool changed = false;
+        if (hierarchy.parent == entity.name) {
+            hierarchy.parent = CStringId{};
+            changed = true;
+        }
+        const auto oldSize = hierarchy.children.size();
+        std::erase(hierarchy.children, entity.name);
+        changed |= hierarchy.children.size() != oldSize;
+        if (changed) {
+            hierarchyPool.Update(componentEntity,
+                                 [&](auto& value) { value = hierarchy; });
+        }
+    }
+
+    mEntityManager.Destroy(entity);
+    if (mSelection.entity && mSelection.entity->id == entity.id) {
+        mSelection.entity.reset();
+    }
+    if (mRenameEntity && mRenameEntity->id == entity.id) {
+        mRenameEntity.reset();
+        mRenamePopupRequested = false;
+        mRenameNeedsFocus = false;
+    }
+}
+
+bool CSceneHierarchy::ReparentEntity(Core::SEntity entity,
+                                     std::optional<Core::SEntity> parent) {
+    if (!mEntityManager.IsAlive(entity) ||
+        (parent && !mEntityManager.IsAlive(*parent)) ||
+        (parent && parent->id == entity.id)) {
+        return false;
+    }
+
+    auto& hierarchyPool = mComponentManager.GetPool<Component::SHierarchy>();
+    if (parent) {
+        std::unordered_set<uint32_t> visited;
+        auto current = parent;
+        while (current && visited.insert(current->id).second) {
+            if (current->id == entity.id) {
+                return false;
+            }
+            if (!hierarchyPool.Has(*current)) {
+                break;
+            }
+            const auto& currentHierarchy = hierarchyPool.Get(*current);
+            if (currentHierarchy.parent.GetName().empty()) {
+                break;
+            }
+            current = mEntityManager.GetEntity(currentHierarchy.parent);
+        }
+    }
+
+    std::optional<Core::SEntity> oldParent;
+    if (hierarchyPool.Has(entity)) {
+        const auto& currentHierarchy = hierarchyPool.Get(entity);
+        if (currentHierarchy.parent == (parent ? parent->name : CStringId{})) {
+            return true;
+        }
+        if (!currentHierarchy.parent.GetName().empty()) {
+            const auto found =
+                mEntityManager.GetEntity(currentHierarchy.parent);
+            if (found) {
+                oldParent = *found;
+            }
+        }
+    }
+
+    if (oldParent && hierarchyPool.Has(*oldParent)) {
+        hierarchyPool.Update(*oldParent, [&](auto& value) {
+            std::erase(value.children, entity.name);
+        });
+    }
+
+    if (hierarchyPool.Has(entity)) {
+        hierarchyPool.Update(entity, [&](auto& value) {
+            value.parent = parent ? parent->name : CStringId{};
+        });
+    } else {
+        auto& hierarchy = hierarchyPool.Create(entity);
+        hierarchy.parent = parent ? parent->name : CStringId{};
+    }
+
+    if (parent) {
+        if (hierarchyPool.Has(*parent)) {
+            hierarchyPool.Update(*parent, [&](auto& value) {
+                if (std::ranges::find(value.children, entity.name) ==
+                    value.children.end()) {
+                    value.children.push_back(entity.name);
+                }
+            });
+        } else {
+            auto& hierarchy = hierarchyPool.Create(*parent);
+            hierarchy.children.push_back(entity.name);
+        }
+    }
+    return true;
 }
 
 CEntityInspector::CEntityInspector(Core::CEntityManager& entityManager,
@@ -233,4 +587,3 @@ const char* CEntityInspector::GetName() const {
     return "Inspector";
 }
 } // namespace Debug
-

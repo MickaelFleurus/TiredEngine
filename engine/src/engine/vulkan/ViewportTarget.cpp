@@ -8,8 +8,7 @@
 #include "engine/vulkan/VulkanSwapchain.h"
 
 namespace Vulkan {
-CViewportTarget::CViewportTarget(const SContext& context,
-                                 CSwapchain& swapchain,
+CViewportTarget::CViewportTarget(const SContext& context, CSwapchain& swapchain,
                                  CVulkanRendering& rendering)
     : mContext(context), mSwapchain(swapchain), mRendering(rendering) {
     CreateRenderPass();
@@ -48,7 +47,8 @@ void CViewportTarget::RequestResize(uint32_t width, uint32_t height) {
         mContext.physicalDeviceProperties.limits.maxImageDimension2D;
     VkExtent2D requested{std::min(width, maxExtent),
                          std::min(height, maxExtent)};
-    if (requested.width != mExtent.width || requested.height != mExtent.height) {
+    if (requested.width != mExtent.width ||
+        requested.height != mExtent.height) {
         mPendingExtent = requested;
     }
 }
@@ -153,18 +153,22 @@ void CViewportTarget::CreateRenderPass() {
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                   VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependencies[0].dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dstAccessMask =
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dependencies[1].srcSubpass = 0;
     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].srcAccessMask =
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     VkRenderPassCreateInfo renderPassInfo{
@@ -191,8 +195,8 @@ void CViewportTarget::CreateTargetImages(uint32_t width, uint32_t height) {
     imageInfo.arrayLayers = 1;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                      VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -227,8 +231,8 @@ void CViewportTarget::CreateTargetImages(uint32_t width, uint32_t height) {
     depthInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     depthInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     if (vmaCreateImage(mContext.vmaAllocator, &depthInfo, &allocationInfo,
-                       &mDepthImage, &mDepthAllocation, nullptr) !=
-        VK_SUCCESS) {
+                       &mDepthImage, &mDepthAllocation,
+                       nullptr) != VK_SUCCESS) {
         LOG_FATAL("Failed to create viewport depth image");
         return;
     }

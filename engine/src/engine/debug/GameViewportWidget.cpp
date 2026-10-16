@@ -60,21 +60,21 @@ void CGameViewportWidget::Render() {
 
         const float scaleX = std::max(io.DisplayFramebufferScale.x, 1.0f);
         const float scaleY = std::max(io.DisplayFramebufferScale.y, 1.0f);
-        const auto requestedWidth = static_cast<uint32_t>(
-            std::max(1.0f, available.x * scaleX));
-        const auto requestedHeight = static_cast<uint32_t>(
-            std::max(1.0f, available.y * scaleY));
-            const float targetAspect =
-                static_cast<float>(targetExtent.width) / targetExtent.height;
-            uint32_t renderWidth = requestedWidth;
-            uint32_t renderHeight = requestedHeight;
-            if (static_cast<float>(requestedWidth) / requestedHeight >
-                targetAspect) {
-                renderWidth = static_cast<uint32_t>(requestedHeight * targetAspect);
-            } else {
-                renderHeight = static_cast<uint32_t>(requestedWidth / targetAspect);
-            }
-            mTarget.RequestResize(renderWidth, renderHeight);
+        const auto requestedWidth =
+            static_cast<uint32_t>(std::max(1.0f, available.x * scaleX));
+        const auto requestedHeight =
+            static_cast<uint32_t>(std::max(1.0f, available.y * scaleY));
+        const float targetAspect =
+            static_cast<float>(targetExtent.width) / targetExtent.height;
+        uint32_t renderWidth = requestedWidth;
+        uint32_t renderHeight = requestedHeight;
+        if (static_cast<float>(requestedWidth) / requestedHeight >
+            targetAspect) {
+            renderWidth = static_cast<uint32_t>(requestedHeight * targetAspect);
+        } else {
+            renderHeight = static_cast<uint32_t>(requestedWidth / targetAspect);
+        }
+        mTarget.RequestResize(renderWidth, renderHeight);
         ImGui::TextDisabled("%u x %u  |  %.2f:1", targetExtent.width,
                             targetExtent.height, aspect);
     }
