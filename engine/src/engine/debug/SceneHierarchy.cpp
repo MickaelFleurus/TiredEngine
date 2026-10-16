@@ -14,8 +14,11 @@
 
 namespace Debug {
 CSceneHierarchy::CSceneHierarchy(Core::CEntityManager& entityManager,
-                                 Component::CManager& componentManager)
-    : mEntityManager(entityManager), mComponentManager(componentManager) {
+                                 Component::CManager& componentManager,
+                                 SEntitySelection& selection)
+    : mEntityManager(entityManager)
+    , mComponentManager(componentManager)
+    , mSelection(selection) {
     SetVisible(true);
 }
 
@@ -30,9 +33,6 @@ void CSceneHierarchy::Render() {
         return entity.name.GetName();
     });
 
-    ImGui::BeginChild("EntityTree",
-                      ImVec2(0.0f, ImGui::GetContentRegionAvail().y * 0.48f),
-                      true);
     std::unordered_set<uint32_t> visited;
     auto& hierarchyPool = mComponentManager.GetPool<Component::SHierarchy>();
 
@@ -53,10 +53,6 @@ void CSceneHierarchy::Render() {
             RenderEntityNode(entity, entities, visited);
         }
     }
-    ImGui::EndChild();
-
-    ImGui::Separator();
-    RenderSelectedEntity();
     ImGui::End();
 }
 
@@ -86,15 +82,15 @@ void CSceneHierarchy::RenderEntityNode(
     if (children.empty()) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
-    if (mSelectedEntity && mSelectedEntity->id == entity.id &&
-        mSelectedEntity->generation == entity.generation) {
+    if (mSelection.entity && mSelection.entity->id == entity.id &&
+        mSelection.entity->generation == entity.generation) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
     const std::string label = entity.name.GetName();
     const bool open = ImGui::TreeNodeEx(label.c_str(), flags);
     if (ImGui::IsItemClicked()) {
-        mSelectedEntity = entity;
+        mSelection.entity = entity;
     }
 
     if (open && !children.empty()) {
@@ -106,14 +102,32 @@ void CSceneHierarchy::RenderEntityNode(
     ImGui::PopID();
 }
 
-void CSceneHierarchy::RenderSelectedEntity() {
-    if (!mSelectedEntity || !mEntityManager.IsAlive(*mSelectedEntity)) {
-        mSelectedEntity.reset();
+CEntityInspector::CEntityInspector(Core::CEntityManager& entityManager,
+                                   Component::CManager& componentManager,
+                                   SEntitySelection& selection)
+    : mEntityManager(entityManager)
+    , mComponentManager(componentManager)
+    , mSelection(selection) {
+    SetVisible(true);
+}
+
+void CEntityInspector::Render() {
+    if (!ImGui::Begin("Inspector", &mVisible)) {
+        ImGui::End();
+        return;
+    }
+    RenderSelectedEntity();
+    ImGui::End();
+}
+
+void CEntityInspector::RenderSelectedEntity() {
+    if (!mSelection.entity || !mEntityManager.IsAlive(*mSelection.entity)) {
+        mSelection.entity.reset();
         ImGui::TextDisabled("Select an entity to inspect its components.");
         return;
     }
 
-    const auto entity = *mSelectedEntity;
+    const auto entity = *mSelection.entity;
     ImGui::Text("%s", entity.name.GetName().c_str());
 
     auto& localTransforms =
@@ -213,6 +227,10 @@ void CSceneHierarchy::RenderSelectedEntity() {
 
 const char* CSceneHierarchy::GetName() const {
     return "Scene Hierarchy";
+}
+
+const char* CEntityInspector::GetName() const {
+    return "Inspector";
 }
 } // namespace Debug
 

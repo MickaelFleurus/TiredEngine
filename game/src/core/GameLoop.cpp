@@ -15,9 +15,11 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     , mCameraUIWidget(mCameraManager)
     , mLevelSceneLoaderWidget(mAssetParser, mSceneLoader)
     , mBufferWidget(mBufferHandler)
-    , mSceneHierarchy(mEntityManager, mComponentManager)
+    , mSceneHierarchy(mEntityManager, mComponentManager, mEntitySelection)
+    , mEntityInspector(mEntityManager, mComponentManager, mEntitySelection)
     , mTexturesWidget(mTextureManager)
-    , mSpritesWidget(mSpriteManager, mTextureManager) {
+    , mSpritesWidget(mSpriteManager, mTextureManager)
+    , mGameViewportWidget(mViewportTarget) {
 
     mSceneMenu.SetVisible(true);
     Debug::COverlord::AddMenu(mSceneMenu, mOverlordToken);
@@ -26,8 +28,10 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     Debug::COverlord::AddWidget(mLevelSceneLoaderWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mBufferWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mSceneHierarchy, mOverlordToken);
+    Debug::COverlord::AddWidget(mEntityInspector, mOverlordToken);
     Debug::COverlord::AddWidget(mTexturesWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mSpritesWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mGameViewportWidget, mOverlordToken);
 
     mOverlordManager.CreateOverlord(context.window.get());
     mSceneLoader.LoadSceneFromFile(std::format(

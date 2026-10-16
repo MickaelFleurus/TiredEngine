@@ -28,6 +28,8 @@ public:
     const std::vector<VkImage>& GetImages() const;
     const std::vector<VkImageView>& GetImageViews() const;
     VkRenderPass GetRenderPass() const;
+    VkImageView GetDepthView() const;
+    VkFormat GetDepthFormat() const;
     int GetImagesCount() const;
     const std::vector<VkCommandBuffer>& GetCommandBuffers() const;
     VkCommandBuffer GetCommandBuffer(int index) const;

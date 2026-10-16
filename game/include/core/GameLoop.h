@@ -5,6 +5,7 @@
 #include "engine/debug/BufferWidget.h"
 #include "engine/debug/Camera3DWidget.h"
 #include "engine/debug/CameraUIWidget.h"
+#include "engine/debug/GameViewportWidget.h"
 #include "engine/debug/InputStateWatcher.h"
 #include "engine/debug/LevelSceneLoaderWidget.h"
 #include "engine/debug/SceneHierarchy.h"
@@ -38,8 +39,11 @@ private:
     Debug::CCameraUIWidget mCameraUIWidget;
     Debug::CLevelSceneLoaderWidget mLevelSceneLoaderWidget;
     Debug::CBufferWidget mBufferWidget;
+    Debug::SEntitySelection mEntitySelection;
     Debug::CSceneHierarchy mSceneHierarchy;
+    Debug::CEntityInspector mEntityInspector;
     Debug::CTexturesWidget mTexturesWidget;
     Debug::CSpritesWidget mSpritesWidget;
+    Debug::CGameViewportWidget mGameViewportWidget;
 };
 } // namespace Core

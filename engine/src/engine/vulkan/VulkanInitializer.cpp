@@ -608,28 +608,42 @@ CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
     return {swapchain, imageFormat, extent, images, imageViews};
 }
 
-VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = swapchainFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat,
+                              VkFormat depthFormat) {
+    VkAttachmentDescription attachments[2]{};
+    attachments[0].format = swapchainFormat;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachments[1].format = depthFormat;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference colorReference{};
+    colorReference.attachment = 0;
+    colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference depthReference{};
+    depthReference.attachment = 1;
+    depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pColorAttachments = &colorReference;
+    subpass.pDepthStencilAttachment = &depthReference;
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = 2;
+    renderPassInfo.pAttachments = attachments;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
@@ -662,15 +676,15 @@ std::vector<VkCommandBuffer> CreateCommandBuffers(VkDevice device,
 std::vector<VkFramebuffer>
 CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
                    const std::vector<VkImageView>& imageViews,
-                   VkExtent2D extent) {
+                   VkImageView depthView, VkExtent2D extent) {
     std::vector<VkFramebuffer> framebuffers(imageViews.size());
     for (size_t i = 0; i < imageViews.size(); i++) {
-        VkImageView attachments[] = {imageViews[i]};
+        VkImageView attachments[] = {imageViews[i], depthView};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.attachmentCount = 2;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = extent.width; // TODO: Might be an issue here.
         framebufferInfo.height = extent.height;

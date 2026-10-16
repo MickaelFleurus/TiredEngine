@@ -19,6 +19,7 @@
 #include "engine/renderer/Window.h"
 #include "engine/thread/Pool.h"
 #include "engine/vulkan/BufferHandler.h"
+#include "engine/vulkan/ViewportTarget.h"
 #include "engine/vulkan/VulkanRendering.h"
 
 namespace Vulkan {
@@ -55,6 +56,7 @@ protected:
     Vulkan::SContext& mContext;
     Vulkan::CSwapchain& mSwapchain;
     Vulkan::CVulkanRendering mVulkanRendering;
+    Vulkan::CViewportTarget mViewportTarget;
     CAssetParser& mAssetParser;
     Core::CCameraManager mCameraManager;
     Vulkan::CBufferHandler mBufferHandler;

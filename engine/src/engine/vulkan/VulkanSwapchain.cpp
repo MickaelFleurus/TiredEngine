@@ -84,6 +84,14 @@ VkRenderPass CSwapchain::GetRenderPass() const {
     return mRenderPass;
 }
 
+VkImageView CSwapchain::GetDepthView() const {
+    return mDepthBuffer.view;
+}
+
+VkFormat CSwapchain::GetDepthFormat() const {
+    return mDepthBuffer.format;
+}
+
 int CSwapchain::GetImagesCount() const {
     return mImages.size();
 }
@@ -144,15 +152,16 @@ void CSwapchain::Recreate() {
     mImages = std::move(images);
     mImageViews = std::move(imageViews);
 
-    mRenderPass = CreateRenderPass(mContext.device, mImageFormat);
+    mDepthBuffer = CreateDepthBuffer(mContext.vmaAllocator, mContext.device,
+                                     mExtent);
+    mRenderPass = CreateRenderPass(mContext.device, mImageFormat,
+                                   mDepthBuffer.format);
 
     mCommandBuffers = std::move(CreateCommandBuffers(
         mContext.device, mCommandPool, mImageViews.size()));
 
-    mFramebuffers = std::move(
-        CreateFramebuffers(mContext.device, mRenderPass, mImageViews, mExtent));
-    mDepthBuffer = std::move(
-        CreateDepthBuffer(mContext.vmaAllocator, mContext.device, mExtent));
+    mFramebuffers = std::move(CreateFramebuffers(
+        mContext.device, mRenderPass, mImageViews, mDepthBuffer.view, mExtent));
 }
 
 } // namespace Vulkan

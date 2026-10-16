@@ -158,15 +158,16 @@ void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
     VkCommandBuffer commandBuffer = mSwapchain.GetCommandBuffer(index);
     vkResetCommandBuffer(commandBuffer, 0);
 
-    VkClearValue clearColor{};
-    clearColor.color = {.1f, 0.1f, 0.1f, 0.0f};
+    VkClearValue clearValues[2]{};
+    clearValues[0].color = {.1f, 0.1f, 0.1f, 0.0f};
+    clearValues[1].depthStencil = {1.0f, 0};
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = mSwapchain.GetRenderPass();
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = mSwapchain.GetExtent();
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clearValues;
     renderPassInfo.framebuffer = mSwapchain.GetFramebuffer(index);
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

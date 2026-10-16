@@ -14,6 +14,7 @@ CEngineLoop::CEngineLoop(System::CSystem& system, Vulkan::SContext& context,
     : mContext(context)
     , mSwapchain(swapchain)
     , mVulkanRendering(context, swapchain)
+    , mViewportTarget(context, swapchain, mVulkanRendering)
     , mAssetParser(system.GetAssetParser())
     , mCameraManager(system.GetFileHandler())
     , mBufferHandler(mContext)
@@ -60,6 +61,13 @@ bool CEngineLoop::Run() {
         mUiRenderer.Prepare();
         mUiRenderer.Update();
 
+        mViewportTarget.ApplyPendingResize();
+        if (auto viewportCmd = mViewportTarget.BeginRender();
+            viewportCmd != VK_NULL_HANDLE) {
+            mUiRenderer.Render(viewportCmd);
+            mViewportTarget.EndRender();
+        }
+
         mOverlordManager.PrepareRender(mWindow.GetSDLWindow());
 
         if (mWindow.BeginRender()) {
@@ -68,7 +76,6 @@ bool CEngineLoop::Run() {
             }
             auto cmd =
                 mSwapchain.GetCommandBuffer(mWindow.GetImageIndex().value());
-            mUiRenderer.Render(cmd);
             mOverlordManager.Render(cmd);
 
             mWindow.EndRender();

@@ -47,6 +47,7 @@ void COverlord::Initialize(SDL_Window* window) {
         ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |=
         ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui::StyleColorsDark();
 
@@ -108,6 +109,8 @@ bool COverlord::PrepareRender(SDL_Window* window) {
     }
 
     RenderMenuBar();
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(),
+                                 ImGuiDockNodeFlags_PassthruCentralNode);
     RenderWidgets();
     ImGui::Render();
     return true;
