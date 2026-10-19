@@ -10,8 +10,6 @@
 
 #include "engine/utils/StringId.h"
 
-#include "glm/ext/vector_float2.hpp"
-
 using IndexType = uint32_t;
 constexpr IndexType INVALID_INDEX = std::numeric_limits<IndexType>::max();
 namespace Core {

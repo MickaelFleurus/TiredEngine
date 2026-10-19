@@ -98,10 +98,10 @@ bool CFileHandler::SaveJson(const std::string& fileName,
                             const std::string& folderName,
                             const nlohmann::json& data) const {
 
-    std::filesystem::path completePath = mTempFolder / folderName / fileName;
+    std::filesystem::path completePath = mTempFolder / folderName;
 
     std::filesystem::create_directories(completePath);
-    completePath.append(".json");
+    completePath.append(fileName + ".json");
     std::ofstream fileStream(completePath.c_str(), std::ios::out);
     if (!fileStream.is_open()) {
         return false;

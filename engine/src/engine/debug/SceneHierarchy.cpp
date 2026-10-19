@@ -518,27 +518,6 @@ void CEntityInspector::RenderSelectedEntity() {
         }
     }
 
-    auto& screenTransforms =
-        mComponentManager.GetPool<Component::SScreenTransform>();
-    if (screenTransforms.Has(entity)) {
-        ImGui::SeparatorText("Screen Transform");
-        auto value = screenTransforms.Get(entity);
-        bool changed =
-            ImGui::DragFloat2("Screen Position", &value.position.x, 0.5f);
-        changed |= ImGui::DragFloat2("Screen Scale", &value.scale.x, 0.01f);
-        float rotationDegrees = glm::degrees(value.rotation);
-        if (ImGui::DragFloat("Screen Rotation", &rotationDegrees, 0.5f)) {
-            value.rotation = glm::radians(rotationDegrees);
-            changed = true;
-        }
-        changed |=
-            ImGui::DragFloat2("Anchor", &value.anchor.x, 0.01f, 0.0f, 1.0f);
-        if (changed) {
-            screenTransforms.Update(entity,
-                                    [&](auto& target) { target = value; });
-        }
-    }
-
     auto& sprites = mComponentManager.GetPool<Component::SSprite>();
     if (sprites.Has(entity)) {
         ImGui::SeparatorText("Sprite Renderer");
@@ -577,10 +556,6 @@ void CEntityInspector::RenderSelectedEntity() {
         }
     }
 
-    if (ImGui::Button("Add Screen Transform") &&
-        !screenTransforms.Has(entity)) {
-        screenTransforms.Create(entity);
-    }
     ImGui::SameLine();
     if (ImGui::Button("Add Sprite") && !sprites.Has(entity)) {
         sprites.Create(entity);
@@ -588,7 +563,7 @@ void CEntityInspector::RenderSelectedEntity() {
     ImGui::SameLine();
     if (ImGui::Button("Add Text") && !texts.Has(entity)) {
         auto& text = texts.Create(entity);
-        text.fontId = 0;
+        text.fontName = "arial";
         text.dirty = true;
     }
 }

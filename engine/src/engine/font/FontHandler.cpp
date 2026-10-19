@@ -19,10 +19,19 @@ struct SFontData {
     msdfgen::FontMetrics fontMetrics{};
 };
 
+constexpr int kFontMetadataVersion = 2;
+
+bool IsCurrentFontMetadata(const nlohmann::json& jsonData) {
+    return jsonData.contains("formatVersion") &&
+           jsonData["formatVersion"].is_number_integer() &&
+           jsonData["formatVersion"].get<int>() == kFontMetadataVersion;
+}
+
 nlohmann::json
 GlyphsToJson(std::unordered_map<std::string, Font::GlyphInfo> glyphs,
              msdfgen::FontMetrics& fontMetrics) {
     nlohmann::json jsonData;
+    jsonData["formatVersion"] = kFontMetadataVersion;
     jsonData["glyphs"] = nlohmann::json::object();
     for (const auto it : glyphs) {
         nlohmann::json glyphJson;
@@ -79,7 +88,7 @@ JsonToGlyphs(const nlohmann::json& jsonData) {
 
             const auto& size = glyphJson["planeBounds"];
             if (size.contains("x") && size.contains("y") &&
-                size.contains("z") && size.contains("w ")) {
+                size.contains("z") && size.contains("w")) {
                 info.planeBounds.x = size["x"];
                 info.planeBounds.y = size["y"];
                 info.planeBounds.z = size["z"];
@@ -167,7 +176,7 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
 
         for (int y = 0; y < height; ++y) {
             Uint8* row = dst + y * pitch;
-            const msdf_atlas::byte* srcRow = src + y * width * 3;
+            const msdf_atlas::byte* srcRow = src + (height - 1 - y) * width * 3;
             for (int x = 0; x < width; ++x) {
                 row[x * 4 + 0] = srcRow[x * 3 + 0]; // R
                 row[x * 4 + 1] = srcRow[x * 3 + 1]; // G
@@ -181,15 +190,15 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
     for (const auto& glyph : glyphs) {
         Font::GlyphInfo info;
         double l, b, r, t;
-        glyph.getQuadAtlasBounds(l, b, r, t);
+        glyph.getQuadPlaneBounds(l, b, r, t);
         info.planeBounds = {static_cast<float>(l), static_cast<float>(b),
                             static_cast<float>(r), static_cast<float>(t)};
 
-        glyph.getQuadPlaneBounds(l, b, r, t);
+        glyph.getQuadAtlasBounds(l, b, r, t);
         info.uvMin = {static_cast<float>(l) / width,
-                      1.0f - static_cast<float>(b) / height};
-        info.uvMax = {static_cast<float>(r) / width,
                       1.0f - static_cast<float>(t) / height};
+        info.uvMax = {static_cast<float>(r) / width,
+                      1.0f - static_cast<float>(b) / height};
 
         double advance = glyph.getAdvance();
         info.advance = static_cast<float>(advance);
@@ -209,8 +218,7 @@ SFontData CreateFontData(msdfgen::FreetypeHandle* freetype,
 
 namespace Font {
 CFontHandler::CFontHandler(Utils::CFileHandler& fileHandler,
-                           Thread::CPool& threadPool,
-                           const CAssetParser& assetParser,
+                           Thread::CPool& threadPool, CAssetParser& assetParser,
                            Renderer::CTextureManager& textureManager)
     : mFileHandler(fileHandler)
     , mThreadPool(threadPool)
@@ -229,19 +237,13 @@ CFontHandler::GetPolice(std::size_t id) {
     return mPolices[id];
 }
 
-CPolice& CFontHandler::GetPolice(const std::string& name) {
-    auto it = mPoliceNameToIndex.find(name);
-    if (it != mPoliceNameToIndex.end()) {
-        return mPolices[it->second];
-    }
-
+void CFontHandler::LoadPolice(const std::string& name) {
     auto fontTexturePath = mAssetParser.Get(EAssetType::Texture, name);
     if (!fontTexturePath || !fontTexturePath->get().mMetadata.has_value()) {
         LOG_FATAL("Font {} does not seems to exists or has not be loaded yet: "
                   "file not found",
                   name);
     }
-
     SFontData fontData;
     LoadExistingFontData(fontTexturePath->get(), fontData, mFileHandler);
     auto textureIndex =
@@ -258,7 +260,18 @@ CPolice& CFontHandler::GetPolice(const std::string& name) {
             fontData.fontMetrics.descenderY, fontData.fontMetrics.lineHeight,
             fontData.fontMetrics.underlineY,
             fontData.fontMetrics.underlineThickness});
-    return mPolices.back();
+}
+
+CPolice& CFontHandler::GetPolice(const std::string& name) {
+
+    auto it = mPoliceNameToIndex.find(name);
+    if (it != mPoliceNameToIndex.end()) {
+        return mPolices[it->second];
+    }
+    LOG_ERROR("Police {} was not loaded and is probably missing from the "
+              "assets. Using police {} instead.",
+              name, mPolices.front().GetName());
+    return mPolices.front();
 }
 
 void CFontHandler::LoadAllThePolices() {
@@ -270,18 +283,35 @@ void CFontHandler::LoadAllThePolices() {
 
     LOG_INFO("Loading fonts...");
     std::vector<std::function<void()>> jobs;
+    std::vector<std::string> cachedFontsToReload;
     const auto fontFiles = mAssetParser.Get(EAssetType::Font);
     for (const auto& fontFile : fontFiles) {
-        const std::string glyphTexFilePath =
-            std::format("{}/textures/{}.png", mFileHandler.GetTempFolder(),
-                        fontFile.mPath.stem().string());
-        if (!mFileHandler.DoesFileExist(glyphTexFilePath)) {
+        const std::string fontName = fontFile.mPath.stem().string();
+        const std::string glyphTexFilePath = std::format(
+            "{}/textures/{}.png", mFileHandler.GetTempFolder(), fontName);
+        const bool hasGlyphTexture =
+            mFileHandler.DoesFileExist(glyphTexFilePath);
+        const std::string glyphMetadataFilePath = std::format(
+            "{}/textures/{}.json", mFileHandler.GetTempFolder(), fontName);
+        const bool hasMetadata =
+            mFileHandler.DoesFileExist(glyphMetadataFilePath);
+        const bool hasCurrentMetadata =
+            hasMetadata &&
+            IsCurrentFontMetadata(mFileHandler.LoadJson(glyphMetadataFilePath));
+        if (!hasGlyphTexture || !hasCurrentMetadata) {
+            cachedFontsToReload.push_back(fontName);
             jobs.push_back(
                 [this, fontFile, freeType]() { LoadFont(fontFile, freeType); });
+        } else {
+            LoadPolice(fontName);
         }
     }
     auto group = mThreadPool.EnqueueJobs(jobs);
     group->WaitForCompletion();
+    mAssetParser.CheckAndUpdateAssets();
+    for (const auto& fontName : cachedFontsToReload) {
+        LoadPolice(fontName);
+    }
     LOG_INFO("All fonts loaded.");
 }
 
@@ -312,5 +342,5 @@ bool CFontHandler::LoadFont(const SAsset& fontAsset,
     LOG_INFO("Loaded font: {}", fontName);
     return true;
 }
-
+// TODO!! Remove screen space code and use transform for everything
 } // namespace Font

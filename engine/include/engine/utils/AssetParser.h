@@ -24,12 +24,14 @@ private:
     std::unordered_map<SAssetKey, SAsset, SAssetKeyHash> mAssets;
 
     // Track folder modification times
-    struct FolderState {
+    struct SFolderState {
         std::filesystem::path path;
         std::filesystem::file_time_type lastWriteTime;
+        std::uint64_t fileCount;
+        std::uint64_t folderSize;
     };
 
-    std::vector<FolderState> mMonitoredFolders;
+    std::vector<SFolderState> mMonitoredFolders;
 
     bool HasFoldersChanged() const;
 };

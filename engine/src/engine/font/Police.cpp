@@ -1,7 +1,5 @@
 #include "engine/font/Police.h"
 
-#include "engine/material/AbstractMaterial.h"
-
 namespace Font {
 CPolice::CPolice(const char* name, uint64_t textureIndex,
                  std::unordered_map<std::string, Font::GlyphInfo> glyphs,

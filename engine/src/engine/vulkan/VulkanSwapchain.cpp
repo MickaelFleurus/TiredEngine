@@ -43,12 +43,7 @@ CSwapchain::CSwapchain(SContext& context)
 CSwapchain::~CSwapchain() {
     vkDeviceWaitIdle(mContext.device);
     vkDestroyCommandPool(mContext.device, mCommandPool, nullptr);
-    for (auto framebuffer : mFramebuffers) {
-        vkDestroyFramebuffer(mContext.device, framebuffer, nullptr);
-    }
-    if (mRenderPass != VK_NULL_HANDLE) {
-        vkDestroyRenderPass(mContext.device, mRenderPass, nullptr);
-    }
+
     for (auto imageView : mImageViews) {
         vkDestroyImageView(mContext.device, imageView, nullptr);
     }
@@ -80,10 +75,6 @@ const std::vector<VkImageView>& CSwapchain::GetImageViews() const {
     return mImageViews;
 }
 
-VkRenderPass CSwapchain::GetRenderPass() const {
-    return mRenderPass;
-}
-
 VkImageView CSwapchain::GetDepthView() const {
     return mDepthBuffer.view;
 }
@@ -100,10 +91,6 @@ const std::vector<VkCommandBuffer>& CSwapchain::GetCommandBuffers() const {
     return mCommandBuffers;
 }
 
-const std::vector<VkFramebuffer>& CSwapchain::GetFramebuffers() const {
-    return mFramebuffers;
-}
-
 VkCommandBuffer CSwapchain::GetCommandBuffer(int index) const {
     if (index < 0 || index >= mCommandBuffers.size()) {
         LOG_FATAL("Invalid command buffer index: {}", index);
@@ -111,24 +98,8 @@ VkCommandBuffer CSwapchain::GetCommandBuffer(int index) const {
     return mCommandBuffers[index];
 }
 
-VkFramebuffer CSwapchain::GetFramebuffer(int index) const {
-    if (index < 0 || index >= mFramebuffers.size()) {
-        LOG_FATAL("Invalid framebuffer index: {}", index);
-    }
-    return mFramebuffers[index];
-}
-
 void CSwapchain::Recreate() {
     vkDeviceWaitIdle(mContext.device);
-
-    for (auto framebuffer : mFramebuffers) {
-        vkDestroyFramebuffer(mContext.device, framebuffer, nullptr);
-    }
-    mFramebuffers.clear();
-
-    if (mRenderPass != VK_NULL_HANDLE) {
-        vkDestroyRenderPass(mContext.device, mRenderPass, nullptr);
-    }
 
     for (auto imageView : mImageViews) {
         vkDestroyImageView(mContext.device, imageView, nullptr);
@@ -154,14 +125,9 @@ void CSwapchain::Recreate() {
 
     mDepthBuffer =
         CreateDepthBuffer(mContext.vmaAllocator, mContext.device, mExtent);
-    mRenderPass =
-        CreateRenderPass(mContext.device, mImageFormat, mDepthBuffer.format);
 
     mCommandBuffers = std::move(CreateCommandBuffers(
         mContext.device, mCommandPool, mImageViews.size()));
-
-    mFramebuffers = std::move(CreateFramebuffers(
-        mContext.device, mRenderPass, mImageViews, mDepthBuffer.view, mExtent));
 }
 
 } // namespace Vulkan

@@ -110,6 +110,10 @@ VkImageView CViewportTarget::GetImageView() const {
     return mImageView;
 }
 
+VkRenderPass CViewportTarget::GetRenderPass() const {
+    return mRenderPass;
+}
+
 const VkExtent2D& CViewportTarget::GetExtent() const {
     return mExtent;
 }

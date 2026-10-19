@@ -25,6 +25,7 @@ public:
     void EndRender();
 
     VkImageView GetImageView() const;
+    VkRenderPass GetRenderPass() const;
     const VkExtent2D& GetExtent() const;
 
 private:

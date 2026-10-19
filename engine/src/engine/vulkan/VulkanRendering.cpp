@@ -2,6 +2,30 @@
 
 #include "engine/utils/Logger.h"
 
+namespace {
+void transitionImage(VkCommandBuffer cmd, VkImage image, VkImageLayout oldL,
+                     VkImageLayout newL, VkPipelineStageFlags2 srcStage,
+                     VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage,
+                     VkAccessFlags2 dstAccess,
+                     VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) {
+    VkImageMemoryBarrier2 b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+    b.srcStageMask = srcStage;
+    b.srcAccessMask = srcAccess;
+    b.dstStageMask = dstStage;
+    b.dstAccessMask = dstAccess;
+    b.oldLayout = oldL;
+    b.newLayout = newL;
+    b.srcQueueFamilyIndex = b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = image;
+    b.subresourceRange = {aspect, 0, 1, 0, 1};
+
+    VkDependencyInfo dep{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+    dep.imageMemoryBarrierCount = 1;
+    dep.pImageMemoryBarriers = &b;
+    vkCmdPipelineBarrier2(cmd, &dep);
+}
+} // namespace
+
 namespace Vulkan {
 
 CVulkanRendering::CVulkanRendering(const SContext& context,
@@ -149,6 +173,11 @@ void CVulkanRendering::WaitIdle() const {
 
 void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
                                        VkRect2D scissor) {
+
+    VkImage swapImage = mSwapchain.GetImages()[index];
+    VkImageView depthImage = mSwapchain.GetDepthView();
+    VkImageView swapView = mSwapchain.GetImageViews()[index];
+
     VkDevice device = mContext.device;
 
     // Wait for GPU to finish with this frame
@@ -158,17 +187,29 @@ void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
     VkCommandBuffer commandBuffer = mSwapchain.GetCommandBuffer(index);
     vkResetCommandBuffer(commandBuffer, 0);
 
-    VkClearValue clearValues[2]{};
-    clearValues[0].color = {.1f, 0.1f, 0.1f, 0.0f};
-    clearValues[1].depthStencil = {1.0f, 0};
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = mSwapchain.GetRenderPass();
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = mSwapchain.GetExtent();
-    renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues = clearValues;
-    renderPassInfo.framebuffer = mSwapchain.GetFramebuffer(index);
+    VkRenderingAttachmentInfo color{
+        VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    color.imageView = mSwapchain.GetImageViews()[index];
+    color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color.clearValue = {{0.f, 0.f, 0.f, 1.f}};
+
+    VkRenderingAttachmentInfo depth{
+        VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    depth.imageView = mSwapchain.GetDepthView();
+    depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth.clearValue.depthStencil = {1.f, 0};
+
+    VkRenderingInfo info{VK_STRUCTURE_TYPE_RENDERING_INFO};
+    info.renderArea = {{0, 0}, mSwapchain.GetExtent()};
+    info.layerCount = 1;
+    info.colorAttachmentCount = 1;
+    info.pColorAttachments = &color;
+    info.pDepthAttachment = &depth;
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -177,15 +218,39 @@ void CVulkanRendering::BeginRenderPass(uint32_t index, VkViewport viewport,
         LOG_ERROR("Failed to begin recording command buffer number {}!", index);
     }
 
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
+    transitionImage(commandBuffer, swapImage, VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
+                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+
+    // (B) depth: UNDEFINED -> DEPTH_ATTACHMENT_OPTIMAL
+    // transitionImage(commandBuffer, depthImage, VK_IMAGE_LAYOUT_UNDEFINED,
+    //                 VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+    //                 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+    //                     VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+    //                 0,
+    //                 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+    //                     VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+    //                 VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    //                 VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    vkCmdBeginRendering(commandBuffer, &info);
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
 void CVulkanRendering::EndRenderPass(uint32_t index) {
     VkCommandBuffer commandBuffer = mSwapchain.GetCommandBuffer(index);
-    vkCmdEndRenderPass(commandBuffer);
+
+    vkCmdEndRendering(commandBuffer);
+
+    transitionImage(commandBuffer, mSwapchain.GetImages()[index],
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         LOG_ERROR("Failed to record command buffer number {}!", index);

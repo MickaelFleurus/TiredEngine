@@ -50,6 +50,14 @@ void COverlord::Initialize(SDL_Window* window) {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui::StyleColorsDark();
+    VkFormat colorFormat = mSwapchain.GetImageFormat();
+
+    VkPipelineRenderingCreateInfoKHR renderingInfo{
+        VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR};
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachmentFormats = &colorFormat;
+    renderingInfo.depthAttachmentFormat =
+        VK_FORMAT_D32_SFLOAT; // only if ImGui draws inside a scope with depth
 
     ImGui_ImplSDL3_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo info{};
@@ -61,12 +69,13 @@ void COverlord::Initialize(SDL_Window* window) {
     info.DescriptorPool = mImguiPool;
     info.MinImageCount = 2;
     info.ImageCount = static_cast<uint32_t>(mSwapchain.GetImagesCount());
-    info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    info.PipelineInfoMain.RenderPass = mSwapchain.GetRenderPass();
     info.Allocator = nullptr;
     info.CheckVkResultFn = nullptr;
     info.PipelineCache = VK_NULL_HANDLE;
     info.PipelineInfoMain.Subpass = 0;
+    info.UseDynamicRendering = true;
+    info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    info.PipelineInfoMain.PipelineRenderingCreateInfo = renderingInfo;
 
     ImGui_ImplVulkan_Init(&info);
 }

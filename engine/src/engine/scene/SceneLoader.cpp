@@ -84,8 +84,7 @@ bool CSceneLoader::SaveCurrentScene() const {
     auto& localTransforms =
         mComponentManager.GetPool<Component::SLocalTransform>();
     auto& hierarchies = mComponentManager.GetPool<Component::SHierarchy>();
-    auto& screenTransforms =
-        mComponentManager.GetPool<Component::SScreenTransform>();
+
     auto& sprites = mComponentManager.GetPool<Component::SSprite>();
     auto& texts = mComponentManager.GetPool<Component::SText>();
 
@@ -128,17 +127,6 @@ bool CSceneLoader::SaveCurrentScene() const {
             components = nlohmann::json::object();
         }
 
-        if (screenTransforms.Has(entity)) {
-            const auto& value = screenTransforms.Get(entity);
-            components["ScreenTransform"] = {
-                {"anchor", {value.anchor.x, value.anchor.y}},
-                {"position", {value.position.x, value.position.y}},
-                {"rotation", value.rotation},
-                {"scale", {value.scale.x, value.scale.y}}};
-        } else {
-            components.erase("ScreenTransform");
-        }
-
         if (sprites.Has(entity)) {
             const auto& value = sprites.Get(entity);
             components["SpriteRenderer"] = {
@@ -155,7 +143,7 @@ bool CSceneLoader::SaveCurrentScene() const {
             const auto& value = texts.Get(entity);
             components["Text"] = {
                 {"value", value.content},
-                {"fontId", value.fontId},
+                {"fontName", value.fontName},
                 {"fontSize", value.fontSize},
                 {"color",
                  {value.color.r, value.color.g, value.color.b, value.color.a}},
@@ -175,6 +163,17 @@ bool CSceneLoader::SaveCurrentScene() const {
     const auto temporaryPath = savePath.string() + ".tmp";
     {
         std::ofstream output(temporaryPath, std::ios::out | std::ios::trunc);
+        if (!output) {
+            return false;
+        }
+        output << document.dump(4) << '\n';
+        if (!output) {
+            return false;
+        }
+    }
+    {
+        std::ofstream output(mCurrentScenePath,
+                             std::ios::out | std::ios::trunc);
         if (!output) {
             return false;
         }

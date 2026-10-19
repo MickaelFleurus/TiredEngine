@@ -27,14 +27,11 @@ public:
     const VkExtent2D& GetExtent() const;
     const std::vector<VkImage>& GetImages() const;
     const std::vector<VkImageView>& GetImageViews() const;
-    VkRenderPass GetRenderPass() const;
     VkImageView GetDepthView() const;
     VkFormat GetDepthFormat() const;
     int GetImagesCount() const;
     const std::vector<VkCommandBuffer>& GetCommandBuffers() const;
     VkCommandBuffer GetCommandBuffer(int index) const;
-    const std::vector<VkFramebuffer>& GetFramebuffers() const;
-    VkFramebuffer GetFramebuffer(int index) const;
 
 private:
     SContext& mContext;
@@ -48,8 +45,6 @@ private:
     SDepthBuffer mDepthBuffer{};
 
     // Rendering
-    VkRenderPass mRenderPass = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> mCommandBuffers;
-    std::vector<VkFramebuffer> mFramebuffers;
 };
 } // namespace Vulkan

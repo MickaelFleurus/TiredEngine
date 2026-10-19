@@ -130,13 +130,25 @@
                 "MeshRendering": {
                     "asset": "enemies.glb",
                     "node": "Goblin"
+                },
+                "Text": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.6352941393852234
+                    ],
+                    "fontName": "arial",
+                    "fontSize": 62.5,
+                    "isAnimated": false,
+                    "value": "AaBbCc Bonjour! Non"
                 }
             },
             "name": "Goblin_01",
             "transform": {
                 "pos": [
-                    5.0,
-                    0.0,
+                    105.4000015258789,
+                    88.55000305175781,
                     2.0
                 ],
                 "rot": [

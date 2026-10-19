@@ -32,7 +32,7 @@ namespace Font {
 class CFontHandler {
 public:
     CFontHandler(Utils::CFileHandler& fileHandler, Thread::CPool& threadPool,
-                 const CAssetParser& assetParser,
+                 CAssetParser& assetParser,
                  Renderer::CTextureManager& textureManager);
     ~CFontHandler();
 
@@ -43,12 +43,13 @@ public:
                   msdfgen::FreetypeHandle* freeType = nullptr);
 
 private:
+    void LoadPolice(const std::string& name);
     std::vector<CPolice> mPolices;
     std::unordered_map<std::string, std::size_t> mPoliceNameToIndex;
 
     Utils::CFileHandler& mFileHandler;
     Thread::CPool& mThreadPool;
-    const CAssetParser& mAssetParser;
+    CAssetParser& mAssetParser;
     Renderer::CTextureManager& mTextureManager;
 };
 } // namespace Font

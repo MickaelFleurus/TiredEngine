@@ -25,15 +25,9 @@ std::tuple<VkSwapchainKHR, VkFormat, VkExtent2D, std::vector<VkImage>,
 CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device,
                 VkSurfaceKHR surface, SDL_Window* window,
                 uint32_t graphicsFamily, uint32_t presentFamily);
-VkRenderPass CreateRenderPass(VkDevice device, VkFormat swapchainFormat,
-                              VkFormat depthFormat);
 std::vector<VkCommandBuffer> CreateCommandBuffers(VkDevice device,
                                                   VkCommandPool& commandPool,
                                                   int bufferCount);
-std::vector<VkFramebuffer>
-CreateFramebuffers(VkDevice device, VkRenderPass renderPass,
-                   const std::vector<VkImageView>& imageViews,
-                   VkImageView depthView, VkExtent2D extent);
 
 std::tuple<VkDescriptorPool, VkDescriptorSetLayout, VkDescriptorSet>
 CreateBindlessTexturePool(VkDevice device, uint32_t maxTextures);

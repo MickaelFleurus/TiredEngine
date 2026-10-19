@@ -36,11 +36,10 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     Debug::COverlord::AddWidget(mGameViewportWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mAssetExplorerWidget, mOverlordToken);
 
+    mFontHandler.LoadAllThePolices();
     mOverlordManager.CreateOverlord(context.window.get());
     mSceneLoader.LoadSceneFromFile(std::format(
         "{}/debug.json", system.GetFileHandler().GetAssetsFolder("scene")));
-
-    mFontHandler.LoadAllThePolices();
 }
 
 void CGameLoop::GameLoop(float deltaTime) {

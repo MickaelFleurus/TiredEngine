@@ -82,6 +82,22 @@ VkFrontFace ConvertFrontFace(Renderer::EFrontFace face) {
 
 namespace Vulkan {
 
+namespace {
+struct SGraphicsPipelineKey {
+    Renderer::SPipelineConfig config;
+
+    bool operator==(const SGraphicsPipelineKey& other) const noexcept {
+        return config == other.config;
+    }
+};
+
+struct SGraphicsPipelineKeyHash {
+    std::size_t operator()(const SGraphicsPipelineKey& key) const noexcept {
+        return Utils::CreateHash(Renderer::SPipelineConfigHash{}(key.config));
+    }
+};
+} // namespace
+
 class CPipelineFactory::CImpl {
 public:
     CImpl(const Vulkan::SContext& context, Vulkan::CSwapchain& swapchain)
@@ -156,7 +172,8 @@ public:
 
     Renderer::SPipelineDescriptors
     GetOrCreateGraphicsPipeline(Renderer::SPipelineConfig config) {
-        if (!mPipelineCache.contains(config)) {
+        const SGraphicsPipelineKey key{config};
+        if (!mPipelineCache.contains(key)) {
             auto vertexShader = mShaderFactory.CreateVertexShader(
                 config.shaderName, config.shaderPath);
             auto fragmentShader = mShaderFactory.CreateFragmentShader(
@@ -308,7 +325,16 @@ public:
             std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
                 vertexShaderStageInfo, fragmentShaderStageInfo};
 
+            VkFormat colorFormat = mSwapchain.GetImageFormat();
+
+            VkPipelineRenderingCreateInfo renderingInfo{
+                VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+            renderingInfo.colorAttachmentCount = 1;
+            renderingInfo.pColorAttachmentFormats = &colorFormat;
+            renderingInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
+
             VkGraphicsPipelineCreateInfo pipelineInfo{};
+            pipelineInfo.pNext = &renderingInfo;
             pipelineInfo.sType =
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.stageCount = shaderStages.size();
@@ -322,7 +348,7 @@ public:
             pipelineInfo.pDynamicState = &kDynamicStateInfo;
             pipelineInfo.pDepthStencilState = &depthStencil;
             pipelineInfo.layout = pipelineLayout;
-            pipelineInfo.renderPass = mSwapchain.GetRenderPass();
+            pipelineInfo.renderPass = VK_NULL_HANDLE;
             pipelineInfo.subpass = 0;
 
             VkPipeline graphicsPipeline;
@@ -333,20 +359,18 @@ public:
                 return {};
             }
 
-            mPipelineCache.try_emplace(config, graphicsPipeline,
-                                       pipelineLayout);
+            mPipelineCache.try_emplace(key, graphicsPipeline, pipelineLayout);
         }
 
-        return mPipelineCache[config];
+        return mPipelineCache[key];
     }
 
 private:
     const Vulkan::SContext& mContext;
     Vulkan::CSwapchain& mSwapchain;
     CShaderFactory mShaderFactory;
-    std::unordered_map<Renderer::SPipelineConfig,
-                       Renderer::SPipelineDescriptors,
-                       Renderer::SPipelineConfigHash>
+    std::unordered_map<SGraphicsPipelineKey, Renderer::SPipelineDescriptors,
+                       SGraphicsPipelineKeyHash>
         mPipelineCache;
     std::unordered_map<Renderer::SComputePipelineConfig,
                        Renderer::SPipelineDescriptors,

@@ -1,6 +1,7 @@
 #include "engine/utils/AssetParser.h"
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 
 #include "engine/utils/FileHandler.h"
@@ -27,6 +28,21 @@ std::optional<fs::path> SearchMetaFile(fs::path filePath) {
         }
     }
     return std::nullopt;
+}
+
+std::pair<std::uint64_t, std::uint64_t> GetFolderSize(fs::path path) {
+    std::uint64_t size = 0;
+    std::uint64_t count = 0;
+
+    for (const auto& entry : fs::recursive_directory_iterator(path)) {
+
+        // Only count and measure regular files (skip folders, symlinks, etc.)
+        if (entry.is_regular_file()) {
+            size += entry.file_size(); // size in bytes
+            count++;
+        }
+    }
+    return std::make_pair(size, count);
 }
 
 constexpr std::array<std::string_view, 5> kAssetExtensions{
@@ -84,7 +100,10 @@ void CAssetParser::InitializeMonitoredFolders() {
                         mFileHandler.GetTempFolder()};
     for (const auto& path : paths) {
         if (fs::exists(path)) {
-            mMonitoredFolders.push_back({path, fs::last_write_time(path)});
+            auto sizeCountFolder = GetFolderSize(path);
+            mMonitoredFolders.emplace_back(
+                SFolderState{path, fs::last_write_time(path),
+                             sizeCountFolder.first, sizeCountFolder.second});
         }
     }
     Parse();
@@ -98,6 +117,12 @@ bool CAssetParser::HasFoldersChanged() const {
         if (fs::last_write_time(folder.path) != folder.lastWriteTime) {
             return true; // Folder modified
         }
+
+        auto sizeCountFolder = GetFolderSize(folder.path);
+        if (sizeCountFolder.first != folder.folderSize ||
+            sizeCountFolder.second != folder.fileCount) {
+            return true;
+        }
     }
     return false;
 }
@@ -106,6 +131,7 @@ void CAssetParser::CheckAndUpdateAssets() {
     if (HasFoldersChanged()) {
         mAssets.clear();
         Parse(); // Re-parse everything
+        InitializeMonitoredFolders();
     }
 }
 

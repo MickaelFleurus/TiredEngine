@@ -8,12 +8,14 @@
 #include "engine/core/DataTypes.h"
 #include "engine/core/Entity.h"
 #include "engine/utils/ComponentParserRegistry.h"
+#include "engine/utils/ComponentUtils.h"
 #include "engine/utils/Logger.h"
 
 namespace Component {
 struct SText {
+    glm::vec2 anchor{0.0f};
     std::string content;
-    uint32_t fontId;
+    std::string fontName;
     float fontSize{16.0f};
     glm::vec4 color{1.0f};
     bool isAnimated{false};
@@ -28,15 +30,8 @@ struct SSprite {
     std::string spriteName;
     glm::vec4 color{1.0f};
     glm::vec2 size{};
-    bool maintainAspectRatio{false};
-};
-
-struct SScreenTransform {
     glm::vec2 anchor{0.0f};
-    glm::vec2 position{0.0f};
-    float rotation = 0.0f;
-    glm::vec2 scale{1.0f};
-    glm::mat3 resolvedTransform; // computed each frame
+    bool maintainAspectRatio{false};
 };
 
 struct SHierarchy {
@@ -69,44 +64,17 @@ static ComponentRegistrar RegisterSprite(
         const auto spritePath = j.at("path").get<std::string>();
         auto& sprite = manager.Emplace<SSprite>(e);
         sprite.spriteName = spritePath;
-        if (j.contains("size")) {
-            sprite.size = {j.at("size").at(0).get<float>(),
-                           j.at("size").at(1).get<float>()};
-        }
-        if (j.contains("maintainAspectRatio")) {
-            sprite.maintainAspectRatio =
-                j.at("maintainAspectRatio").get<bool>();
-        }
-        if (j.contains("color") && j.at("color").is_array() &&
-            j.at("color").size() == 4) {
-            sprite.color = {j.at("color").at(0).get<float>(),
-                            j.at("color").at(1).get<float>(),
-                            j.at("color").at(2).get<float>(),
-                            j.at("color").at(3).get<float>()};
-        }
-    });
 
-static ComponentRegistrar RegisterScreenTransform(
-    "ScreenTransform",
-    [](Component::CManager& manager, Core::SEntity e, const nlohmann::json& j) {
-        auto& screenTransform = manager.Emplace<SScreenTransform>(e);
-        if (j.contains("anchor")) {
-            screenTransform.anchor = {j.at("anchor").at(0).get<float>(),
-                                      j.at("anchor").at(1).get<float>()};
-        }
-        if (j.contains("position")) {
-            screenTransform.position = {j.at("position").at(0).get<float>(),
-                                        j.at("position").at(1).get<float>()};
-        }
+        sprite.size =
+            Utils::ParseArray2<float>(j, "size").value_or(glm::vec2{1.0f});
 
-        if (j.contains("rotation")) {
-            screenTransform.rotation = j.at("rotation").get<float>();
-        }
+        sprite.maintainAspectRatio =
+            Utils::ParseBool(j, "maintainAspectRatio").value_or(true);
 
-        if (j.contains("scale")) {
-            screenTransform.scale = {j.at("scale").at(0).get<float>(),
-                                     j.at("scale").at(1).get<float>()};
-        }
+        sprite.color =
+            Utils::ParseArray4<float>(j, "color").value_or(glm::vec4{1.0f});
+        sprite.anchor =
+            Utils::ParseArray2<float>(j, "anchor").value_or(glm::vec2{1.0f});
     });
 
 static ComponentRegistrar RegisterText("Text", [](Component::CManager& manager,
@@ -114,14 +82,12 @@ static ComponentRegistrar RegisterText("Text", [](Component::CManager& manager,
                                                   const nlohmann::json& j) {
     auto& text = manager.Emplace<SText>(e);
     text.content = j.at("value").get<std::string>();
-    text.color = {
-        j.at("color").at(0).get<float>(), j.at("color").at(1).get<float>(),
-        j.at("color").at(2).get<float>(), j.at("color").at(3).get<float>()};
+    text.color =
+        Utils::ParseArray4<float>(j, "color").value_or(glm::vec4{1.0f});
     text.fontSize = j.at("fontSize").get<float>();
-    text.fontId = j.at("fontId").get<uint32_t>();
-    if (j.contains("isAnimated")) {
-        text.isAnimated = j.at("isAnimated").get<bool>();
-    }
+    text.fontName = j.at("fontName").get<std::string>();
+
+    text.isAnimated = Utils::ParseBool(j, "isAnimated").value_or(false);
 });
 
 } // namespace Component

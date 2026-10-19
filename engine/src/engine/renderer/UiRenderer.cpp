@@ -5,6 +5,7 @@
 #include "engine/component/ComponentManager2.h"
 #include "engine/component/ComponentPool.h"
 #include "engine/component/ComponentView.h"
+#include "engine/component/TransformComponent.h"
 #include "engine/component/UIComponents.h"
 #include "engine/core/CameraUI.h"
 #include "engine/core/EntityManager.h"
@@ -17,7 +18,37 @@
 #include "engine/vulkan/HostBuffer.h"
 #include "engine/vulkan/PipelineFactory.h"
 
+#include "glm/ext/vector_float2.hpp"
+
 namespace {
+
+float twistAngleY(const glm::quat& q) {
+    float len = std::sqrt(q.w * q.w + q.y * q.y);
+    if (len < 1e-6f)
+        return 0.0f;
+
+    // angle = 2 * atan2(y, w) of the normalized twist quat
+    float angle = 2.0f * std::atan2(q.y, q.w);
+
+    // wrap to (-π, π]
+    if (angle > glm::pi<float>())
+        angle -= glm::two_pi<float>();
+    if (angle <= -glm::pi<float>())
+        angle += glm::two_pi<float>();
+    return angle;
+}
+
+struct S2DTransform {
+    S2DTransform(const Component::SLocalTransform& local)
+        : position{local.position.x, local.position.y}
+        , scale{local.scale.x, local.scale.y}
+        , rotation(twistAngleY(local.rotation)) {
+    }
+
+    glm::vec2 position;
+    glm::vec2 scale;
+    float rotation;
+};
 
 std::vector<Core::SScreenQuadInstance>
 BuildScreenText(const std::string& utf8Text, glm::vec2 penStart, float fontSize,
@@ -81,8 +112,7 @@ glm::mat3 MakeLocal2D(glm::vec2 position, float rotation, glm::vec2 scale) {
 }
 
 std::optional<Core::SScreenQuadInstance>
-BuildSpriteQuad(const Component::SSprite& sprite,
-                const Component::SScreenTransform& xform,
+BuildSpriteQuad(const Component::SSprite& sprite, S2DTransform transform,
                 const Renderer::CSpriteManager& spriteManager,
                 const Renderer::CTextureManager& textureManager) {
     const auto spriteInfo = spriteManager.GetSpriteInfo(sprite.spriteName);
@@ -112,49 +142,22 @@ BuildSpriteQuad(const Component::SSprite& sprite,
             size.y = sprite.size.y;
         }
     }
-    size *= xform.scale;
+    size *= transform.scale;
 
     Core::SScreenQuadInstance inst{};
-    inst.posMin = xform.position;
-    inst.posMax = xform.position + size;
+    inst.posMin = transform.position;
+    inst.posMax = transform.position + size;
     inst.uvMin = spriteInfo->uvMin;
     inst.uvMax = spriteInfo->uvMax;
     inst.color = sprite.color;
-    inst.anchor = xform.anchor;
+    inst.anchor = sprite.anchor;
     inst.scale = {1.0f, 1.0f};
-    inst.rotation = xform.rotation;
+    inst.rotation = transform.rotation;
     inst.texIndex = static_cast<uint32_t>(spriteInfo->id);
     inst.isText = 0u;
     return inst;
 }
 
-void ResolveScreenTransform(
-    Component::CPool<Component::SScreenTransform>& screenTransformPool,
-    Component::CPool<Component::SHierarchy>& hierarchyPool, Core::SEntity e,
-    Core::CEntityManager& entityManager,
-    glm::mat3 parentTransform = glm::mat3{1.0f},
-    glm::vec2 parentSize = glm::vec2(1.0f)) {
-    screenTransformPool.Update(e, [&](auto& t) {
-        glm::vec2 anchorOffset = t.anchor * parentSize;
-        glm::mat3 local =
-            MakeLocal2D(anchorOffset + t.position, t.rotation, t.scale);
-
-        t.resolvedTransform = parentTransform * local;
-    });
-
-    if (hierarchyPool.Has(e)) {
-        const auto& hierarchy = hierarchyPool.Get(e);
-        const auto& parent = screenTransformPool.Get(e);
-        for (CStringId name : hierarchy.children) {
-            auto childEntity = entityManager.GetEntity(name);
-            if (childEntity) {
-                ResolveScreenTransform(screenTransformPool, hierarchyPool,
-                                       *childEntity, entityManager,
-                                       parent.resolvedTransform);
-            }
-        }
-    }
-}
 } // namespace
 
 namespace Renderer {
@@ -189,30 +192,29 @@ CUiRenderer::CUiRenderer(
 }
 
 void CUiRenderer::Prepare() {
+    mInstances.clear();
     Component::CView textView{
         mComponentManager
-            .GetPools<Component::SScreenTransform, Component::SText>()};
+            .GetPools<Component::SLocalTransform, Component::SText>()};
     for (auto it = textView.begin(); it != textView.end(); ++it) {
         auto& text = it.Get<Component::SText>();
-        auto& transform = it.Get<Component::SScreenTransform>();
-        if (text.dirty || text.isAnimated) {
-            it.Update<Component::SText>([&](auto& t) {
-                t.cachedGlyphs = BuildScreenText(
-                    text.content, transform.position, text.fontSize, text.color,
-                    *mFontHandler.GetPolice(text.fontId));
-                t.dirty = false;
-            });
-        }
+        auto& transform = it.Get<Component::SLocalTransform>();
+        it.Update<Component::SText>([&](auto& t) {
+            t.cachedGlyphs = BuildScreenText(
+                text.content, transform.position, text.fontSize, text.color,
+                mFontHandler.GetPolice(text.fontName));
+            t.dirty = false;
+        });
         mInstances.insert(mInstances.end(), text.cachedGlyphs.begin(),
                           text.cachedGlyphs.end());
     }
 
     Component::CView spriteView{
         mComponentManager
-            .GetPools<Component::SScreenTransform, Component::SSprite>()};
+            .GetPools<Component::SLocalTransform, Component::SSprite>()};
     for (auto it = spriteView.begin(); it != spriteView.end(); ++it) {
         auto& sprite = it.Get<Component::SSprite>();
-        auto& xform = it.Get<Component::SScreenTransform>();
+        auto& xform = it.Get<Component::SLocalTransform>();
         const auto instance =
             BuildSpriteQuad(sprite, xform, mSpriteManager, mTextureManager);
         if (instance) {
