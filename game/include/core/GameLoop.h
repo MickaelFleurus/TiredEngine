@@ -11,6 +11,7 @@
 #include "engine/debug/LevelSceneLoaderWidget.h"
 #include "engine/debug/SceneHierarchy.h"
 #include "engine/debug/SceneLoaderOverlord.h"
+#include "engine/debug/SpriteAnimationWidget.h"
 #include "engine/debug/SpritesWidget.h"
 #include "engine/debug/TexturesWidget.h"
 #include "engine/utils/Token.h"
@@ -45,6 +46,7 @@ private:
     Debug::CEntityInspector mEntityInspector;
     Debug::CTexturesWidget mTexturesWidget;
     Debug::CSpritesWidget mSpritesWidget;
+    Debug::CSpriteAnimationWidget mSpriteAnimationWidget;
     Debug::CGameViewportWidget mGameViewportWidget;
     Debug::CAssetExplorerWidget mAssetExplorerWidget;
 };

@@ -20,6 +20,7 @@ include(SPIRV-Reflect)
 include(yaml-cpp)
 include(VMA)
 include(fastgltf)
+include(ImGuizmo)
 
 function(setup_dependencies)
     # Base dependencies first (no external deps)
@@ -45,6 +46,7 @@ function(setup_dependencies)
     
     # Libraries that depend on SDL/graphics
     setup_imgui()       # depends on SDL3
+    setup_imguizmo()
     
     # Font/text libraries that depend on FreeType
     setup_msdfgen()     # depends on FreeType

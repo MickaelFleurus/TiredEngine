@@ -20,6 +20,8 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     , mEntityInspector(mEntityManager, mComponentManager, mEntitySelection)
     , mTexturesWidget(mTextureManager)
     , mSpritesWidget(mSpriteManager, mTextureManager)
+    , mSpriteAnimationWidget(mSpriteManager, mTextureManager,
+                             context.window.get())
     , mGameViewportWidget(mViewportTarget)
     , mAssetExplorerWidget(system.GetFileHandler()) {
 
@@ -35,6 +37,7 @@ CGameLoop::CGameLoop(System::CSystem& system, Vulkan::SContext& context,
     Debug::COverlord::AddWidget(mSpritesWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mGameViewportWidget, mOverlordToken);
     Debug::COverlord::AddWidget(mAssetExplorerWidget, mOverlordToken);
+    Debug::COverlord::AddWidget(mSpriteAnimationWidget, mOverlordToken);
 
     mFontHandler.LoadAllThePolices();
     mOverlordManager.CreateOverlord(context.window.get());

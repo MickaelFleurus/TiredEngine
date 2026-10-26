@@ -16,6 +16,7 @@ target_link_libraries(Angine_LIB PUBLIC
     spirv-reflect-static
     fastgltf::fastgltf
     TiredPackerReadingLib
+    imguizmo
 )
 
 # On macOS, link required frameworks for MoltenVK

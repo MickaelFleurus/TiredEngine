@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <optional>
 
 #include "engine/utils/Asset.h"
@@ -20,6 +21,7 @@ public:
 
 private:
     void Parse();
+    void ParseMonitoredFolder(std::filesystem::path p);
     Utils::CFileHandler& mFileHandler;
     std::unordered_map<SAssetKey, SAsset, SAssetKeyHash> mAssets;
 

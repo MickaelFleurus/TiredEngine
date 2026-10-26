@@ -99,14 +99,27 @@ void CAssetParser::InitializeMonitoredFolders() {
     const auto paths = {mFileHandler.GetAssetsFolder(),
                         mFileHandler.GetTempFolder()};
     for (const auto& path : paths) {
-        if (fs::exists(path)) {
-            auto sizeCountFolder = GetFolderSize(path);
-            mMonitoredFolders.emplace_back(
-                SFolderState{path, fs::last_write_time(path),
-                             sizeCountFolder.first, sizeCountFolder.second});
-        }
+        ParseMonitoredFolder(path);
     }
     Parse();
+}
+
+void CAssetParser::ParseMonitoredFolder(fs::path p) {
+    std::vector<fs::path> toExplore;
+    std::uint64_t size = 0;
+    std::uint64_t count = 0;
+    for (const auto& item : std::filesystem::directory_iterator(p)) {
+        if (item.is_directory()) {
+            toExplore.push_back(item);
+        } else if (item.is_regular_file()) {
+            count++;
+            size += item.file_size(); // size in bytes
+        }
+    }
+    mMonitoredFolders.push_back({p, fs::last_write_time(p), size, count});
+    for (const auto& folder : toExplore) {
+        ParseMonitoredFolder(folder);
+    }
 }
 
 bool CAssetParser::HasFoldersChanged() const {
